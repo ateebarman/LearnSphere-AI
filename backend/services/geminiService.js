@@ -1,134 +1,45 @@
-const generateJson = async (prompt) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not set in environment variables');
-  }
+// Feature Functions with AI Integration
+// Imports generateJson from unified AI service
+// Includes all demo fallback modes for development
 
-  const fullPrompt = `${prompt}. You must respond with only a valid JSON object. Do not include \`\`\`json or any other wrappers in your response.`;
-  
-  try {
-    // Try multiple endpoints in order of preference
-    // Using models that are available in the free tier
-    const endpoints = [
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${apiKey}`,
-    ];
-
-    let lastError = null;
-    for (const endpoint of endpoints) {
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            contents: [
-              {
-                parts: [
-                  {
-                    text: fullPrompt,
-                  },
-                ],
-              },
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              topK: 1,
-              topP: 1,
-              maxOutputTokens: 8192,
-            },
-            safetySettings: [
-              {
-                category: 'HARM_CATEGORY_HARASSMENT',
-                threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-              },
-              {
-                category: 'HARM_CATEGORY_HATE_SPEECH',
-                threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-              },
-              {
-                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-              },
-              {
-                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                threshold: 'BLOCK_MEDIUM_AND_ABOVE',
-              },
-            ],
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          lastError = new Error(`API Error: ${response.status} - ${JSON.stringify(errorData)}`);
-          continue;
-        }
-
-        const data = await response.json();
-        
-        if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-          lastError = new Error('Invalid response structure from Gemini API');
-          continue;
-        }
-
-        let text = data.candidates[0].content.parts[0].text;
-        
-        try {
-          // Clean markdown code blocks if present
-          text = text.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
-          return JSON.parse(text);
-        } catch (e) {
-          console.error("Gemini response was not valid JSON:", text);
-          // Try removing backticks more aggressively
-          text = text.replace(/```/g, '').trim();
-          try {
-            return JSON.parse(text);
-          } catch (e2) {
-            lastError = new Error("Failed to parse AI response: " + text.substring(0, 200));
-            continue;
-          }
-        }
-      } catch (e) {
-        lastError = e;
-      }
-    }
-
-    // If all endpoints fail, throw the last error
-    throw lastError || new Error('All Gemini API endpoints failed');
-  } catch (error) {
-    console.error('Error calling Gemini API:', error.message);
-    throw error;
-  }
-};
+import { generateJson } from './ai/index.js';
+import { getResourcesForTopic } from './resourceDatabase.js';
 
 export const generateRoadmapFromAI = async (topic) => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  // Get real resources from database first
+  const realResources = getResourcesForTopic(topic);
   
-  // Try real API if key exists
-  if (apiKey) {
-    try {
-      const prompt = `
-        Generate a personalized learning roadmap for the topic: "${topic}".
-        The roadmap should be structured as a JSON object with a "title", "description", and an array named "modules".
-        Each module in the "modules" array should be an object with:
-        1. "title" (string): The name of the module (e.g., "Introduction to React").
-        2. "description" (string): A short 1-2 sentence description of what the module covers.
-        3. "estimatedTime" (string): A string representing the estimated time (e.g., "3 hours", "1 week").
-        4. "resources" (array): An array of 3-5 objects, each with a "title" (e.g., "Official React Docs") and "type" ("doc", "article", or "challenge"). Do NOT include video resources, as we will fetch those separately.
-        
-        Example for "title": "Learning ${topic}"
-      `;
-      return await generateJson(prompt);
-    } catch (error) {
-      console.warn('Real Gemini API failed, falling back to demo mode:', error.message);
+  // Try real API
+  try {
+    const prompt = `
+      Generate a personalized learning roadmap for the topic: "${topic}".
+      The roadmap should be structured as a JSON object with a "title", "description", and an array named "modules".
+      Each module in the "modules" array should be an object with:
+      1. "title" (string): The name of the module (e.g., "Introduction to React").
+      2. "description" (string): A short 1-2 sentence description of what the module covers.
+      3. "estimatedTime" (string): A string representing the estimated time (e.g., "3 hours", "1 week").
+      4. "resources" (array): Leave this EMPTY - resources will be added from our verified database. Just return an empty array [].
+      
+      Do NOT include video resources, as we will fetch those separately.
+      
+      Example for "title": "Learning ${topic}"
+    `;
+    const roadmap = await generateJson(prompt);
+    
+    // Inject real resources into each module
+    if (roadmap.modules && Array.isArray(roadmap.modules)) {
+      roadmap.modules = roadmap.modules.map(module => ({
+        ...module,
+        resources: realResources.slice(0, 4) // Add 4 verified resources per module
+      }));
     }
+    
+    return roadmap;
+  } catch (error) {
+    console.warn(`🔄 Falling back to demo mode for roadmap (${topic})`);
   }
 
   // Demo mode - return structured sample data
-  console.log('Using DEMO mode for roadmap generation (API key not configured)');
   const demoRoadmaps = {
     'react': {
       title: `Learning ${topic}`,
@@ -233,38 +144,34 @@ export const generateRoadmapFromAI = async (topic) => {
 };
 
 export const generateQuizFromAI = async (moduleTitle, topic) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  
-  // Try real API if key exists
-  if (apiKey) {
-    try {
-      const prompt = `
-        Generate a 10-question multiple-choice quiz for the topic "${moduleTitle}" within the broader subject of "${topic}".
-        Respond with a JSON object containing a single key "questions".
-        "questions" should be an array of objects. Each object must have:
-        1. "question" (string): The text of the question.
-        2. "options" (array of strings): An array of 4 possible answers.
-        3. "correctAnswer" (string): The string of the correct answer, which must be one of the strings from the "options" array.
+  // Try real API with key rotation
+  try {
+    const prompt = `
+      Generate a 10-question multiple-choice quiz for the topic "${moduleTitle}" within the broader subject of "${topic}".
+      Respond with a JSON object containing a single key "questions".
+      "questions" should be an array of objects. Each object must have:
+      1. "question" (string): The text of the question.
+      2. "options" (array of strings): An array of 4 possible answers.
+      3. "correctAnswer" (string): The string of the correct answer, which must be one of the strings from the "options" array.
 
-        Example:
-        {
-          "questions": [
-            {
-              "question": "What is React?",
-              "options": ["A library", "A framework", "A language", "A database"],
-              "correctAnswer": "A library"
-            }
-          ]
-        }
-      `;
-      return await generateJson(prompt);
-    } catch (error) {
-      console.warn('Real Gemini API failed for quiz, using demo mode:', error.message);
-    }
+      Example:
+      {
+        "questions": [
+          {
+            "question": "What is React?",
+            "options": ["A library", "A framework", "A language", "A database"],
+            "correctAnswer": "A library"
+          }
+        ]
+      }
+    `;
+    return await generateJson(prompt);
+  } catch (error) {
+    console.warn(`⚠️  Real AI API failed for quiz (${moduleTitle}):`, error.message);
   }
 
   // Demo mode - return structured sample quiz
-  console.log('Using DEMO mode for quiz generation (API key not configured)');
+  console.log('❌ Using DEMO mode for quiz generation (No API keys available)');
   return {
     questions: [
       {
@@ -372,30 +279,26 @@ export const generateQuizFromAI = async (moduleTitle, topic) => {
 };
 
 export const getRecommendationsFromAI = async (moduleTitle, score, incorrectAnswers) => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  
-  // Try real API first
-  if (apiKey && process.env.USE_REAL_GEMINI === 'true') {
-    try {
-      const prompt = `
-        A user just scored ${score}% on a quiz about "${moduleTitle}".
-        Their incorrect answers were on these topics: ${incorrectAnswers.join(', ')}.
-        
-        Generate a short, encouraging feedback message and personalized recommendations.
-        If the score is < 70%, suggest specific resources or concepts to review based on the incorrect answers.
-        If the score is > 90%, congratulate them and suggest they move on or explore an advanced related topic.
-        
-        Respond with a JSON object with one key: "feedback".
-        
-        Example:
-        {
-          "feedback": "Great job on the quiz! You scored ${score}%. You seem to have a good grasp, but try reviewing ${incorrectAnswers[0]}... Here is a good article: [link]"
-        }
-      `;
-      return await generateJson(prompt);
-    } catch (error) {
-      console.warn('Real Gemini API failed for recommendations, using demo mode');
-    }
+  // Try real API
+  try {
+    const prompt = `
+      A user just scored ${score}% on a quiz about "${moduleTitle}".
+      Their incorrect answers were on these topics: ${incorrectAnswers.join(', ')}.
+      
+      Generate a short, encouraging feedback message and personalized recommendations.
+      If the score is < 70%, suggest specific resources or concepts to review based on the incorrect answers.
+      If the score is > 90%, congratulate them and suggest they move on or explore an advanced related topic.
+      
+      Respond with a JSON object with one key: "feedback".
+      
+      Example:
+      {
+        "feedback": "Great job on the quiz! You scored ${score}%. You seem to have a good grasp, but try reviewing ${incorrectAnswers[0]}... Here is a good article: [link]"
+      }
+    `;
+    return await generateJson(prompt);
+  } catch (error) {
+    console.warn(`🔄 Falling back to demo mode for recommendations`);
   }
 
   // Demo mode
@@ -420,22 +323,52 @@ export const getRecommendationsFromAI = async (moduleTitle, score, incorrectAnsw
 };
 
 export const getArticlesFromAI = async (topic) => {
-   const prompt = `
-    Find 3 high-quality articles or documentation links for learning about "${topic}".
-    Respond with a JSON object with a key "resources".
-    "resources" should be an array of objects, each with "title", "url", "description", and "type" (set to "article" or "doc").
-    
-    Example:
-    {
-      "resources": [
-        {
-          "title": "MDN Docs: ${topic}",
-          "url": "https://developer.mozilla.org/...",
-          "description": "The official MDN documentation.",
-          "type": "doc"
-        }
-      ]
-    }
-  `;
-  return generateJson(prompt);
+  // Try real API
+  try {
+    const prompt = `
+      Find 3 high-quality articles or documentation links for learning about "${topic}".
+      Respond with a JSON object with a key "resources".
+      "resources" should be an array of objects, each with "title", "url", "description", and "type" (set to "article" or "doc").
+      
+      Example:
+      {
+        "resources": [
+          {
+            "title": "MDN Docs: ${topic}",
+            "url": "https://developer.mozilla.org/...",
+            "description": "The official MDN documentation.",
+            "type": "doc"
+          }
+        ]
+      }
+    `;
+    return await generateJson(prompt);
+  } catch (error) {
+    console.warn(`🔄 Falling back to demo mode for articles (${topic})`);
+  }
+
+  // Demo mode - return structured sample articles
+  return {
+    resources: [
+      {
+        title: `Official ${topic} Documentation`,
+        url: `https://docs.example.com/${topic.toLowerCase()}`,
+        description: `The official documentation for ${topic}. Covers all fundamental concepts and best practices.`,
+        type: 'doc'
+      },
+      {
+        title: `${topic} Tutorial Guide`,
+        url: `https://tutorial.example.com/${topic.toLowerCase()}`,
+        description: `Comprehensive tutorial guide with step-by-step examples for learning ${topic}.`,
+        type: 'article'
+      },
+      {
+        title: `Advanced ${topic} Concepts`,
+        url: `https://advanced.example.com/${topic.toLowerCase()}`,
+        description: `In-depth guide covering advanced patterns and techniques in ${topic}.`,
+        type: 'article'
+      }
+    ]
+  };
 };
+
