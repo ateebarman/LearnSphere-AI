@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
+import { initializeAI } from './services/ai/index.js';
 
 import authRoutes from './routes/authRoutes.js';
 import roadmapRoutes from './routes/roadmapRoutes.js';
@@ -11,6 +12,7 @@ import resourceRoutes from './routes/resourceRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 
 dotenv.config();
+initializeAI();
 
 connectDB();
 

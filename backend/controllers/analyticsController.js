@@ -7,8 +7,27 @@ import Roadmap from '../models/roadmapModel.js';
 // @access  Private
 const getAnalytics = asyncHandler(async (req, res) => {
   const userId = req.user._id;
+  console.log('Fetching analytics for userId:', userId.toString());
+  
   const quizAttempts = await QuizAttempt.find({ user: userId });
   const roadmaps = await Roadmap.find({ user: userId });
+  
+  console.log('Found roadmaps:', roadmaps.length);
+  console.log('Found quizAttempts:', quizAttempts.length);
+  
+  // Debug: Check if there are roadmaps in total
+  const totalRoadmapsCount = await Roadmap.countDocuments();
+  const roadmapsWithoutUser = await Roadmap.countDocuments({ user: null });
+  console.log('Total roadmaps in DB:', totalRoadmapsCount);
+  console.log('Roadmaps without user field:', roadmapsWithoutUser);
+  
+  if (roadmaps.length === 0 && totalRoadmapsCount > 0) {
+    console.log('No roadmaps found for this user. Sample roadmaps:');
+    const samples = await Roadmap.find().limit(2);
+    samples.forEach(r => {
+      console.log('Roadmap:', r._id, 'user:', r.user, 'title:', r.title);
+    });
+  }
 
   // Simple aggregation for strong/weak areas
   const topicScores = {};
@@ -96,9 +115,9 @@ const getAnalytics = asyncHandler(async (req, res) => {
     weakAreas,
     
     // New format
-    totalRoadmapsCreated,
-    totalQuizzesTaken,
-    averageQuizScore,
+    totalRoadmaps: totalRoadmapsCreated,
+    totalQuizzes: totalQuizzesTaken,
+    averageScore: averageQuizScore,
     moduleCompletionRate,
     completedModules,
     totalModules,

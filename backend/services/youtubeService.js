@@ -1,20 +1,32 @@
 import { google } from 'googleapis';
 
-const youtube = google.youtube({
-  version: 'v3',
-  auth: process.env.YOUTUBE_API_KEY,
-});
-
 export const searchYouTube = async (query) => {
-  try {
-    const response = await youtube.search.list({
-      part: 'snippet',
-      q: `${query} tutorial playlist`,
-      type: 'playlist', // Focus on playlists for structured learning
-      maxResults: 5,
-    });
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  
+  if (!apiKey) {
+    console.warn('YouTube API Key not configured, using demo mode');
+    return getDemoVideos(query);
+  }
 
-    return response.data.items.map((item) => ({
+  try {
+    // Use REST API directly instead of googleapis client
+    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(`${query} tutorial playlist`)}&type=playlist&maxResults=5&key=${apiKey}`;
+    
+    const response = await fetch(searchUrl);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`YouTube API Error: ${errorData.error.message}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.items || data.items.length === 0) {
+      console.log('No YouTube results found, using demo videos');
+      return getDemoVideos(query);
+    }
+
+    return data.items.map((item) => ({
       title: item.snippet.title,
       description: item.snippet.description,
       url: `https://www.youtube.com/playlist?list=${item.id.playlistId}`,
@@ -23,8 +35,12 @@ export const searchYouTube = async (query) => {
   } catch (error) {
     console.warn('Error fetching YouTube data:', error.message);
     console.log('Falling back to demo videos for:', query);
-    
-    // Demo mode - return sample playlists
+    return getDemoVideos(query);
+  }
+};
+
+const getDemoVideos = (query) => {
+  // Demo mode - return sample playlists
     const demoPlaylists = {
       'react': [
         {
@@ -72,5 +88,4 @@ export const searchYouTube = async (query) => {
         type: 'video'
       }
     ];
-  }
 };
