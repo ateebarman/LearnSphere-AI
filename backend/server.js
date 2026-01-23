@@ -1,5 +1,14 @@
-import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Load .env FIRST before any other imports
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
+
+// Now import everything else
+import express from 'express';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
@@ -10,8 +19,7 @@ import roadmapRoutes from './routes/roadmapRoutes.js';
 import quizRoutes from './routes/quizRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
-
-dotenv.config();
+import tutorRoutes from './routes/tutorRoutes.js';
 initializeAI();
 
 connectDB();
@@ -31,6 +39,7 @@ app.use('/api/roadmaps', roadmapRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/tutor', tutorRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

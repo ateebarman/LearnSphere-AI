@@ -9,6 +9,9 @@ import RoadmapView from './pages/RoadmapView';
 import QuizPage from './pages/QuizPage';
 import Profile from './pages/Profile';
 import Analytics from './pages/Analytics';
+import TutorChat from './pages/TutorChat';
+import ResourceLibrary from './pages/ResourceLibrary';
+import Explore from './pages/Explore';
 
 function App() {
   return (
@@ -18,6 +21,7 @@ function App() {
         <Route index element={<Home />} />
         <Route path="login" element={<Login />} />
         <Route path="signup" element={<Signup />} />
+        <Route path="explore" element={<Explore />} />
 
         {/* Private Routes */}
         <Route element={<ProtectedRoute />}>
@@ -26,6 +30,8 @@ function App() {
           <Route path="quiz/:roadmapId/:moduleTitle" element={<QuizPage />} />
           <Route path="profile" element={<Profile />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="tutor" element={<TutorChat />} />
+          <Route path="resources" element={<ResourceLibrary />} />
         </Route>
       </Route>
     </Routes>
