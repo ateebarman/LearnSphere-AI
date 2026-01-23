@@ -17,7 +17,7 @@ const ResourceIcon = ({ type }) => {
   }
 };
 
-const ModuleCard = ({ module, roadmapId, index, defaultOpen = false }) => {
+const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = true }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
@@ -27,7 +27,7 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false }) => {
         className="w-full text-left p-6 flex justify-between items-center"
       >
         <div className="flex items-center">
-          {module.isCompleted ? (
+          {isOwner && module.isCompleted ? (
             <FaCheckCircle className="text-green-500 text-2xl mr-4" />
           ) : (
             <div className="w-6 h-6 border-2 border-gray-400 rounded-full mr-4 flex-shrink-0"></div>
@@ -58,16 +58,18 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false }) => {
             ))}
           </ul>
 
-          <Link
-            to={`/quiz/${roadmapId}/${encodeURIComponent(module.title)}`}
-            className={`w-full block text-center px-6 py-3 rounded-lg font-semibold text-white ${
-              module.isCompleted
-                ? 'bg-green-600 hover:bg-green-700'
-                : 'bg-indigo-600 hover:bg-indigo-700'
-            }`}
-          >
-            {module.isCompleted ? 'Retake Quiz' : 'Start Quiz'}
-          </Link>
+          {isOwner && (
+            <Link
+              to={`/quiz/${roadmapId}/${encodeURIComponent(module.title)}`}
+              className={`w-full block text-center px-6 py-3 rounded-lg font-semibold text-white ${
+                module.isCompleted
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
+            >
+              {module.isCompleted ? 'Retake Quiz' : 'Start Quiz'}
+            </Link>
+          )}
         </div>
       )}
     </div>

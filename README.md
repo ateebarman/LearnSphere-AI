@@ -26,7 +26,17 @@
 
 **Project Overview**
 
-LearnSphere AI is a full-stack learning platform prototype with a Node.js + Express backend and a Vite + React frontend. The backend exposes REST endpoints for authentication, quizzes, roadmaps, resources, and analytics, and integrates with AI services (Gemini) and the YouTube API.
+LearnSphere AI is a full-stack learning platform with a Node.js + Express backend and a Vite + React frontend. It integrates AI services (Gemini & Groq), YouTube search, quizzes, roadmaps, analytics, and a community roadmap gallery. Users can generate personalized learning roadmaps, chat with an AI tutor, search learning resources, and share/clone public roadmaps.
+
+**Key Features**
+
+- 🎓 **AI Tutor Chat** — Real-time tutoring with Groq LLM (llama-3.3-70b-versatile)
+- 📚 **Resource Library** — Search and browse learning resources (videos + articles) independently
+- 🗺️ **Roadmap Gallery** — Explore, clone, and share public learning roadmaps
+- 📝 **Quiz System** — AI-generated quizzes with progress tracking
+- 📊 **Analytics** — Track user engagement and learning progress
+- 🔐 **JWT Authentication** — Secure user accounts and protected routes
+- 🎯 **Personalized Roadmaps** — AI-generated learning paths with YouTube videos
 
 **Tech Stack**
 
@@ -69,13 +79,35 @@ Top-level files
 
 Create a `.env` file in `backend/` (or set env vars in whatever deployment environment you use). Typical variables:
 
-- `PORT` — port for backend server (default 3000)
-- `MONGODB_URI` or `DATABASE_URL` — connection string for the DB
-- `JWT_SECRET` — secret used for signing JWT tokens for auth
-- `GEMINI_API_KEY` — (optional) API key used by `backend/services/geminiService.js`
-- `YOUTUBE_API_KEY` — (optional) API key for YouTube integration
+```
+PORT=5001
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/?appName=AppName
+JWT_SECRET=your_super_secret_jwt_key
+GEMINI_API_KEYS=api_key1,api_key2,api_key3
+YOUTUBE_API_KEY=your_youtube_api_key
 
-Adjust names to match how `backend/config/db.js` and other modules read env vars (check that file for exact variable names).
+# AI Provider Configuration (groq or gemini)
+AI_PROVIDER=groq
+
+# Groq Configuration
+GROQ_API_KEY=gsk_your_groq_key
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# Tutor Service - Separate Groq API Key
+TUTOR_GROQ_API_KEY=gsk_your_tutor_groq_key
+```
+
+- `PORT` — port for backend server (default 5001)
+- `MONGO_URI` — MongoDB connection string
+- `JWT_SECRET` — secret for signing JWT tokens
+- `GEMINI_API_KEYS` — comma-separated Gemini API keys (for roadmap/quiz generation)
+- `YOUTUBE_API_KEY` — YouTube Data API key
+- `AI_PROVIDER` — set to 'groq' or 'gemini' for roadmap generation
+- `GROQ_API_KEY` — Groq API key for roadmap/quiz generation
+- `GROQ_BASE_URL` — Groq API endpoint
+- `GROQ_MODEL` — Groq model to use (currently llama-3.3-70b-versatile)
+- `TUTOR_GROQ_API_KEY` — Separate Groq key for AI Tutor (prevents rate limiting conflicts)
 
 **Local Setup**
 
@@ -193,65 +225,115 @@ Created: [README.md](README.md)
 
 **Detailed Features & Implementation**
 
-This section lists each user-facing and backend feature, what it does today, how it's implemented (file locations and flow), and planned improvements (what will be done later).
+This section lists each user-facing and backend feature, what it does, how it's implemented, and examples.
 
 - **Authentication (signup / login / JWT)**
   - What it does: register users, authenticate, issue JWTs, protect routes.
   - Implemented in: [backend/routes/authRoutes.js](backend/routes/authRoutes.js), [backend/controllers/authController.js](backend/controllers/authController.js), [backend/middleware/authMiddleware.js](backend/middleware/authMiddleware.js)
-  - How it works: signup stores user records via `userModel` in `backend/models/userModel.js`, passwords are hashed (check `authController.js`), login verifies credentials and issues a signed JWT using `JWT_SECRET`. Protected routes use `authMiddleware` to verify tokens and attach `req.user`.
-  - Later: add refresh tokens, email verification, OAuth providers (Google/GitHub), account recovery flows.
+  - How it works: signup stores user records with hashed passwords; login verifies credentials and issues a signed JWT. Protected routes use `authMiddleware` to verify tokens.
+  - Later: add refresh tokens, OAuth, email verification, account recovery flows.
+
+- **AI Tutor Chat** ⭐ NEW
+  - What it does: real-time 1-on-1 tutoring with an AI powered by Groq LLM.
+  - Implemented in: [backend/services/grokTutorService.js](backend/services/grokTutorService.js), [backend/controllers/tutorController.js](backend/controllers/tutorController.js), [backend/routes/tutorRoutes.js](backend/routes/tutorRoutes.js)
+  - Frontend: [frontend/src/pages/TutorChat.jsx](frontend/src/pages/TutorChat.jsx), [frontend/src/services/tutorService.js](frontend/src/services/tutorService.js)
+  - How it works: authenticated users send messages to `/api/tutor` endpoint; service calls Groq API (llama-3.3-70b-versatile) with conversation history; responses stream back in real-time.
+  - API: `POST /api/tutor` (protected) — sends `{ message, history }` and returns tutoring response.
+  - Environment: Uses separate `TUTOR_GROQ_API_KEY` to avoid rate-limit conflicts with roadmap generation.
+  - UI: Chat interface with message history, loading states, error handling, and auto-scroll.
+
+- **Resource Library** ⭐ NEW
+  - What it does: search and browse learning resources (YouTube videos + AI articles) independently of roadmaps.
+  - Frontend: [frontend/src/pages/ResourceLibrary.jsx](frontend/src/pages/ResourceLibrary.jsx), [frontend/src/services/resourceService.js](frontend/src/services/resourceService.js)
+  - How it works: users search a topic via `/api/resources/:topic` endpoint; results split into Videos and Articles sections. Suggested topics provide quick-start chips.
+  - UI: search bar, suggested topic chips, cards with thumbnails, channels, snippets, and "Open" buttons.
+  - Empty states: before search shows "Search for a topic to get started"; after search with no results shows "No results found".
+  - Navigation: "📚 Resources" link in navbar for authenticated users.
+
+- **Public Roadmap Gallery (Explore)** ⭐ NEW
+  - What it does: browse community roadmaps, view details, and clone into personal account.
+  - Frontend: [frontend/src/pages/Explore.jsx](frontend/src/pages/Explore.jsx)
+  - Backend: New endpoints in [backend/routes/roadmapRoutes.js](backend/routes/roadmapRoutes.js), functions in [backend/controllers/roadmapController.js](backend/controllers/roadmapController.js)
+  - How it works:
+    - Roadmap owners can toggle visibility (public/private) via "Make Public/Make Private" button in [frontend/src/pages/RoadmapView.jsx](frontend/src/pages/RoadmapView.jsx)
+    - `GET /api/roadmaps/public/list` — fetch all public roadmaps (no auth required)
+    - `PUT /api/roadmaps/:id/visibility` — toggle public/private (protected, owner only)
+    - `POST /api/roadmaps/:id/clone` — clone roadmap to user's account (protected)
+  - UI: grid of roadmap cards with title, topic, description, creator info, "View" and "Clone" buttons.
+  - Cloned roadmaps default to private and are created as separate documents in user's account.
+  - Navigation: "🔍 Explore" link in navbar (public route, no auth required).
+
+- **Roadmap Management** (Enhanced)
+  - What it does: generate, list, view, and manage learning roadmaps with modules and resources.
+  - Enhanced with: `isPublic` field, visibility toggling, and cloning capability.
+  - Model: [backend/models/roadmapModel.js](backend/models/roadmapModel.js) — now includes `isPublic: { type: Boolean, default: false }`
+  - Controller: [backend/controllers/roadmapController.js](backend/controllers/roadmapController.js)
+  - Routes: [backend/routes/roadmapRoutes.js](backend/routes/roadmapRoutes.js)
+  - How it works: roadmaps contain ordered modules with resources (videos, articles, docs). AI generates roadmaps from topics; YouTube search enhances with videos.
+  - New logic: non-owners can view public roadmaps; owners can toggle visibility; cloning deep-copies roadmap content.
 
 - **Quiz Management & Attempts**
   - What it does: fetch quizzes, submit answers, store attempts and calculate results.
   - Implemented in: [backend/routes/quizRoutes.js](backend/routes/quizRoutes.js), [backend/controllers/quizController.js](backend/controllers/quizController.js), [backend/models/quizAttemptModel.js](backend/models/quizAttemptModel.js)
-  - How it works: quiz endpoints return question sets; when a user submits answers, the controller evaluates correctness, stores an attempt document, and returns scores. Score calculation and partial scoring logic live in `quizController.js`.
-  - Later: add timed quizzes, question pools, adaptive difficulty, analytics hooks to track item-level performance.
+  - How it works: quiz endpoints return question sets; user submits answers; controller evaluates correctness, stores attempt, and returns scores.
 
-- **Roadmaps (learning paths)**
-  - What it does: list and manage roadmaps (learning paths) with modules and progress tracking.
-  - Implemented in: [backend/routes/roadmapRoutes.js](backend/routes/roadmapRoutes.js), [backend/controllers/roadmapController.js](backend/controllers/roadmapController.js), [backend/models/roadmapModel.js](backend/models/roadmapModel.js)
-  - How it works: roadmap documents describe ordered modules and resources. Controller endpoints support reading, updating, and user progress updates.
-  - Later: add collaborative editing, versioning, module-level assessments and auto-generated module suggestions via AI.
-
-- **Resources (links, docs, attachments)**
-  - What it does: CRUD for supplemental resources (articles, videos, links) used across roadmaps and modules.
-  - Implemented in: [backend/routes/resourceRoutes.js](backend/routes/resourceRoutes.js), [backend/controllers/resourceController.js](backend/controllers/resourceController.js)
-  - How it works: resource endpoints accept metadata (title, type, url) and return paginated lists. Frontend `roadmapService` / `resourceService` consume these.
-  - Later: add tagging, full-text search, user bookmarks, and moderation workflows.
+- **Resources (independent search)**
+  - What it does: dynamically fetch learning resources by topic (YouTube videos + AI articles).
+  - Backend: [backend/routes/resourceRoutes.js](backend/routes/resourceRoutes.js), [backend/controllers/resourceController.js](backend/controllers/resourceController.js)
+  - How it works: `GET /api/resources/:topic` queries YouTube API and AI for relevant content; returns structured resource list.
+  - Frontend integrates via Resource Library page for independent browsing.
 
 - **Analytics & Events**
-  - What it does: collect usage events (page views, quiz starts/completions), aggregate metrics.
-  - Implemented in: [backend/routes/analyticsRoutes.js](backend/routes/analyticsRoutes.js), [backend/controllers/analyticsController.js](backend/controllers/analyticsController.js), frontend analytics calls in `frontend/src/services/analyticsService.js`
-  - How it works: client sends event payloads to analytics endpoints; controller persists or forwards to an analytics pipeline. Basic aggregation endpoints compute counts and trends.
-  - Later: export to external analytics (e.g., Mixpanel, Amplitude), add dashboards and scheduled reports.
+  - What it does: collect usage events and track learning progress.
+  - Implemented in: [backend/routes/analyticsRoutes.js](backend/routes/analyticsRoutes.js), [backend/controllers/analyticsController.js](backend/controllers/analyticsController.js)
+  - How it works: client sends event payloads to analytics endpoints; controller aggregates and returns metrics.
 
 - **Gemini AI Integration**
-  - What it does: query Gemini for AI-driven content (explanations, suggestions, code examples).
-  - Implemented in: [backend/services/geminiService.js](backend/services/geminiService.js) and used by controllers that require AI outputs.
-  - How it works: service wraps Gemini API calls; controllers pass prompts and receive generated text which can be persisted or returned to clients. Requires `GEMINI_API_KEY`.
-  - Later: implement prompt templates, caching of AI responses, cost tracking, and a queue for long-running generation tasks.
+  - What it does: AI-driven roadmap generation, explanations, and content suggestions.
+  - Implemented in: [backend/services/geminiService.js](backend/services/geminiService.js)
+  - How it works: service wraps Gemini API; controllers pass prompts and receive generated content for roadmaps and quizzes.
+  - Requires: `GEMINI_API_KEYS` environment variable.
+
+- **Groq AI Integration** ⭐ NEW
+  - What it does: roadmap generation and AI tutor chat via Groq LLM.
+  - Implemented in: [backend/services/ai/providers/groq.client.js](backend/services/ai/providers/groq.client.js), [backend/services/grokTutorService.js](backend/services/grokTutorService.js)
+  - Model: llama-3.3-70b-versatile (high performance for coding/technical topics)
+  - Requires: `GROQ_API_KEY` (roadmaps), `TUTOR_GROQ_API_KEY` (tutor) — kept separate to prevent rate limiting.
 
 - **YouTube Integration**
-  - What it does: search YouTube for relevant videos and surface them in resources/roadmaps.
-  - Implemented in: [backend/services/youtubeService.js](backend/services/youtubeService.js) and `test-youtube.js` for verification.
-  - How it works: service calls YouTube Data API using `YOUTUBE_API_KEY`, normalizes results and returns a concise resource object (title, channel, url, thumbnail).
-  - Later: add automatic transcript fetching, matching video segments to roadmap modules, and caching.
+  - What it does: search YouTube for relevant videos; surface in roadmaps and resource library.
+  - Implemented in: [backend/services/youtubeService.js](backend/services/youtubeService.js)
+  - How it works: service calls YouTube Data API, normalizes results, returns structured resource objects (title, channel, url, thumbnail).
+  - Requires: `YOUTUBE_API_KEY` environment variable.
 
-- **Middleware & Validation**
-  - What it does: centralize error handling, input validation, and authentication enforcement.
-  - Implemented in: [backend/middleware/validationMiddleware.js](backend/middleware/validationMiddleware.js), [backend/middleware/errorMiddleware.js](backend/middleware/errorMiddleware.js)
-  - How it works: routes attach validators; middleware transforms thrown errors into consistent HTTP responses and logs stack traces.
-  - Later: integrate schema validation with OpenAPI or Zod, add request tracing and structured logs.
+**Frontend Pages**
 
-- **Data Models (summary)**
-  - `userModel.js`: users, credentials, profile fields, roles.
-  - `quizAttemptModel.js`: references to user, quiz, answers, score, timestamps.
-  - `roadmapModel.js`: ordered modules, resources per module, metadata.
-  - Later: expand schemas with indexes for performance and additional relations.
+- **Home** (`frontend/src/pages/Home.jsx`) — landing page with feature overview
+- **Login** (`frontend/src/pages/Login.jsx`) — user authentication
+- **Signup** (`frontend/src/pages/Signup.jsx`) — user registration
+- **Dashboard** (`frontend/src/pages/Dashboard.jsx`) — user's learning roadmaps, quick access to features
+- **RoadmapView** (`frontend/src/pages/RoadmapView.jsx`) — view roadmap details, modules, progress, toggle public/private (owner only)
+- **QuizPage** (`frontend/src/pages/QuizPage.jsx`) — take quizzes generated from roadmap modules
+- **Profile** (`frontend/src/pages/Profile.jsx`) — user settings and preferences
+- **Analytics** (`frontend/src/pages/Analytics.jsx`) — learning metrics and progress charts
+- **TutorChat** ⭐ NEW (`frontend/src/pages/TutorChat.jsx`) — AI tutor chat interface, real-time conversations
+- **ResourceLibrary** ⭐ NEW (`frontend/src/pages/ResourceLibrary.jsx`) — search and browse learning resources
+- **Explore** ⭐ NEW (`frontend/src/pages/Explore.jsx`) — browse public roadmaps, search, clone to personal account
 
-**Examples: Common Flows**
+**Frontend Navigation**
 
-- Signup / Login (curl)
+Navbar shows authenticated users:
+- 📊 Dashboard
+- 🎓 AI Tutor
+- 📚 Resources
+- 🔍 Explore
+- 📊 Analytics
+- Profile (with user name)
+- Logout button
+
+Non-authenticated users see:
+- Sign In
+- Sign Up
 
 ```bash
 # Signup
@@ -291,15 +373,15 @@ node test-youtube.js
 
 Ensure environment variables are set prior to running tests.
 
-**Future Work / Roadmap (what will be done later)**
+**Future Work / Roadmap**
 
-- Authentication: refresh tokens, OAuth, email verification, stronger password policies.
-- Quizzes: timed tests, adaptive difficulty, item response theory (IRT) analytics, richer item types (coding exercises with run/eval).
-- Roadmaps: auto-generated module suggestions via AI, module-level progress tracking and assessments, public/private roadmap variants.
-- AI: response caching, prompt library, usage / cost dashboard, streaming responses for large outputs.
-- Search & Discovery: add full-text search across resources, rankings, and personalization signals.
-- Observability: structured logging, tracing, metrics endpoints, health checks, error alerting.
-- DevOps: Dockerfiles for backend and frontend, CI workflows, automated tests and linting.
+- **AI Tutor**: support follow-up sessions, rate limiting, cost tracking, multi-language support
+- **Roadmaps**: collaborative editing, version history, forking, ratings and reviews on public roadmaps
+- **Analytics**: dashboards with charts, export reports, user cohort analysis
+- **Search**: full-text search across roadmaps and resources, ranking algorithms
+- **Recommendations**: personalized roadmap suggestions based on learning history
+- **Mobile**: native mobile apps for iOS/Android
+- **DevOps**: Docker containers, CI/CD pipelines, automated testing, staging environments
 
 **How to Extend / Add a Feature (quick guide)**
 

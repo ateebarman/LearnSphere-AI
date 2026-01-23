@@ -27,6 +27,24 @@ const Navbar = () => {
                 📊 Dashboard
               </Link>
               <Link
+                to="/tutor"
+                className="text-gray-700 font-semibold hover:text-indigo-600 transition duration-200"
+              >
+                🎓 AI Tutor
+              </Link>
+              <Link
+                to="/explore"
+                className="text-gray-700 font-semibold hover:text-indigo-600 transition duration-200"
+              >
+                🔍 Explore
+              </Link>
+              <Link
+                to="/resources"
+                className="text-gray-700 font-semibold hover:text-indigo-600 transition duration-200"
+              >
+                📚 Resources
+              </Link>
+              <Link
                 to="/analytics"
                 className="flex items-center text-gray-700 font-semibold hover:text-indigo-600 transition duration-200"
               >
