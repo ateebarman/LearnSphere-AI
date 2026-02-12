@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { generateRoadmap, getUserRoadmaps } from '../services/roadmapService';
-import { FaPlus, FaSpinner } from 'react-icons/fa';
+import { FaPlus, FaSpinner, FaGraduationCap, FaMagic, FaBookOpen } from 'react-icons/fa';
 
 const Dashboard = () => {
   const { userInfo } = useAuthStore();
@@ -42,48 +42,55 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       {/* Welcome Section */}
-      <div className="space-y-2">
-        <h1 className="text-5xl font-bold">
-          Welcome back, <span className="text-indigo-600">{userInfo?.name}!</span>
+      <div className="space-y-3 relative py-4">
+        <h1 className="text-5xl font-extrabold tracking-tight">
+          Welcome back, <span className="text-gradient leading-[1.2]">{userInfo?.name.split(' ')[0]}!</span>
         </h1>
-        <p className="text-xl text-gray-600">
-          What would you like to learn today?
+        <p className="text-xl text-gray-600 dark:text-gray-400 font-medium">
+          Ready to hack your next skill today?
         </p>
       </div>
 
       {/* Generate New Roadmap */}
-      <div className="card bg-gradient-to-br from-indigo-50 to-white border-2 border-indigo-100">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900">
-          ✨ Create a New Learning Roadmap
+      <div className="card-premium border-none relative overflow-hidden group">
+        <div className="absolute top-0 right-0 p-8 text-indigo-500/10 group-hover:scale-110 transition-transform duration-500">
+          <FaMagic className="text-8xl" />
+        </div>
+
+        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white flex items-center space-x-3">
+          <FaMagic className="text-indigo-600" />
+          <span>Generate New Roadmap</span>
         </h2>
+
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
-            <p className="text-red-700 font-medium">{error}</p>
+          <div className="bg-red-50 dark:bg-red-950/20 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
+            <p className="text-red-700 dark:text-red-400 font-medium">{error}</p>
           </div>
         )}
-        <form onSubmit={handleGenerate} className="flex flex-col sm:flex-row gap-4">
+
+        <form onSubmit={handleGenerate} className="flex flex-col md:flex-row gap-4 relative z-10">
           <input
             type="text"
-            className="form-input flex-grow"
-            placeholder="e.g., 'React Hooks', 'Machine Learning', 'Web Design'"
+            className="form-input flex-grow text-lg"
+            placeholder="What do you want to master? (e.g. Advanced React, LLMs, Cooking, Stoicism)"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
           />
           <button
             type="submit"
-            className="btn-primary flex items-center justify-center whitespace-nowrap"
+            className="btn-primary px-8 flex items-center justify-center whitespace-nowrap text-lg"
             disabled={generating}
           >
             {generating ? (
               <>
-                <FaSpinner className="animate-spin mr-2" />
-                Generating...
+                <FaSpinner className="animate-spin mr-3 text-xl" />
+                Dreaming it up...
               </>
             ) : (
               <>
-                <FaPlus className="mr-2" />
+                <FaPlus className="mr-3" />
                 Generate
               </>
             )}
@@ -92,41 +99,61 @@ const Dashboard = () => {
       </div>
 
       {/* Existing Roadmaps */}
-      <div>
-        <h2 className="text-3xl font-bold mb-8 text-gray-900">📚 Your Roadmaps</h2>
+      <div className="space-y-8">
+        <div className="flex items-center justify-between border-b dark:border-gray-800 pb-4">
+          <h2 className="text-3xl font-bold flex items-center space-x-3">
+            <FaBookOpen className="text-indigo-600" />
+            <span>Your Learning Path</span>
+          </h2>
+          <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-4 py-1 rounded-full text-sm font-bold">
+            {roadmaps.length} Roadmaps
+          </span>
+        </div>
+
         {loading ? (
-          <div className="card text-center py-12">
-            <FaSpinner className="animate-spin text-indigo-600 text-4xl mx-auto" />
-            <p className="text-gray-600 mt-4">Loading your roadmaps...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="card animate-pulse h-48 bg-gray-100 dark:bg-gray-800 border-none"></div>
+            ))}
           </div>
         ) : roadmaps.length === 0 ? (
-          <div className="card text-center py-12 bg-gradient-to-br from-gray-50 to-white border-2 border-dashed border-gray-300">
-            <p className="text-2xl text-gray-500 mb-2">🚀 No roadmaps yet</p>
-            <p className="text-gray-400">Create your first learning roadmap above to get started!</p>
+          <div className="text-center py-24 bg-gray-50 dark:bg-gray-900/50 rounded-3xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FaGraduationCap className="text-3xl text-gray-400" />
+            </div>
+            <p className="text-2xl font-bold text-gray-500 dark:text-gray-400 mb-2">Adventure awaits!</p>
+            <p className="text-gray-400 dark:text-gray-500">Generate your first AI roadmap to see it here.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {roadmaps.map((roadmap) => (
               <Link
                 to={`/roadmap/${roadmap._id}`}
                 key={roadmap._id}
-                className="card-hover border-l-4 border-indigo-600"
+                className="card-hover group relative overflow-hidden"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-xl font-bold text-gray-900 flex-1">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <FaGraduationCap className="text-6xl" />
+                </div>
+
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl font-bold leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {roadmap.title}
                   </h3>
-                  <span className="text-2xl">🎓</span>
                 </div>
-                <p className="text-gray-600 mb-4 line-clamp-2">{roadmap.description}</p>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-600">Progress</span>
-                    <span className="text-sm font-bold text-indigo-600">{Math.round(roadmap.progress)}%</span>
+
+                <p className="text-gray-600 dark:text-gray-400 mb-6 line-clamp-2 text-sm">
+                  {roadmap.description}
+                </p>
+
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    <span>Mastery Level</span>
+                    <span>{Math.round(roadmap.progress)}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-indigo-500 to-indigo-600 h-3 rounded-full transition-all duration-300"
+                      className="bg-indigo-600 h-full rounded-full transition-all duration-700 ease-out"
                       style={{ width: `${roadmap.progress}%` }}
                     ></div>
                   </div>

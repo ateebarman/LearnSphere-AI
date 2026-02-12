@@ -2,17 +2,17 @@ import { useState, useEffect } from 'react';
 import { getProfile, updateProfile, changePassword, deleteAccount } from '../services/authService';
 import { getAnalytics } from '../services/analyticsService';
 import { useAuthStore } from '../store/useAuthStore';
-import { FaSpinner, FaEdit, FaSave, FaTimes, FaLock, FaTrash, FaCheckCircle } from 'react-icons/fa';
+import { FaSpinner, FaEdit, FaSave, FaTimes, FaLock, FaTrash, FaCheckCircle, FaUserCircle, FaEnvelope, FaTags, FaCalendarAlt, FaChartBar, FaShieldAlt } from 'react-icons/fa';
 
 const Profile = () => {
   const { logout } = useAuthStore();
-  
+
   // Profile state
   const [profile, setProfile] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('profile');
-  
+
   // Edit mode
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,7 +20,7 @@ const Profile = () => {
     email: '',
     topicsOfInterest: ''
   });
-  
+
   // Password change
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -28,12 +28,12 @@ const Profile = () => {
     confirmPassword: ''
   });
   const [passwordError, setPasswordError] = useState('');
-  
+
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
-  
+
   // Messages
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -53,7 +53,7 @@ const Profile = () => {
         email: profileData.email,
         topicsOfInterest: (profileData.topicsOfInterest || []).join(', ')
       });
-      
+
       const analyticsData = await getAnalytics();
       setAnalytics(analyticsData);
     } catch (err) {
@@ -77,18 +77,18 @@ const Profile = () => {
     try {
       setSubmitting(true);
       setErrorMessage('');
-      
+
       const topics = formData.topicsOfInterest
         .split(',')
         .map(t => t.trim())
         .filter(t => t);
-      
+
       await updateProfile({
         name: formData.name,
         email: formData.email,
         topicsOfInterest: topics
       });
-      
+
       setSuccessMessage('Profile updated successfully!');
       setEditMode(false);
       await fetchData();
@@ -105,19 +105,19 @@ const Profile = () => {
     try {
       setPasswordError('');
       setSubmitting(true);
-      
+
       if (passwordForm.newPassword.length < 6) {
         setPasswordError('New password must be at least 6 characters');
         return;
       }
-      
+
       if (passwordForm.newPassword !== passwordForm.confirmPassword) {
         setPasswordError('Passwords do not match');
         return;
       }
-      
+
       await changePassword(passwordForm.currentPassword, passwordForm.newPassword);
-      
+
       setSuccessMessage('Password changed successfully!');
       setPasswordForm({
         currentPassword: '',
@@ -137,14 +137,14 @@ const Profile = () => {
     try {
       setDeleteError('');
       setSubmitting(true);
-      
+
       if (!deletePassword) {
         setDeleteError('Please enter your password');
         return;
       }
-      
+
       await deleteAccount(deletePassword);
-      
+
       setSuccessMessage('Account deleted successfully. Logging out...');
       setTimeout(() => {
         logout();
@@ -159,177 +159,178 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-20">
-        <FaSpinner className="animate-spin text-4xl mx-auto text-blue-500" />
-        <p className="mt-4 text-gray-600">Loading profile...</p>
+      <div className="min-[60vh] flex flex-col items-center justify-center space-y-4">
+        <FaSpinner className="animate-spin text-5xl text-indigo-600" />
+        <p className="text-gray-500 font-medium animate-pulse">Loading your profile...</p>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="text-center py-20">
-        <p className="text-red-500 text-lg">Failed to load profile</p>
+      <div className="card-premium py-20 text-center mx-auto max-w-lg mt-12">
+        <p className="text-red-500 text-lg font-bold">Failed to load profile</p>
+        <button onClick={fetchData} className="btn-primary mt-6">Try Again</button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="space-y-12 pb-20">
+      <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">My Profile</h1>
-          <p className="text-gray-600">Manage your account and view learning statistics</p>
+        <div className="space-y-3">
+          <h1 className="text-5xl font-extrabold text-gradient flex items-center gap-4">
+            <FaUserCircle className="text-indigo-600" />
+            My Profile
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-400 font-medium">
+            Personalize your experience and track your evolution.
+          </p>
         </div>
 
         {/* Messages */}
-        {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-            <FaCheckCircle className="text-green-600" />
-            <p className="text-green-800">{successMessage}</p>
-          </div>
-        )}
-        
-        {errorMessage && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800">{errorMessage}</p>
-          </div>
-        )}
+        <div className="fixed top-24 right-8 z-50 space-y-4 max-w-md w-full pointer-events-none">
+          {successMessage && (
+            <div className="p-4 bg-green-500 text-white rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-right duration-500 pointer-events-auto">
+              <FaCheckCircle className="text-xl" />
+              <p className="font-bold">{successMessage}</p>
+            </div>
+          )}
+          {errorMessage && (activeTab === 'profile') && (
+            <div className="p-4 bg-red-500 text-white rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-right duration-500 pointer-events-auto">
+              <FaTimes className="text-xl" />
+              <p className="font-bold">{errorMessage}</p>
+            </div>
+          )}
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar with Stats */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow p-6 sticky top-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Stats</h2>
+          <div className="lg:col-span-1 space-y-6">
+            <div className="card-premium text-center space-y-6">
+              <div className="relative inline-block">
+                <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-blue-600 rounded-3xl flex items-center justify-center text-4xl text-white shadow-xl shadow-indigo-500/20 mx-auto">
+                  {profile.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 border-4 border-white dark:border-gray-950 rounded-full"></div>
+              </div>
+              <div>
+                <h3 className="text-xl font-black dark:text-white">{profile.name}</h3>
+                <p className="text-sm font-bold text-gray-400">{profile.email}</p>
+              </div>
+            </div>
+
+            <div className="card-premium space-y-6">
+              <h2 className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Mastery Metrics</h2>
               <div className="space-y-4">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Roadmaps Created</p>
-                  <p className="text-2xl font-bold text-blue-600">{analytics?.totalRoadmaps || 0}</p>
-                </div>
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Quizzes Taken</p>
-                  <p className="text-2xl font-bold text-purple-600">{analytics?.totalQuizzes || 0}</p>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Avg Quiz Score</p>
-                  <p className="text-2xl font-bold text-green-600">{analytics?.averageScore?.toFixed(1) || 0}%</p>
-                </div>
-                <div className="p-3 bg-orange-50 rounded-lg">
-                  <p className="text-sm text-gray-600">Learning Time</p>
-                  <p className="text-2xl font-bold text-orange-600">{Math.round(analytics?.estimatedLearningTime || 0)}h</p>
-                </div>
+                {[
+                  { label: 'Paths', value: analytics?.totalRoadmaps || 0, color: 'blue' },
+                  { label: 'Quizzes', value: analytics?.totalQuizzes || 0, color: 'purple' },
+                  { label: 'Mastery', value: `${analytics?.averageScore?.toFixed(0) || 0}%`, color: 'green' },
+                  { label: 'Focus', value: `${Math.round(analytics?.estimatedLearningTime || 0)}h`, color: 'orange' },
+                ].map((stat, i) => (
+                  <div key={i} className={`p-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-transparent hover:border-${stat.color}-500/20 transition-all`}>
+                    <p className="text-[10px] uppercase font-black tracking-widest text-gray-500 mb-1">{stat.label}</p>
+                    <p className={`text-2xl font-black text-${stat.color}-600 dark:text-${stat.color}-400`}>{stat.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-3">
-            {/* Tabs */}
-            <div className="flex gap-0 border-b border-gray-200 mb-6">
-              <button
-                onClick={() => setActiveTab('profile')}
-                className={`px-6 py-3 font-medium border-b-2 transition ${
-                  activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <FaEdit className="inline mr-2" />
-                Profile
-              </button>
-              <button
-                onClick={() => setActiveTab('security')}
-                className={`px-6 py-3 font-medium border-b-2 transition ${
-                  activeTab === 'security'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <FaLock className="inline mr-2" />
-                Security
-              </button>
-              <button
-                onClick={() => setActiveTab('statistics')}
-                className={`px-6 py-3 font-medium border-b-2 transition ${
-                  activeTab === 'statistics'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <FaCheckCircle className="inline mr-2" />
-                Statistics
-              </button>
+          <div className="lg:col-span-3 space-y-8">
+            {/* Navigation Tabs */}
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-2xl w-fit border border-gray-200 dark:border-gray-800">
+              {[
+                { id: 'profile', label: 'Identity', icon: FaEdit },
+                { id: 'security', label: 'Security', icon: FaShieldAlt },
+                { id: 'statistics', label: 'Analytics', icon: FaChartBar },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center space-x-2 px-8 py-3 rounded-xl font-bold transition-all duration-300 ${activeTab === tab.id
+                    ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 shadow-lg'
+                    : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                >
+                  <tab.icon className="text-lg" />
+                  <span>{tab.label}</span>
+                </button>
+              ))}
             </div>
 
             {/* Profile Tab */}
             {activeTab === 'profile' && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Edit Profile</h2>
+              <div className="card-premium space-y-8 animate-in fade-in duration-500">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-3xl font-black dark:text-white">Profile Information</h2>
                   {!editMode && (
                     <button
                       onClick={() => setEditMode(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                      className="btn-secondary flex items-center gap-2"
                     >
-                      <FaEdit /> Edit
+                      <FaEdit /> Edit Account
                     </button>
                   )}
                 </div>
 
                 {editMode ? (
-                  <form onSubmit={handleUpdateProfile} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleEditChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
+                  <form onSubmit={handleUpdateProfile} className="space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-3">
+                        <label className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                          <FaUserCircle className="text-indigo-600" /> Full Name
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleEditChange}
+                          className="form-input"
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                          <FaEnvelope className="text-indigo-600" /> Email Address
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleEditChange}
+                          className="form-input"
+                          required
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 space-y-3">
+                        <label className="text-xs font-black uppercase tracking-widest text-gray-500 flex items-center gap-2">
+                          <FaTags className="text-indigo-600" /> Topics of Interest
+                        </label>
+                        <textarea
+                          name="topicsOfInterest"
+                          value={formData.topicsOfInterest}
+                          onChange={handleEditChange}
+                          placeholder="e.g., JavaScript, React, Node.js"
+                          className="form-input min-h-[100px] py-4"
+                        />
+                        <p className="text-[10px] font-bold text-gray-400">Separate multiple topics with commas for better AI personalization.</p>
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleEditChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Topics of Interest (comma-separated)
-                      </label>
-                      <input
-                        type="text"
-                        name="topicsOfInterest"
-                        value={formData.topicsOfInterest}
-                        onChange={handleEditChange}
-                        placeholder="e.g., JavaScript, React, Node.js"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Separate multiple topics with commas</p>
-                    </div>
-
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex gap-4 pt-6 border-t dark:border-gray-800">
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="flex items-center gap-2 px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-400 transition"
+                        className="btn-primary flex items-center gap-2 px-10"
                       >
                         {submitting ? <FaSpinner className="animate-spin" /> : <FaSave />}
-                        Save Changes
+                        Update Identity
                       </button>
                       <button
                         type="button"
@@ -341,41 +342,46 @@ const Profile = () => {
                             topicsOfInterest: (profile.topicsOfInterest || []).join(', ')
                           });
                         }}
-                        className="flex items-center gap-2 px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                        className="btn-secondary"
                       >
-                        <FaTimes /> Cancel
+                        Discard Changes
                       </button>
                     </div>
                   </form>
                 ) : (
-                  <div className="space-y-6">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Full Name</p>
-                      <p className="text-lg text-gray-900 mt-1">{profile.name}</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="space-y-6">
+                      <div className="group">
+                        <p className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Display Name</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white transition-all group-hover:translate-x-1">{profile.name}</p>
+                      </div>
+                      <div className="group">
+                        <p className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Account Email</p>
+                        <p className="text-2xl font-black text-gray-900 dark:text-white transition-all group-hover:translate-x-1">{profile.email}</p>
+                      </div>
+                      <div className="group">
+                        <p className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2 font-black flex items-center gap-2">
+                          <FaCalendarAlt /> Member Since
+                        </p>
+                        <p className="text-lg font-bold text-gray-500 dark:text-gray-400">{new Date(profile.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Email Address</p>
-                      <p className="text-lg text-gray-900 mt-1">{profile.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Topics of Interest</p>
-                      <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="space-y-4">
+                      <p className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Learning Passions</p>
+                      <div className="flex flex-wrap gap-2">
                         {profile.topicsOfInterest && profile.topicsOfInterest.length > 0 ? (
                           profile.topicsOfInterest.map((topic, i) => (
-                            <span key={i} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            <span key={i} className="px-5 py-2 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 rounded-2xl text-xs font-black border border-indigo-100 dark:border-indigo-800 transition-all hover:scale-105 active:scale-95 cursor-default">
                               {topic}
                             </span>
                           ))
                         ) : (
-                          <p className="text-gray-500 text-sm">No topics added yet</p>
+                          <div className="bg-gray-50 dark:bg-gray-900 rounded-2xl p-6 border-2 border-dashed border-gray-200 dark:border-gray-800 text-center w-full opacity-50">
+                            <FaTags className="mx-auto mb-2" />
+                            <p className="text-xs font-bold">No interests defined yet.</p>
+                          </div>
                         )}
                       </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Member Since</p>
-                      <p className="text-lg text-gray-900 mt-1">
-                        {new Date(profile.createdAt).toLocaleDateString()}
-                      </p>
                     </div>
                   </div>
                 )}
@@ -384,136 +390,120 @@ const Profile = () => {
 
             {/* Security Tab */}
             {activeTab === 'security' && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Security Settings</h2>
+              <div className="space-y-8 animate-in slide-in-from-right duration-500">
+                <div className="card-premium space-y-8">
+                  <h2 className="text-3xl font-black dark:text-white flex items-center gap-4">
+                    <FaLock className="text-indigo-600" />
+                    Authentication Keys
+                  </h2>
 
-                {/* Change Password */}
-                <div className="mb-8 pb-8 border-b border-gray-200">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Change Password</h3>
-                  
                   {passwordError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-800 text-sm">{passwordError}</p>
+                    <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-2xl font-bold text-sm">
+                      {passwordError}
                     </div>
                   )}
 
-                  <form onSubmit={handlePasswordChange} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Current Password
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordForm.currentPassword}
-                        onChange={(e) => setPasswordForm(prev => ({
-                          ...prev,
-                          currentPassword: e.target.value
-                        }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        New Password
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordForm.newPassword}
-                        onChange={(e) => setPasswordForm(prev => ({
-                          ...prev,
-                          newPassword: e.target.value
-                        }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Confirm New Password
-                      </label>
-                      <input
-                        type="password"
-                        value={passwordForm.confirmPassword}
-                        onChange={(e) => setPasswordForm(prev => ({
-                          ...prev,
-                          confirmPassword: e.target.value
-                        }))}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
+                  <form onSubmit={handlePasswordChange} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Current Token</label>
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          value={passwordForm.currentPassword}
+                          onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                          className="form-input"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">New Secret</label>
+                        <input
+                          type="password"
+                          placeholder="New password"
+                          value={passwordForm.newPassword}
+                          onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                          className="form-input"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Confirm Secret</label>
+                        <input
+                          type="password"
+                          placeholder="Repeat new password"
+                          value={passwordForm.confirmPassword}
+                          onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          className="form-input"
+                          required
+                        />
+                      </div>
                     </div>
 
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 transition"
+                      className="btn-primary flex items-center gap-2 px-10"
                     >
-                      {submitting ? <FaSpinner className="animate-spin inline mr-2" /> : null}
-                      Update Password
+                      {submitting ? <FaSpinner className="animate-spin" /> : <FaShieldAlt />}
+                      Rotate Credentials
                     </button>
                   </form>
                 </div>
 
                 {/* Delete Account */}
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 text-red-600">Danger Zone</h3>
-                  <p className="text-gray-600 mb-4">Permanently delete your account and all associated data.</p>
-                  
+                <div className="card-premium border-red-500/20 bg-red-50/50 dark:bg-red-950/10 space-y-6">
+                  <h3 className="text-2xl font-black text-red-600">Volatile Action Zone</h3>
+                  <p className="text-gray-600 dark:text-gray-400 font-medium">Permanently purge your account, learning history, and generated nodes from our global network.</p>
+
                   {!showDeleteConfirm ? (
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      className="flex items-center gap-2 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+                      className="flex items-center gap-2 px-8 py-3 bg-red-600 text-white rounded-2xl font-black hover:bg-red-700 transition transform hover:scale-105"
                     >
-                      <FaTrash /> Delete Account
+                      <FaTrash /> Purge Account
                     </button>
                   ) : (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="space-y-6 animate-in zoom-in duration-300">
+                      <div className="p-6 bg-red-600 text-white rounded-3xl space-y-4 shadow-xl shadow-red-500/30">
+                        <p className="font-black text-lg">⚠️ Final Warning</p>
+                        <p className="text-sm opacity-90 font-medium">This action is irreversible. All your proved roadmaps and analytics data will be destroyed forever.</p>
+
+                        <form onSubmit={handleDeleteAccount} className="space-y-4 pt-2">
+                          <input
+                            type="password"
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                            placeholder="Enter your security token to confirm"
+                            className="w-full px-6 py-4 bg-white/20 border-2 border-white/30 rounded-2xl focus:outline-none focus:bg-white/30 placeholder:text-white/60 text-white"
+                            required
+                          />
+
+                          <div className="flex flex-col sm:flex-row gap-4">
+                            <button
+                              type="submit"
+                              disabled={submitting}
+                              className="flex-1 bg-white text-red-600 py-4 rounded-2xl font-black hover:bg-gray-100 transition-all active:scale-95 shadow-lg"
+                            >
+                              {submitting ? <FaSpinner className="animate-spin inline mr-2" /> : 'PURGE EVERYTHING'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setShowDeleteConfirm(false);
+                                setDeletePassword('');
+                                setDeleteError('');
+                              }}
+                              className="px-8 py-4 bg-white/10 text-white border-2 border-white/20 rounded-2xl font-black hover:bg-white/20 transition-all"
+                            >
+                              ABORT
+                            </button>
+                          </div>
+                        </form>
+                      </div>
                       {deleteError && (
-                        <div className="mb-4 p-3 bg-red-100 rounded">
-                          <p className="text-red-800 text-sm">{deleteError}</p>
-                        </div>
+                        <p className="text-red-600 font-black text-center animate-bounce">{deleteError}</p>
                       )}
-                      
-                      <p className="text-red-800 font-medium mb-4">
-                        This action cannot be undone. Please enter your password to confirm.
-                      </p>
-                      
-                      <form onSubmit={handleDeleteAccount} className="space-y-4">
-                        <input
-                          type="password"
-                          value={deletePassword}
-                          onChange={(e) => setDeletePassword(e.target.value)}
-                          placeholder="Enter your password"
-                          className="w-full px-4 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          required
-                        />
-                        
-                        <div className="flex gap-3">
-                          <button
-                            type="submit"
-                            disabled={submitting}
-                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition"
-                          >
-                            {submitting ? <FaSpinner className="animate-spin inline mr-2" /> : null}
-                            Delete Account Permanently
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowDeleteConfirm(false);
-                              setDeletePassword('');
-                              setDeleteError('');
-                            }}
-                            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
                     </div>
                   )}
                 </div>
@@ -522,83 +512,69 @@ const Profile = () => {
 
             {/* Statistics Tab */}
             {activeTab === 'statistics' && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Learning Statistics</h2>
-                
-                {analytics && (
-                  <div className="space-y-6">
-                    {/* Completion Rate */}
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="text-sm font-medium text-gray-600">Module Completion Rate</p>
-                        <p className="text-lg font-bold text-blue-600">
-                          {analytics.moduleCompletionRate?.toFixed(1) || 0}%
-                        </p>
+              <div className="space-y-8 animate-in zoom-in duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Completion Rate */}
+                  <div className="card-premium flex flex-col justify-between">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Efficiency</h3>
+                      <div className="flex items-end gap-3">
+                        <p className="text-6xl font-black dark:text-white">{analytics?.moduleCompletionRate?.toFixed(0) || 0}%</p>
+                        <p className="text-sm font-bold text-gray-500 mb-2">Completion</p>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-4 relative overflow-hidden">
                         <div
-                          className="bg-blue-500 h-3 rounded-full transition-all"
-                          style={{ width: `${analytics.moduleCompletionRate || 0}%` }}
+                          className="bg-indigo-600 h-full rounded-full transition-all duration-1000 ease-out shadow-lg shadow-indigo-500/40"
+                          style={{ width: `${analytics?.moduleCompletionRate || 0}%` }}
                         />
                       </div>
                     </div>
-
-                    {/* Topics Breakdown */}
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Topics Breakdown</h3>
-                      {analytics.topicBreakdown && Object.keys(analytics.topicBreakdown).length > 0 ? (
-                        <div className="space-y-3">
-                          {Object.entries(analytics.topicBreakdown).map(([topic, count]) => (
-                            <div key={topic}>
-                              <div className="flex justify-between items-center mb-1">
-                                <p className="text-sm font-medium text-gray-700">{topic}</p>
-                                <p className="text-sm text-gray-600">{count} quiz(zes)</p>
-                              </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-purple-500 h-2 rounded-full"
-                                  style={{
-                                    width: `${
-                                      analytics.totalQuizzes > 0
-                                        ? (count / analytics.totalQuizzes) * 100
-                                        : 0
-                                    }%`
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-gray-500">No quiz data yet</p>
-                      )}
-                    </div>
-
-                    {/* Summary Stats */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Total Roadmaps</p>
-                        <p className="text-3xl font-bold text-blue-600 mt-1">{analytics.totalRoadmaps || 0}</p>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Total Quizzes</p>
-                        <p className="text-3xl font-bold text-purple-600 mt-1">{analytics.totalQuizzes || 0}</p>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Average Score</p>
-                        <p className="text-3xl font-bold text-green-600 mt-1">
-                          {analytics.averageScore?.toFixed(1) || 0}%
-                        </p>
-                      </div>
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Learning Time</p>
-                        <p className="text-3xl font-bold text-orange-600 mt-1">
-                          {Math.round(analytics.estimatedLearningTime || 0)}h
-                        </p>
-                      </div>
-                    </div>
                   </div>
-                )}
+
+                  {/* Topics Insight */}
+                  <div className="card-premium space-y-6">
+                    <h3 className="text-lg font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest whitespace-nowrap">Focus Breakdown</h3>
+                    {analytics?.topicBreakdown && Object.keys(analytics.topicBreakdown).length > 0 ? (
+                      <div className="space-y-4">
+                        {Object.entries(analytics.topicBreakdown).map(([topic, count]) => (
+                          <div key={topic} className="space-y-2">
+                            <div className="flex justify-between items-center text-xs font-black uppercase tracking-tight">
+                              <span className="dark:text-gray-300">{topic}</span>
+                              <span className="text-indigo-600">{count} EXP</span>
+                            </div>
+                            <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
+                              <div
+                                className="bg-purple-600 h-full rounded-full transition-all duration-1000"
+                                style={{
+                                  width: `${analytics.totalQuizzes > 0 ? (count / analytics.totalQuizzes) * 100 : 0}%`
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 opacity-40">
+                        <p className="font-bold text-sm">Awaiting your first assessment...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[
+                    { label: 'Network Points', value: analytics?.totalRoadmaps || 0, color: 'indigo' },
+                    { label: 'Solved Puzzles', value: analytics?.totalQuizzes || 0, color: 'purple' },
+                    { label: 'Success IQ', value: `${analytics?.averageScore?.toFixed(0) || 0}%`, color: 'green' },
+                    { label: 'Grind Hours', value: `${Math.round(analytics?.estimatedLearningTime || 0)}h`, color: 'orange' },
+                  ].map((stat, i) => (
+                    <div key={i} className="card-premium text-center hover:scale-105 transition-transform">
+                      <p className="text-[10px] uppercase font-black text-gray-500 mb-2">{stat.label}</p>
+                      <p className={`text-3xl font-black text-${stat.color}-600 dark:text-${stat.color}-400`}>{stat.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

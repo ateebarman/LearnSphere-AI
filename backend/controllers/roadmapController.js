@@ -1,7 +1,9 @@
 import asyncHandler from 'express-async-handler';
 import Roadmap from '../models/roadmapModel.js';
-import { generateRoadmapFromAI } from '../services/geminiService.js';
+import { generateRoadmapFromAI, generateRoadmapFromRAG } from '../services/geminiService.js';
 import { searchYouTube } from '../services/youtubeService.js';
+import { getRelevantContext } from '../services/ragService.js';
+
 
 // @desc    Generate a new roadmap
 // @route   POST /api/roadmaps
@@ -41,6 +43,59 @@ const generateRoadmap = asyncHandler(async (req, res) => {
   const createdRoadmap = await roadmap.save();
   res.status(201).json(createdRoadmap);
 });
+
+// @desc    Generate a RAG-based roadmap
+// @route   POST /api/roadmaps/rag
+// @access  Private
+const generateRAGRoadmap = asyncHandler(async (req, res) => {
+  const { topic, materialId } = req.body;
+  console.log(`🤖 RAG Request: Topic="${topic}", MaterialId=${materialId}`);
+
+  if (!topic || !materialId) {
+    res.status(400);
+    throw new Error('Please provide a topic and material ID');
+  }
+
+  // 1. Get relevant context from Vector Store
+  console.log('🔍 Fetching context from vector store...');
+  const context = await getRelevantContext(topic, req.user._id, materialId);
+  
+  if (!context) {
+    console.error('❌ No context found for this topic in vectors.');
+    res.status(400);
+    throw new Error('Could not find relevant context in your study material. Try a different topic or ensure the PDF content is searchable.');
+  }
+
+  console.log(`✅ Found context (${context.length} chars). Generating roadmap...`);
+
+  // 2. Generate roadmap based on context
+  const aiRoadmap = await generateRoadmapFromRAG(topic, context);
+
+  // 3. Enhance with YouTube (optional but good)
+  const enhancedModules = await Promise.all(
+    aiRoadmap.modules.map(async (module) => {
+      const videos = await searchYouTube(`${module.title} ${topic}`);
+      return { 
+        ...module, 
+        resources: videos.map((v) => ({ ...v, type: 'video' })) 
+      };
+    })
+  );
+
+  // 4. Save to DB
+  const roadmap = new Roadmap({
+    user: req.user._id,
+    title: aiRoadmap.title || `Learning ${topic} (from material)`,
+    topic: topic,
+    description: aiRoadmap.description,
+    modules: enhancedModules,
+    sourceMaterial: materialId
+  });
+
+  const createdRoadmap = await roadmap.save();
+  res.status(201).json(createdRoadmap);
+});
+
 
 // @desc    Get user's roadmaps
 // @route   GET /api/roadmaps
@@ -153,4 +208,12 @@ const cloneRoadmap = asyncHandler(async (req, res) => {
   res.status(201).json({ roadmapId: savedRoadmap._id });
 });
 
-export { generateRoadmap, getRoadmapById, getUserRoadmaps, getPublicRoadmaps, toggleRoadmapVisibility, cloneRoadmap };
+export { 
+  generateRoadmap, 
+  generateRAGRoadmap,
+  getRoadmapById, 
+  getUserRoadmaps, 
+  getPublicRoadmaps, 
+  toggleRoadmapVisibility, 
+  cloneRoadmap 
+};

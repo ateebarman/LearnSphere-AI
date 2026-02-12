@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { getResources } from '../services/resourceService';
-import { FaSpinner, FaExternalLinkAlt, FaYoutube } from 'react-icons/fa';
+import { FaSpinner, FaExternalLinkAlt, FaYoutube, FaSearch, FaBookOpen, FaLightbulb, FaArrowRight } from 'react-icons/fa';
 
 const ResourceLibrary = () => {
   const [topicInput, setTopicInput] = useState('');
@@ -14,7 +14,7 @@ const ResourceLibrary = () => {
 
   const handleSearch = async (topic) => {
     const trimmedTopic = topic.trim();
-    
+
     if (!trimmedTopic) {
       setError('Please enter a topic');
       return;
@@ -26,21 +26,17 @@ const ResourceLibrary = () => {
 
     try {
       const response = await getResources(trimmedTopic);
-      
-      // Safe mapping strategy for different response shapes
+
       let videosData = [];
       let articlesData = [];
 
       if (response.videos && response.articles) {
-        // Response has direct videos and articles arrays
         videosData = Array.isArray(response.videos) ? response.videos : [];
         articlesData = Array.isArray(response.articles) ? response.articles : [];
       } else if (response.resources && Array.isArray(response.resources)) {
-        // Response has resources array with type field
         videosData = response.resources.filter(r => r.type === 'video');
         articlesData = response.resources.filter(r => r.type === 'article');
       } else if (Array.isArray(response)) {
-        // Response is directly an array
         videosData = response.filter(r => r.type === 'video');
         articlesData = response.filter(r => r.type === 'article');
       }
@@ -70,175 +66,176 @@ const ResourceLibrary = () => {
     handleSearch(topic);
   };
 
-  const handleRetry = () => {
-    if (activeTopic) {
-      handleSearch(activeTopic);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Page Title */}
-        <div className="mb-8">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent mb-2">
-            Resources
-          </h1>
-          <p className="text-gray-600">Search and discover learning resources by topic</p>
-        </div>
+    <div className="space-y-12 pb-20">
+      {/* Page Title */}
+      <div className="space-y-4">
+        <h1 className="text-5xl font-extrabold text-gradient flex items-center gap-4">
+          <FaBookOpen className="text-indigo-600" />
+          Resource Library
+        </h1>
+        <p className="text-xl text-gray-600 dark:text-gray-400 font-medium">Search the globe for the finest learning materials curated for your path.</p>
+      </div>
 
-        {/* Search Bar */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Search a topic (e.g., React Hooks, Node Auth, DSA)"
-              value={topicInput}
-              onChange={(e) => setTopicInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              disabled={loading}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
-            />
-            <button
-              onClick={() => handleSearch(topicInput)}
-              disabled={loading || !topicInput.trim()}
-              className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-            >
-              {loading ? <FaSpinner className="animate-spin" /> : 'Search'}
-            </button>
-          </div>
-        </div>
-
-        {/* Suggested Topics */}
-        {!activeTopic && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">Suggested Topics</h2>
-            <div className="flex flex-wrap gap-3">
-              {suggestedTopics.map((topic) => (
+      {/* Search & Suggestions */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="card-premium relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"></div>
+            <div className="relative z-10 space-y-4">
+              <label className="text-sm font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Discover</label>
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search a topic (e.g., React Hooks, Node Auth, DSA)"
+                    value={topicInput}
+                    onChange={(e) => setTopicInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={loading}
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-600 dark:focus:border-indigo-500 rounded-2xl focus:outline-none transition-all disabled:opacity-50 font-medium dark:text-white"
+                  />
+                </div>
                 <button
-                  key={topic}
-                  onClick={() => handleChipClick(topic)}
-                  disabled={loading}
-                  className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full font-medium hover:bg-indigo-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => handleSearch(topicInput)}
+                  disabled={loading || !topicInput.trim()}
+                  className="btn-primary px-8 py-4 flex items-center gap-2"
                 >
-                  {topic}
+                  {loading ? <FaSpinner className="animate-spin text-xl" /> : <><FaSearch /> <span>Search</span></>}
                 </button>
-              ))}
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Empty State - Before Search */}
-        {!activeTopic && !error && (
-          <div className="bg-white rounded-lg shadow-md p-12 text-center">
-            <p className="text-lg text-gray-600">Search for a topic to get started.</p>
+        <div className="card-premium">
+          <h2 className="text-lg font-black dark:text-white mb-6 flex items-center gap-2 uppercase tracking-tight">
+            <FaLightbulb className="text-yellow-500" />
+            Suggested
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {suggestedTopics.map((topic) => (
+              <button
+                key={topic}
+                onClick={() => handleChipClick(topic)}
+                disabled={loading}
+                className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 transition-all border border-indigo-100 dark:border-white/10"
+              >
+                {topic}
+              </button>
+            ))}
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
-            <p className="text-red-700 font-medium mb-3">{error}</p>
-            <button
-              onClick={handleRetry}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-            >
-              Retry
-            </button>
-          </div>
-        )}
+      {/* Status Messages */}
+      {!activeTopic && !error && (
+        <div className="card-premium py-20 text-center opacity-50 animate-in fade-in duration-700">
+          <FaSearch className="text-6xl mx-auto mb-6 text-indigo-200 dark:text-indigo-900" />
+          <p className="text-xl font-bold">The library is open. What will you learn today?</p>
+        </div>
+      )}
 
-        {/* Loading State */}
-        {loading && (
-          <div className="flex justify-center items-center py-12">
-            <FaSpinner className="text-4xl text-indigo-600 animate-spin" />
-          </div>
-        )}
+      {error && (
+        <div className="card-premium border-red-100 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/20 text-center py-12">
+          <p className="text-red-600 dark:text-red-400 font-black text-xl mb-4">{error}</p>
+          <button onClick={() => handleSearch(activeTopic)} className="btn-secondary">Try Again</button>
+        </div>
+      )}
 
-        {/* Results Section */}
-        {activeTopic && !loading && !error && (
-          <div className="space-y-8">
-            {/* Videos Section */}
-            {videos.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                  <FaYoutube className="mr-3 text-red-600" />
-                  Videos
+      {/* Results Section */}
+      {activeTopic && !loading && !error && (
+        <div className="space-y-16 animate-in slide-in-from-bottom duration-500">
+          {/* Videos Section */}
+          {videos.length > 0 && (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black flex items-center gap-4 dark:text-white">
+                  <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600">
+                    <FaYoutube />
+                  </div>
+                  Premium Video Content
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {videos.map((video, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
-                    >
-                      {video.thumbnail && (
-                        <div className="w-full h-40 bg-gray-200 overflow-hidden">
-                          <img
-                            src={video.thumbnail}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                          />
+                <div className="h-px flex-grow mx-8 bg-gray-100 dark:bg-gray-800 hidden md:block"></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {videos.map((video, idx) => (
+                  <div key={idx} className="card-hover group p-0 overflow-hidden flex flex-col border-none shadow-xl bg-white dark:bg-gray-900">
+                    {video.thumbnail && (
+                      <div className="aspect-video relative overflow-hidden">
+                        <img src={video.thumbnail} alt={video.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <div className="w-16 h-16 rounded-full bg-red-600/90 text-white flex items-center justify-center text-xl animate-pulse">
+                            <FaYoutube />
+                          </div>
                         </div>
-                      )}
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
+                      </div>
+                    )}
+                    <div className="p-6 space-y-4 flex-grow flex flex-col justify-between">
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">{video.channel || 'Educational Resource'}</p>
+                        <h3 className="text-lg font-bold leading-tight line-clamp-2 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                           {video.title}
                         </h3>
-                        {video.channel && (
-                          <p className="text-sm text-gray-600 mb-4">{video.channel}</p>
-                        )}
-                        <a
-                          href={video.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium"
-                        >
-                          Open <FaExternalLinkAlt className="ml-2" />
-                        </a>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Articles Section */}
-            {articles.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-4">Articles</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {articles.map((article, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition"
-                    >
-                      <h3 className="font-semibold text-gray-800 mb-2">{article.title}</h3>
-                      {article.snippet && (
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                          {article.snippet}
-                        </p>
-                      )}
-                      {article.summary && (
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                          {article.summary}
-                        </p>
-                      )}
                       <a
-                        href={article.url}
+                        href={video.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium"
+                        className="flex items-center justify-between group/link font-black text-xs text-gray-500 hover:text-indigo-600 transition-all pt-4 border-t dark:border-gray-800"
                       >
-                        Read <FaExternalLinkAlt className="ml-2" />
+                        WATCH RESOURCE <FaArrowRight className="transition-transform group-hover/link:translate-x-1" />
                       </a>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+
+          {/* Articles Section */}
+          {articles.length > 0 && (
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black flex items-center gap-4 dark:text-white">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
+                    <FaBookOpen />
+                  </div>
+                  Deep-Dive Articles
+                </h2>
+                <div className="h-px flex-grow mx-8 bg-gray-100 dark:bg-gray-800 hidden md:block"></div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {articles.map((article, idx) => (
+                  <div key={idx} className="card-hover group border-none shadow-xl bg-white dark:bg-gray-900 flex flex-col justify-between p-8">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div className="w-12 h-12 rounded-xl bg-gray-50 dark:bg-gray-800 flex items-center justify-center text-indigo-600">
+                          <FaBookOpen />
+                        </div>
+                        <FaExternalLinkAlt className="text-gray-300" />
+                      </div>
+                      <h3 className="text-2xl font-black leading-tight dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{article.title}</h3>
+                      <p className="text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3 font-medium">
+                        {article.snippet || article.summary || 'Expert level insight on this topic.'}
+                      </p>
+                    </div>
+                    <a
+                      href={article.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn-secondary mt-8 w-full flex items-center justify-center gap-2"
+                    >
+                      Read Full Article <FaExternalLinkAlt size={12} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
