@@ -372,3 +372,32 @@ export const getArticlesFromAI = async (topic) => {
   };
 };
 
+
+export const generateRoadmapFromRAG = async (topic, context) => {
+  try {
+    const prompt = `
+      You are an elite educational architect. I have provided below excerpts from a user's study material:
+      
+      CONTEXT FROM STUDY MATERIAL:
+      """
+      ${context}
+      """
+      
+      TASK:
+      Generate a structured learning roadmap for "${topic}" BASE ENTIRELY ON THE PROVIDED CONTEXT AND GENERAL KNOWLEDGE.
+      The roadmap must be structured as a JSON object with a "title", "description", and an array named "modules".
+      
+      Each module MUST HAVE:
+      1. "title": Specific chapter or concept.
+      2. "description": 1-2 sentences on what will be learned.
+      3. "estimatedTime": e.g., "2 hours".
+      4. "resources": Leave as empty array [].
+      
+      Respond ONLY with JSON.
+    `;
+    return await generateJson(prompt);
+  } catch (error) {
+    console.error(`❌ RAG Roadmap Generation Error: ${error.message}`);
+    return generateRoadmapFromAI(topic); // Fallback to standard generation
+  }
+};

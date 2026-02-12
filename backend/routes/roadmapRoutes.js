@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   generateRoadmap,
+  generateRAGRoadmap,
   getRoadmapById,
   getUserRoadmaps,
   getPublicRoadmaps,
@@ -17,6 +18,10 @@ router.get('/public/list', getPublicRoadmaps);
 
 // User's roadmaps and generate new one
 router.route('/').post(protect, validateRoadmap, generateRoadmap).get(protect, getUserRoadmaps);
+
+// Generate RAG-based roadmap
+router.post('/rag', protect, generateRAGRoadmap);
+
 
 // Roadmap details (protected - can view own or public)
 router.get('/:id', protect, getRoadmapById);

@@ -1,16 +1,15 @@
 import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
+import Footer from './Footer';
 
 const Layout = () => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
       <Navbar />
-      <main className="flex-grow container mx-auto px-6 py-8">
+      <main className="flex-grow container mx-auto px-6 py-12">
         <Outlet />
       </main>
-      <footer className="bg-white shadow-inner py-4 text-center text-gray-600">
-        © 2025 LearnSphere AI. All rights reserved.
-      </footer>
+      <Footer />
     </div>
   );
 };

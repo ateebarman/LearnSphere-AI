@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getAnalytics, getRoadmapStats, getQuizStats } from '../services/analyticsService';
-import { FaSpinner, FaBook, FaClipboardList, FaChartBar, FaClock, FaTrophy } from 'react-icons/fa';
+import { FaSpinner, FaBook, FaClipboardList, FaChartBar, FaClock, FaTrophy, FaCalendarAlt } from 'react-icons/fa';
 
 const Analytics = () => {
   const [analytics, setAnalytics] = useState(null);
@@ -18,13 +18,13 @@ const Analytics = () => {
     try {
       setLoading(true);
       setErrorMessage('');
-      
+
       const analyticsData = await getAnalytics();
       setAnalytics(analyticsData);
-      
+
       const roadmapData = await getRoadmapStats();
       setRoadmapStats(roadmapData || []);
-      
+
       const quizData = await getQuizStats();
       setQuizStats(quizData || []);
     } catch (err) {
@@ -37,161 +37,140 @@ const Analytics = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-20">
-        <FaSpinner className="animate-spin text-4xl mx-auto text-blue-500" />
-        <p className="mt-4 text-gray-600">Loading analytics...</p>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-4">
+        <FaSpinner className="animate-spin text-5xl text-indigo-600" />
+        <p className="text-gray-500 font-medium animate-pulse">Calculating your achievements...</p>
       </div>
     );
   }
 
   if (!analytics) {
     return (
-      <div className="text-center py-20">
-        <p className="text-red-500 text-lg">{errorMessage || 'Failed to load analytics'}</p>
+      <div className="card-premium py-20 text-center mx-auto max-w-lg mt-12">
+        <p className="text-red-500 text-lg font-bold">{errorMessage || 'Failed to load analytics'}</p>
+        <button onClick={fetchData} className="btn-primary mt-6">Try Again</button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="space-y-12 pb-20">
+      <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Learning Analytics</h1>
-          <p className="text-gray-600">Track your learning progress and performance</p>
+        <div className="space-y-3">
+          <h1 className="text-5xl font-extrabold text-gradient flex items-center gap-4">
+            <FaChartBar className="text-indigo-600" />
+            Learning Analytics
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-400 font-medium">
+            Visualizing your journey from curiosity to mastery.
+          </p>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-0 border-b border-gray-200 mb-8">
-          <button
-            onClick={() => setActiveView('overview')}
-            className={`px-6 py-3 font-medium border-b-2 transition ${
-              activeView === 'overview'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <FaChartBar className="inline mr-2" />
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveView('roadmaps')}
-            className={`px-6 py-3 font-medium border-b-2 transition ${
-              activeView === 'roadmaps'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <FaBook className="inline mr-2" />
-            Roadmaps
-          </button>
-          <button
-            onClick={() => setActiveView('quizzes')}
-            className={`px-6 py-3 font-medium border-b-2 transition ${
-              activeView === 'quizzes'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <FaClipboardList className="inline mr-2" />
-            Quizzes
-          </button>
+        <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-2xl w-fit border border-gray-200 dark:border-gray-800">
+          {[
+            { id: 'overview', label: 'Overview', icon: FaChartBar },
+            { id: 'roadmaps', label: 'Roadmaps', icon: FaBook },
+            { id: 'quizzes', label: 'Quizzes', icon: FaClipboardList },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveView(tab.id)}
+              className={`flex items-center space-x-2 px-8 py-3 rounded-xl font-bold transition-all duration-300 ${activeView === tab.id
+                ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 shadow-lg'
+                : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                }`}
+            >
+              <tab.icon className="text-lg" />
+              <span>{tab.label}</span>
+            </button>
+          ))}
         </div>
 
         {/* Overview Tab */}
         {activeView === 'overview' && (
-          <div className="space-y-8">
+          <div className="space-y-12 animate-in fade-in duration-500">
             {/* Key Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Total Roadmaps</p>
-                    <p className="text-4xl font-bold text-blue-600 mt-2">{analytics.totalRoadmaps || 0}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[
+                { label: 'Total Roadmaps', value: analytics.totalRoadmaps, icon: FaBook, color: 'indigo' },
+                { label: 'Total Quizzes', value: analytics.totalQuizzes, icon: FaClipboardList, color: 'purple' },
+                { label: 'Average Score', value: `${analytics.averageScore?.toFixed(1) || 0}%`, icon: FaTrophy, color: 'green' },
+                { label: 'Learning Time', value: `${Math.round(analytics.estimatedLearningTime || 0)}h`, icon: FaClock, color: 'orange' },
+              ].map((stat, idx) => (
+                <div key={idx} className="card-premium group hover:border-indigo-500/30">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                      <p className="text-4xl font-black text-gray-900 dark:text-white">{stat.value}</p>
+                    </div>
+                    <div className={`p-3 rounded-xl bg-${stat.color}-50 dark:bg-${stat.color}-950/30 text-${stat.color}-600 dark:text-${stat.color}-400 transition-transform group-hover:scale-110`}>
+                      <stat.icon size={24} />
+                    </div>
                   </div>
-                  <FaBook className="text-4xl text-blue-200" />
                 </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Total Quizzes</p>
-                    <p className="text-4xl font-bold text-purple-600 mt-2">{analytics.totalQuizzes || 0}</p>
-                  </div>
-                  <FaClipboardList className="text-4xl text-purple-200" />
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Average Score</p>
-                    <p className="text-4xl font-bold text-green-600 mt-2">
-                      {analytics.averageScore?.toFixed(1) || 0}%
-                    </p>
-                  </div>
-                  <FaTrophy className="text-4xl text-green-200" />
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Learning Time</p>
-                    <p className="text-4xl font-bold text-orange-600 mt-2">
-                      {Math.round(analytics.estimatedLearningTime || 0)}h
-                    </p>
-                  </div>
-                  <FaClock className="text-4xl text-orange-200" />
-                </div>
-              </div>
+              ))}
             </div>
 
             {/* Progress and Topics */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Module Completion */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Module Completion</h2>
+              <div className="card-premium flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <p className="text-sm font-medium text-gray-700">Overall Progress</p>
-                    <p className="text-lg font-bold text-blue-600">
-                      {analytics.moduleCompletionRate?.toFixed(1) || 0}%
-                    </p>
+                  <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                    <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
+                    Module Completion
+                  </h2>
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-end">
+                      <div className="space-y-1">
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">Overall Mastery Rate</p>
+                        <p className="text-5xl font-black text-indigo-600 dark:text-indigo-400">
+                          {analytics.moduleCompletionRate?.toFixed(1) || 0}%
+                        </p>
+                      </div>
+                      <FaTrophy className="text-5xl text-indigo-100 dark:text-indigo-900/40" />
+                    </div>
+                    <div className="relative pt-4">
+                      <div className="flex mb-2 items-center justify-between">
+                        <span className="text-xs font-bold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200 dark:bg-indigo-900/50">
+                          Progress
+                        </span>
+                      </div>
+                      <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-indigo-100 dark:bg-gray-800">
+                        <div
+                          style={{ width: `${analytics.moduleCompletionRate || 0}%` }}
+                          className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-1000 ease-out"
+                        ></div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-4">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-500"
-                      style={{ width: `${analytics.moduleCompletionRate || 0}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-3">
-                    {Math.round(analytics.moduleCompletionRate || 0)}% of roadmaps completed
-                  </p>
                 </div>
               </div>
 
               {/* Topics Breakdown */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-6">Topics Breakdown</h2>
+              <div className="card-premium">
+                <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                  <div className="w-2 h-8 bg-purple-600 rounded-full"></div>
+                  Knowledge Map
+                </h2>
                 {analytics.topicBreakdown && Object.keys(analytics.topicBreakdown).length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
                     {Object.entries(analytics.topicBreakdown).map(([topic, count]) => (
-                      <div key={topic}>
-                        <div className="flex justify-between items-center mb-2">
-                          <p className="text-sm font-medium text-gray-700">{topic}</p>
-                          <span className="text-sm font-bold text-gray-600">{count}</span>
+                      <div key={topic} className="group">
+                        <div className="flex justify-between items-center mb-3">
+                          <p className="font-bold text-gray-700 dark:text-gray-300">{topic}</p>
+                          <span className="px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm font-black">{count} Quizzes</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-2.5 overflow-hidden">
                           <div
-                            className="bg-purple-500 h-2 rounded-full"
+                            className="bg-purple-600 h-full rounded-full transition-all duration-700 group-hover:bg-purple-500"
                             style={{
-                              width: `${
-                                analytics.totalQuizzes > 0
-                                  ? (count / analytics.totalQuizzes) * 100
-                                  : 0
-                              }%`
+                              width: `${analytics.totalQuizzes > 0
+                                ? (count / analytics.totalQuizzes) * 100
+                                : 0
+                                }%`
                             }}
                           />
                         </div>
@@ -199,31 +178,11 @@ const Analytics = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No quiz data yet</p>
+                  <div className="h-full flex flex-col items-center justify-center text-center py-10 opacity-50">
+                    <FaBook className="text-5xl mb-4" />
+                    <p className="font-medium">No quiz deep-dives recorded yet.</p>
+                  </div>
                 )}
-              </div>
-            </div>
-
-            {/* Statistics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
-                <p className="text-gray-700 font-medium mb-2">Roadmaps Created</p>
-                <p className="text-5xl font-bold text-blue-600">{analytics.totalRoadmaps || 0}</p>
-                <p className="text-sm text-gray-600 mt-3">Learning paths you've started</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200">
-                <p className="text-gray-700 font-medium mb-2">Quizzes Completed</p>
-                <p className="text-5xl font-bold text-purple-600">{analytics.totalQuizzes || 0}</p>
-                <p className="text-sm text-gray-600 mt-3">Assessment attempts made</p>
-              </div>
-
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
-                <p className="text-gray-700 font-medium mb-2">Success Rate</p>
-                <p className="text-5xl font-bold text-green-600">
-                  {analytics.averageScore?.toFixed(0) || 0}%
-                </p>
-                <p className="text-sm text-gray-600 mt-3">Average quiz performance</p>
               </div>
             </div>
           </div>
@@ -231,120 +190,54 @@ const Analytics = () => {
 
         {/* Roadmaps Tab */}
         {activeView === 'roadmaps' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Roadmap Statistics</h2>
-              <p className="text-gray-600 mt-1">Details of your learning roadmaps</p>
+          <div className="card-premium border-none p-0 overflow-hidden animate-in slide-in-from-bottom duration-500">
+            <div className="p-8 border-b dark:border-gray-800">
+              <h2 className="text-3xl font-bold flex items-center gap-3">
+                <FaBook className="text-indigo-600" />
+                Active Learning Paths
+              </h2>
             </div>
 
             {roadmapStats && roadmapStats.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Roadmap Title</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Topic</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Modules</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Completion</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Created</th>
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-950/50 text-gray-400 uppercase text-xs font-black tracking-widest border-b dark:border-gray-800">
+                      <th className="px-8 py-5">Title</th>
+                      <th className="px-8 py-5">Topic</th>
+                      <th className="px-8 py-5 text-center">Modules</th>
+                      <th className="px-8 py-5">Progress</th>
+                      <th className="px-8 py-5">Started</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {roadmapStats.map((roadmap) => (
-                      <tr key={roadmap._id} className="hover:bg-gray-50 transition">
-                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{roadmap.title}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{roadmap.topic}</td>
-                        <td className="px-6 py-4 text-center text-sm text-gray-900">
-                          {roadmap.modules?.length || 0}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 bg-gray-200 rounded-full h-2">
-                              <div
-                                className="bg-blue-500 h-2 rounded-full"
-                                style={{
-                                  width: `${
-                                    roadmap.modules && roadmap.modules.length > 0
-                                      ? (roadmap.modules.filter(m => m.completed).length / roadmap.modules.length) * 100
-                                      : 0
-                                  }%`
-                                }}
-                              />
-                            </div>
-                            <span className="text-xs font-semibold text-gray-600">
-                              {roadmap.modules && roadmap.modules.length > 0
-                                ? ((roadmap.modules.filter(m => m.completed).length / roadmap.modules.length) * 100).toFixed(0)
-                                : 0}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {new Date(roadmap.createdAt).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-12 text-center">
-                <FaBook className="text-4xl text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 font-medium">No roadmaps created yet</p>
-                <p className="text-gray-500 text-sm mt-1">Start creating a roadmap to see statistics here</p>
-              </div>
-            )}
-          </div>
-        )}
+                  <tbody className="divide-y dark:divide-gray-800">
+                    {roadmapStats.map((roadmap) => {
+                      const completion = roadmap.modules && roadmap.modules.length > 0
+                        ? (roadmap.modules.filter(m => m.completed).length / roadmap.modules.length) * 100
+                        : 0;
 
-        {/* Quizzes Tab */}
-        {activeView === 'quizzes' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Quiz Statistics</h2>
-              <p className="text-gray-600 mt-1">Details of your quiz attempts</p>
-            </div>
-
-            {quizStats && quizStats.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Quiz</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Roadmap</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Questions</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Correct</th>
-                      <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">Score</th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {quizStats.map((quiz) => {
-                      const correctCount = quiz.answers?.filter(a => a.isCorrect).length || 0;
-                      const totalQuestions = quiz.answers?.length || 0;
-                      const scorePercentage =
-                        totalQuestions > 0 ? ((correctCount / totalQuestions) * 100).toFixed(1) : 0;
-                      
                       return (
-                        <tr key={quiz._id} className="hover:bg-gray-50 transition">
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{quiz.quizId || 'Quiz'}</td>
-                          <td className="px-6 py-4 text-sm text-gray-600">{quiz.roadmapId || '-'}</td>
-                          <td className="px-6 py-4 text-center text-sm text-gray-900">{totalQuestions}</td>
-                          <td className="px-6 py-4 text-center text-sm font-medium text-green-600">
-                            {correctCount}/{totalQuestions}
-                          </td>
-                          <td className="px-6 py-4 text-center">
-                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                              scorePercentage >= 80
-                                ? 'bg-green-100 text-green-800'
-                                : scorePercentage >= 60
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {scorePercentage}%
+                        <tr key={roadmap._id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                          <td className="px-8 py-6 font-bold text-gray-900 dark:text-white">{roadmap.title}</td>
+                          <td className="px-8 py-6">
+                            <span className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold">
+                              {roadmap.topic}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600">
-                            {new Date(quiz.attemptedAt).toLocaleDateString()}
+                          <td className="px-8 py-6 text-center font-black">{roadmap.modules?.length || 0}</td>
+                          <td className="px-8 py-6">
+                            <div className="flex items-center gap-4">
+                              <div className="flex-grow w-24 bg-gray-100 dark:bg-gray-800 rounded-full h-2">
+                                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${completion}%` }} />
+                              </div>
+                              <span className="font-bold text-sm min-w-[3rem]">{Math.round(completion)}%</span>
+                            </div>
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-500 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <FaCalendarAlt />
+                              {new Date(roadmap.createdAt).toLocaleDateString()}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -353,10 +246,78 @@ const Analytics = () => {
                 </table>
               </div>
             ) : (
-              <div className="p-12 text-center">
-                <FaClipboardList className="text-4xl text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 font-medium">No quizzes taken yet</p>
-                <p className="text-gray-500 text-sm mt-1">Complete a quiz to see statistics here</p>
+              <div className="p-20 text-center opacity-50">
+                <FaBook className="text-6xl mx-auto mb-6" />
+                <p className="text-xl font-bold">Your library is currently empty.</p>
+                <p className="mt-2">Generate a roadmap to start tracking your progress.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Quizzes Tab */}
+        {activeView === 'quizzes' && (
+          <div className="card-premium border-none p-0 overflow-hidden animate-in slide-in-from-bottom duration-500">
+            <div className="p-8 border-b dark:border-gray-800">
+              <h2 className="text-3xl font-bold flex items-center gap-3">
+                <FaClipboardList className="text-purple-600" />
+                Assessment History
+              </h2>
+            </div>
+
+            {quizStats && quizStats.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-950/50 text-gray-400 uppercase text-xs font-black tracking-widest border-b dark:border-gray-800">
+                      <th className="px-8 py-5">Topic</th>
+                      <th className="px-8 py-5 text-center">Questions</th>
+                      <th className="px-8 py-5 text-center">Correct</th>
+                      <th className="px-8 py-5">Score</th>
+                      <th className="px-8 py-5">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y dark:divide-gray-800">
+                    {quizStats.map((quiz) => {
+                      const correctCount = quiz.answers?.filter(a => a.isCorrect).length || 0;
+                      const totalQuestions = quiz.answers?.length || 0;
+                      const scorePercentage = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
+
+                      return (
+                        <tr key={quiz._id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                          <td className="px-8 py-6">
+                            <div className="font-bold text-gray-900 dark:text-white truncate max-w-xs">{quiz.quizId || 'Community Topic'}</div>
+                            <div className="text-xs text-gray-500 mt-1">ID: {quiz.roadmapId?.substring(0, 8)}...</div>
+                          </td>
+                          <td className="px-8 py-6 text-center font-black">{totalQuestions}</td>
+                          <td className="px-8 py-6 text-center font-black text-green-600 dark:text-green-400">{correctCount}</td>
+                          <td className="px-8 py-6">
+                            <span className={`inline-block w-20 text-center py-2 rounded-xl text-sm font-black ${scorePercentage >= 80
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                              : scorePercentage >= 60
+                                ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400'
+                                : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400'
+                              }`}>
+                              {scorePercentage.toFixed(0)}%
+                            </span>
+                          </td>
+                          <td className="px-8 py-6 text-sm text-gray-500 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <FaCalendarAlt />
+                              {new Date(quiz.attemptedAt).toLocaleDateString()}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-20 text-center opacity-50">
+                <FaClipboardList className="text-6xl mx-auto mb-6" />
+                <p className="text-xl font-bold">No quiz attempts yet.</p>
+                <p className="mt-2">Testing your knowledge is the fastest way to learn!</p>
               </div>
             )}
           </div>

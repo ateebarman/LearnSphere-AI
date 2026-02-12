@@ -40,7 +40,12 @@ const roadmapSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    sourceMaterial: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'StudyMaterial',
+    },
   },
+
   {
     timestamps: true,
   }

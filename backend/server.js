@@ -20,6 +20,8 @@ import quizRoutes from './routes/quizRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import tutorRoutes from './routes/tutorRoutes.js';
+import studyMaterialRoutes from './routes/studyMaterialRoutes.js';
+
 initializeAI();
 
 connectDB();
@@ -40,6 +42,8 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/tutor', tutorRoutes);
+app.use('/api/study-materials', studyMaterialRoutes);
+
 
 // Error Handling Middleware
 app.use(notFound);
