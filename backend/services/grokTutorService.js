@@ -12,15 +12,25 @@ Guidelines:
 7. Explain the "why" behind concepts, not just the "how"
 8. When showing code, use proper syntax highlighting with language tags
 9. Break down complex topics into digestible pieces
-10. Relate new concepts to ones the user might already know`;
+10. Relate new concepts to ones the user might already know
 
-export const chatWithTutor = async (message, history = []) => {
+GROUNDING INSTRUCTIONS:
+- You will be provided with INTERNAL DOCUMENTATION snippets from our knowledge base when relevant.
+- PLEASE PRIORITIZE the information in these snippets as the primary source of truth for technical details and best practices.
+- Do not mention that you are reading from snippets; incorporate the information naturally as your own expert knowledge.`;
+
+export const chatWithTutor = async (message, history = [], knowledgeContext = '') => {
   // Read env vars inside function, not at module level
   const TUTOR_GROQ_API_KEY = process.env.TUTOR_GROQ_API_KEY;
   const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
-  const GROQ_MODEL = process.env.GROQ_MODEL || 'mixtral-8x7b-32768';
+  const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
   try {
+    // Preparing the user message with context if available
+    const userMessageContent = knowledgeContext 
+      ? `CONTEXT FROM OUR KNOWLEDGE BASE:\n${knowledgeContext}\n\nUSER QUESTION: ${message}`
+      : message;
+
     // Input validation
     const trimmedMessage = message.trim();
     if (!trimmedMessage) {
@@ -38,7 +48,7 @@ export const chatWithTutor = async (message, history = []) => {
       })),
       {
         role: 'user',
-        content: trimmedMessage,
+        content: userMessageContent,
       },
     ];
 

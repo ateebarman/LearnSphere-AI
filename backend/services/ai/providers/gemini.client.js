@@ -1,55 +1,86 @@
 // Gemini API Provider Client
 // Single API key, no rotation, single request attempt
 
-let apiKey = null;
+let apiKeys = [];
+let currentKeyIndex = 0;
+
+// Rate Limiter State
+const RPM_LIMIT = 15;
+const requestHistory = new Map(); // Key -> Array of timestamps
 
 export const initializeGemini = () => {
-  apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS?.split(',')[0];
-  if (apiKey) {
-    console.log('✅ Gemini API key loaded');
+  apiKeys = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY2,
+    process.env.GEMINI_API_KEY3,
+    process.env.GEMINI_API_KEY4
+  ].filter(Boolean);
+
+  if (apiKeys.length > 0) {
+    apiKeys.forEach(key => requestHistory.set(key, []));
+    console.log(`✅ Gemini Service initialized with ${apiKeys.length} keys (Model: 1.5 Pro)`);
   } else {
-    console.log('⚠️  No Gemini API key found - will use demo mode');
+    console.log('⚠️  No Gemini API keys found - will use demo mode');
   }
+};
+
+const getNextApiKey = async () => {
+  if (apiKeys.length === 0) return null;
+  
+  // Try all keys to find one within limit
+  for (let i = 0; i < apiKeys.length; i++) {
+    const index = (currentKeyIndex + i) % apiKeys.length;
+    const key = apiKeys[index];
+    const now = Date.now();
+    
+    // Clean history
+    const history = requestHistory.get(key).filter(time => now - time < 60000);
+    requestHistory.set(key, history);
+
+    if (history.length < RPM_LIMIT) {
+      currentKeyIndex = (index + 1) % apiKeys.length;
+      history.push(now);
+      return key;
+    }
+  }
+
+  // All keys full? Wait 5 seconds and try again
+  console.log('⏳ All Gemini keys at RPM limit. Waiting 5s...');
+  await new Promise(resolve => setTimeout(resolve, 5000));
+  return getNextApiKey();
 };
 
 const extractJSON = (text) => {
-  // Strategy 1: Remove markdown code blocks
-  let cleanText = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-  
-  // Strategy 2: Find the first { and last } and extract everything between
-  const firstBrace = cleanText.indexOf('{');
-  const lastBrace = cleanText.lastIndexOf('}');
-  
-  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
-    throw new Error('No valid JSON structure found in response');
-  }
-  
-  let jsonStr = cleanText.substring(firstBrace, lastBrace + 1);
-  
-  // Strategy 3: Try to fix common issues
-  // Fix trailing commas before } or ]
-  jsonStr = jsonStr.replace(/,(\s*[}\]])/g, '$1');
-  
-  // Fix single quotes that should be double quotes (but be careful with apostrophes)
-  // Only replace quotes that look like they're wrapping keys or values
-  jsonStr = jsonStr.replace(/:\s*'([^']*?)'\s*([,}\])])/g, ': "$1"$2');
-  
-  // Try to parse
   try {
-    return JSON.parse(jsonStr);
-  } catch (parseError) {
-    // If still failing, try removing all newlines and extra whitespace
-    jsonStr = jsonStr.replace(/\n/g, ' ').replace(/\s+/g, ' ');
-    try {
-      return JSON.parse(jsonStr);
-    } catch (secondError) {
-      throw new Error(`JSON parsing failed: ${parseError.message} at position ~${parseError.message.match(/position (\d+)/)?.at(1) || 'unknown'}`);
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error('No JSON object found in response');
     }
+
+    const jsonCandidate = text.substring(firstBrace, lastBrace + 1);
+    
+    // Fix common AI JSON errors before parsing
+    let fixed = jsonCandidate
+      .replace(/,(\s*[}\]])/g, '$1') // remove trailing commas
+      .replace(/[\u201C\u201D]/g, '"'); // fix "smart" quotes
+      
+    return JSON.parse(fixed);
+  } catch (parseError) {
+    console.error('❌ Gemini JSON Extract Failed:', parseError.message);
+    // Last ditch: try to see if it's just raw text within code blocks
+    let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    if (cleaned.startsWith('{')) {
+      try { return JSON.parse(cleaned); } catch (e) {}
+    }
+    throw new Error(`JSON parsing failed: ${parseError.message}`);
   }
 };
 
-export const generateJsonGemini = async (prompt) => {
-  if (!apiKey) {
+export const generateJsonGemini = async (prompt, retryCount = 0) => {
+  const currentKey = await getNextApiKey();
+  if (!currentKey) {
     throw new Error('No Gemini API key configured');
   }
 
@@ -65,17 +96,17 @@ CRITICAL INSTRUCTIONS:
 
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${currentKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{ parts: [{ text: fullPrompt }] }],
           generationConfig: {
-            temperature: 0.7,
+            temperature: 0.6,
             topK: 1,
             topP: 1,
-            maxOutputTokens: 2048  // Reduced from 8192 to lower free-tier pressure
+            maxOutputTokens: 4096 
           },
           safetySettings: [
             {
@@ -120,9 +151,14 @@ CRITICAL INSTRUCTIONS:
 
     return extractJSON(text);
   } catch (error) {
-    // Log quota exhaustion clearly (once)
+    // Failover to next key if quota exhausted or rate limited
+    if ((error.message === 'QUOTA_EXHAUSTED' || error.message.includes('429')) && retryCount < apiKeys.length - 1) {
+      console.warn(`🔄 Gemini key rate-limited. Retrying with next key... (${retryCount + 1}/${apiKeys.length})`);
+      return generateJsonGemini(prompt, retryCount + 1);
+    }
+
     if (error.message === 'QUOTA_EXHAUSTED') {
-      console.warn('⚠️  Gemini quota exhausted — switching to DEMO mode');
+      console.warn('⚠️  All Gemini keys rate-limited — switching provider or demo mode');
     } else {
       console.warn(`⚠️  Gemini API failed:`, error.message);
     }

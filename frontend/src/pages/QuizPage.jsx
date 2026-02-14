@@ -21,7 +21,9 @@ const QuizPage = () => {
     const fetchQuiz = async () => {
       setLoading(true);
       try {
-        const data = await generateQuiz(moduleTitle, "related topic");
+        // If it's a knowledge library quiz, we use moduleTitle as both module and topic
+        const quizTopic = roadmapId === 'knowledge' ? moduleTitle : "related topic";
+        const data = await generateQuiz(moduleTitle, quizTopic);
         setQuestions(data.questions);
         setSelectedAnswers(new Array(data.questions.length).fill(null));
       } catch (err) {
@@ -30,7 +32,7 @@ const QuizPage = () => {
       setLoading(false);
     };
     fetchQuiz();
-  }, [moduleTitle]);
+  }, [moduleTitle, roadmapId]);
 
   const handleAnswerSelect = (option) => {
     const newAnswers = [...selectedAnswers];
@@ -62,6 +64,8 @@ const QuizPage = () => {
     setSubmitting(false);
   };
 
+  const isStandalone = roadmapId === 'knowledge';
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center space-y-6">
@@ -71,7 +75,7 @@ const QuizPage = () => {
         </div>
         <div className="text-center space-y-2">
           <p className="text-xl font-black dark:text-white">Generating Your Assessment...</p>
-          <p className="text-gray-500 font-medium whitespace-nowrap">AI is crafting custom questions based on your roadmap.</p>
+          <p className="text-gray-500 font-medium whitespace-nowrap">AI is crafting custom questions based on {isStandalone ? 'this topic' : 'your roadmap'}.</p>
         </div>
       </div>
     );
@@ -117,10 +121,10 @@ const QuizPage = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 pt-6">
             <button
-              onClick={() => navigate(`/roadmap/${roadmapId}`)}
+              onClick={() => isStandalone ? navigate(`/library?topic=${encodeURIComponent(moduleTitle)}`) : navigate(`/roadmap/${roadmapId}`)}
               className="btn-primary flex-1 flex items-center justify-center gap-2"
             >
-              <FaArrowLeft /> Retun to Learning Path
+              <FaArrowLeft /> {isStandalone ? 'Back to Library' : 'Return to Learning Path'}
             </button>
             <button
               onClick={() => window.location.reload()}

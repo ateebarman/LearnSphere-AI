@@ -100,6 +100,40 @@ export const resourceDatabase = {
       { title: 'The Node Handbook', type: 'article', url: 'https://nodejs.dev/en/learn/' },
       { title: 'Node.js Best Practices', type: 'article', url: 'https://github.com/goldbergyoni/nodebestpractices' }
     ]
+  },
+  'llm': {
+    resources: [
+      { title: 'Hugging Face Course', type: 'doc', url: 'https://huggingface.co/learn/nlp-course/' },
+      { title: 'OpenAI API Documentation', type: 'doc', url: 'https://platform.openai.com/docs/introduction' },
+      { title: 'LangChain Documentation', type: 'doc', url: 'https://python.langchain.com/' },
+      { title: 'Transformers Documentation', type: 'doc', url: 'https://huggingface.co/docs/transformers/index' },
+      { title: 'DeepLearning.AI Short Courses', type: 'article', url: 'https://www.deeplearning.ai/short-courses/' }
+    ]
+  },
+  'generative ai': {
+    resources: [
+      { title: 'Generative AI for Everyone (Andrew Ng)', type: 'article', url: 'https://www.deeplearning.ai/courses/generative-ai-for-everyone/' },
+      { title: 'Google Generative AI Learning Path', type: 'doc', url: 'https://www.cloudskillsboost.google/paths/118' },
+      { title: 'Anthropic Cookbook', type: 'article', url: 'https://github.com/anthropics/anthropic-cookbook' },
+      { title: 'Stability AI Documentation', type: 'doc', url: 'https://platform.stability.ai/docs/getting-started' }
+    ]
+  },
+  'system design': {
+    resources: [
+      { title: 'System Design Interview - Alex Xu', type: 'article', url: 'https://bytebytego.com/' },
+      { title: 'The System Design Primer', type: 'doc', url: 'https://github.com/donnemartin/system-design-primer' },
+      { title: 'High Scalability Blog', type: 'article', url: 'http://highscalability.com/' },
+      { title: 'AWS Architecture Center', type: 'doc', url: 'https://aws.amazon.com/architecture/' },
+      { title: 'Grokking the System Design Interview', type: 'article', url: 'https://www.designgurus.io/course/grokking-the-system-design-interview' }
+    ]
+  },
+  'backend': {
+    resources: [
+      { title: 'Node.js Best Practices', type: 'doc', url: 'https://github.com/goldbergyoni/nodebestpractices' },
+      { title: 'Architecting Web Applications', type: 'doc', url: 'https://roadmap.sh/backend' },
+      { title: 'Postman API Learning', type: 'article', url: 'https://learning.postman.com/' },
+      { title: 'Prisma Documentation', type: 'doc', url: 'https://www.prisma.io/docs' }
+    ]
   }
 };
 

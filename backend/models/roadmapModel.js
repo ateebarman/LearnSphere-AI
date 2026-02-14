@@ -5,12 +5,15 @@ const resourceSchema = mongoose.Schema({
   type: { type: String, enum: ['video', 'article', 'doc', 'challenge'] },
   url: String,
   description: String,
+  thumbnail: String,
 });
 
 const moduleSchema = mongoose.Schema({
   title: String,
   description: String,
   estimatedTime: String,
+  objectives: [String],
+  keyConcepts: [String],
   resources: [resourceSchema],
   isCompleted: { type: Boolean, default: false },
 });
@@ -31,6 +34,8 @@ const roadmapSchema = mongoose.Schema(
       default: 'General',
     },
     description: String,
+    difficulty: String,
+    totalDuration: String,
     modules: [moduleSchema],
     progress: {
       type: Number,

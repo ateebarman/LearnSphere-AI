@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import QuizAttempt from '../models/quizAttemptModel.js';
 import Roadmap from '../models/roadmapModel.js';
+import KnowledgeNode from '../models/knowledgeModel.js';
 
 // @desc    Get user analytics (progress, weak/strong areas)
 // @route   GET /api/analytics
@@ -99,12 +100,35 @@ const getAnalytics = asyncHandler(async (req, res) => {
     });
   });
 
-  // Calculate topic breakdown (count quizzes by topic)
-  const topicBreakdown = {};
-  quizAttempts.forEach((attempt) => {
-    const topic = attempt.moduleTitle || 'Other';
-    topicBreakdown[topic] = (topicBreakdown[topic] || 0) + 1;
+  // NEW: Category-based Mastery (for Skill Tree)
+  const categoryStats = {};
+  
+  // Initialize with all unique categories from knowledge base
+  const allCategories = await KnowledgeNode.distinct('category');
+  allCategories.forEach(cat => {
+    categoryStats[cat] = { totalScore: 0, count: 0, completedModules: 0 };
   });
+
+  // Map quiz attempts to categories
+  for (const attempt of quizAttempts) {
+    // Try to find the category for this moduleTitle
+    const node = await KnowledgeNode.findOne({ topic: attempt.moduleTitle }).select('category');
+    if (node && categoryStats[node.category]) {
+      categoryStats[node.category].totalScore += attempt.score;
+      categoryStats[node.category].count += 1;
+      if (attempt.score >= 70) {
+        categoryStats[node.category].completedModules += 1;
+      }
+    }
+  }
+
+  const categoryMastery = Object.entries(categoryStats).map(([name, data]) => ({
+    category: name,
+    averageScore: data.count > 0 ? Math.round(data.totalScore / data.count) : 0,
+    completionCount: data.completedModules,
+    level: Math.floor(data.completedModules / 3) + 1, // Level up every 3 completed modules
+    progress: Math.min(100, (data.completedModules % 3) * 33.3)
+  })).filter(c => c.completionCount > 0 || c.category === 'DSA' || c.category === 'System Design' || c.category === 'OS');
 
   res.json({
     // Old format (for backward compatibility)
@@ -122,7 +146,7 @@ const getAnalytics = asyncHandler(async (req, res) => {
     completedModules,
     totalModules,
     estimatedLearningTime,
-    topicBreakdown,
+    categoryMastery,
   });
 });
 

@@ -42,6 +42,12 @@ const Navbar = () => {
                   🔍 Explore
                 </Link>
                 <Link
+                  to="/library"
+                  className="text-gray-700 dark:text-gray-300 font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
+                >
+                  📚 Docs
+                </Link>
+                <Link
                   to="/lab"
                   className="text-gray-700 dark:text-gray-300 font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors duration-200"
                 >

@@ -4,166 +4,154 @@
 
 import { generateJson } from './ai/index.js';
 import { getResourcesForTopic } from './resourceDatabase.js';
+import { searchYouTubeVideos } from './youtubeService.js';
 
 export const generateRoadmapFromAI = async (topic) => {
-  // Get real resources from database first
-  const realResources = getResourcesForTopic(topic);
-  
-  // Try real API
   try {
+    // 1. Get verified resources for the main topic if available
+    const verifiedResources = getResourcesForTopic(topic);
+
     const prompt = `
-      Generate a personalized learning roadmap for the topic: "${topic}".
-      The roadmap should be structured as a JSON object with a "title", "description", and an array named "modules".
-      Each module in the "modules" array should be an object with:
-      1. "title" (string): The name of the module (e.g., "Introduction to React").
-      2. "description" (string): A short 1-2 sentence description of what the module covers.
-      3. "estimatedTime" (string): A string representing the estimated time (e.g., "3 hours", "1 week").
-      4. "resources" (array): Leave this EMPTY - resources will be added from our verified database. Just return an empty array [].
+      You are a World-Class Educational Architect.
+      Generate a MASTERCLASS roadmap for: "${topic}".
       
-      Do NOT include video resources, as we will fetch those separately.
-      
-      Example for "title": "Learning ${topic}"
+      CURRICULUM RULES:
+      1. STRUCTURE: 8 strictly progressive modules.
+      2. RICH DETAIL: 
+         - "description": 3-4 professional sentences focusing on technical depth.
+         - "objectives": 4-5 high-level technical outcomes.
+         - "keyConcepts": 5-6 granular technical terms.
+      3. REAL RESOURCES:
+         - Provide REAL URLs to official documentation. 
+         - Examples of REAL sites: huggingface.co/docs, pytorch.org/docs, react.dev, geeksforgeeks.org, developer.mozilla.org, learn.microsoft.com, aws.amazon.com/docs.
+         - If unsure, provide the resource name in 'title' and I will find it.
+
+      JSON STRUCTURE:
+      {
+        "title": "Mastering ${topic}",
+        "description": "Comprehensive summary.",
+        "difficulty": (string),
+        "totalDuration": (string),
+        "modules": [
+          {
+            "title": (string),
+            "description": (string),
+            "objectives": [(string)],
+            "keyConcepts": [(string)],
+            "estimatedTime": (string),
+            "suggestedResources": [
+               { "title": "Official Doc: [Topic]", "url": "https://...", "type": "doc" }
+            ]
+          }
+        ]
+      }
+      Respond ONLY with valid JSON.
     `;
+    
     const roadmap = await generateJson(prompt);
     
-    // Inject real resources into each module
     if (roadmap.modules && Array.isArray(roadmap.modules)) {
-      roadmap.modules = roadmap.modules.map(module => ({
-        ...module,
-        resources: realResources.slice(0, 4) // Add 4 verified resources per module
+      roadmap.modules = roadmap.modules.slice(0, 8);
+
+      const modulesWithVideos = await Promise.all(roadmap.modules.map(async (module, index) => {
+        let videos = [];
+        try {
+          // PRECISION SEARCH: Use module title + first 2 key concepts to anchor the results
+          const concepts = (module.keyConcepts || []).slice(0, 2).join(' ');
+          const searchQuery = `${module.title} ${concepts} technical tutorial`.trim();
+          videos = await searchYouTubeVideos(searchQuery, 6);
+        } catch (err) {
+          console.warn(`⚠️ Video fetch failed for module ${index+1}`);
+        }
+        
+        const extraResources = index === 0 ? verifiedResources.slice(0, 3) : [];
+        
+        // Trusted domains for validation
+        const trustedDomains = [
+          'huggingface.co', 'pytorch.org', 'react.dev', 'geeksforgeeks.org', 
+          'developer.mozilla.org', 'wikipedia.org', 'stackoverflow.com', 
+          'github.com', 'w3schools.com', 'learn.microsoft.com', 'aws.amazon.com',
+          'google.com/docs', 'openai.com', 'langchain.com'
+        ];
+
+        // Sanitize & Force Realistic Documentation Links
+        const sanitizedResources = (module.suggestedResources || [])
+          .filter(r => r && (typeof r === 'object' || typeof r === 'string'))
+          .map(r => {
+            const allowedTypes = ['video', 'article', 'doc', 'challenge'];
+            let title = typeof r === 'string' ? r : (r.title || 'Official Documentation');
+            let url = typeof r === 'string' ? '' : (r.url || '');
+            let type = (r.type || 'doc').toLowerCase();
+            if (!allowedTypes.includes(type)) type = 'article';
+
+            // IF URL IS DUMMY OR UNTRUSTED -> Use a Scoped Search (Much better UX)
+            const isTrusted = trustedDomains.some(domain => url.toLowerCase().includes(domain));
+            
+            if (!url || !url.startsWith('http') || !isTrusted) {
+               // Pick the best site based on the topic
+               let site = '';
+               const lowTitle = (title + ' ' + topic).toLowerCase();
+               if (lowTitle.includes('data structure') || lowTitle.includes('algorithm') || lowTitle.includes('dsa')) site = 'geeksforgeeks.org';
+               else if (lowTitle.includes('llm') || lowTitle.includes('nlp') || lowTitle.includes('transformer')) site = 'huggingface.co';
+               else if (lowTitle.includes('react') || lowTitle.includes('frontend')) site = 'react.dev';
+               else if (lowTitle.includes('js') || lowTitle.includes('javascript') || lowTitle.includes('html')) site = 'developer.mozilla.org';
+               else if (lowTitle.includes('python')) site = 'docs.python.org';
+               
+               const searchQuery = site ? `site:${site} ${title}` : `${title} official documentation`;
+               url = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+            }
+
+            return { title, url, type };
+          });
+
+        return {
+          ...module,
+          resources: [
+            ...sanitizedResources,
+            ...extraResources,
+            ...videos
+          ]
+        };
       }));
+
+      roadmap.modules = modulesWithVideos;
     }
     
     return roadmap;
   } catch (error) {
-    console.warn(`🔄 Falling back to demo mode for roadmap (${topic})`);
+    console.error(`❌ Roadmap Generation Error:`, error.message);
+    throw error;
   }
-
-  // Demo mode - return structured sample data
-  const demoRoadmaps = {
-    'react': {
-      title: `Learning ${topic}`,
-      description: `A comprehensive learning path for mastering ${topic}`,
-      modules: [
-        {
-          title: 'Introduction to React',
-          description: 'Learn the basics of React including JSX, components, and props.',
-          estimatedTime: '3 hours',
-          resources: [
-            { title: 'Official React Documentation', type: 'doc', url: 'https://react.dev' },
-            { title: 'React Basics Article', type: 'article', url: 'https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Client-side_JavaScript_frameworks/React_getting_started' }
-          ]
-        },
-        {
-          title: 'State and Props',
-          description: 'Master the fundamental concepts of state management and component props.',
-          estimatedTime: '4 hours',
-          resources: [
-            { title: 'React State & Props Guide', type: 'doc', url: 'https://react.dev/learn/passing-props-to-a-component' },
-            { title: 'Managing State Tutorial', type: 'article', url: 'https://react.dev/learn/state-a-components-memory' }
-          ]
-        },
-        {
-          title: 'React Hooks',
-          description: 'Understand useState, useEffect, and custom hooks for functional components.',
-          estimatedTime: '5 hours',
-          resources: [
-            { title: 'Hooks API Reference', type: 'doc', url: 'https://react.dev/reference/react/hooks' },
-            { title: 'Building Your Own Hooks', type: 'article', url: 'https://react.dev/learn/reusing-logic-with-custom-hooks' }
-          ]
-        }
-      ]
-    },
-    'javascript': {
-      title: `Learning ${topic}`,
-      description: `A comprehensive learning path for mastering ${topic}`,
-      modules: [
-        {
-          title: 'JavaScript Fundamentals',
-          description: 'Master variables, types, operators, and control flow in JavaScript.',
-          estimatedTime: '6 hours',
-          resources: [
-            { title: 'JavaScript.info Guide', type: 'doc', url: 'https://javascript.info/' },
-            { title: 'MDN JavaScript Tutorial', type: 'article', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide' }
-          ]
-        },
-        {
-          title: 'Functions and Scope',
-          description: 'Learn about functions, closures, and scope management.',
-          estimatedTime: '4 hours',
-          resources: [
-            { title: 'Functions Documentation', type: 'doc', url: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions' },
-            { title: 'JavaScript Closures Explained', type: 'article', url: 'https://javascript.info/closure' }
-          ]
-        }
-      ]
-    },
-    'default': {
-      title: `Learning ${topic}`,
-      description: `A personalized learning roadmap for ${topic}`,
-      modules: [
-        {
-          title: `Introduction to ${topic}`,
-          description: `Get started with the fundamentals of ${topic}.`,
-          estimatedTime: '4 hours',
-          resources: [
-            { title: `${topic} Official Documentation`, type: 'doc', url: 'https://developer.mozilla.org/' },
-            { title: `${topic} Getting Started Guide`, type: 'article', url: 'https://developer.mozilla.org/' }
-          ]
-        },
-        {
-          title: `Intermediate ${topic} Concepts`,
-          description: `Build on your knowledge with intermediate topics and best practices.`,
-          estimatedTime: '6 hours',
-          resources: [
-            { title: `Advanced ${topic} Patterns`, type: 'article', url: 'https://developer.mozilla.org/' },
-            { title: `${topic} Best Practices`, type: 'doc', url: 'https://developer.mozilla.org/' }
-          ]
-        },
-        {
-          title: `${topic} Projects and Practice`,
-          description: `Apply your knowledge through hands-on projects and challenges.`,
-          estimatedTime: '8 hours',
-          resources: [
-            { title: `Build a Project with ${topic}`, type: 'article', url: 'https://developer.mozilla.org/' },
-            { title: `${topic} Coding Challenges`, type: 'challenge', url: 'https://developer.mozilla.org/' }
-          ]
-        }
-      ]
-    }
-  };
-
-  // Return demo data based on topic
-  const topicLower = topic.toLowerCase();
-  if (topicLower.includes('react')) {
-    return demoRoadmaps.react;
-  } else if (topicLower.includes('javascript') || topicLower.includes('js')) {
-    return demoRoadmaps.javascript;
-  }
-  return demoRoadmaps.default;
 };
 
-export const generateQuizFromAI = async (moduleTitle, topic) => {
+
+export const generateQuizFromAI = async (moduleTitle, topic, knowledgeContext = '') => {
   // Try real API with key rotation
   try {
     const prompt = `
+      You are an expert assessment designer. 
       Generate a 10-question multiple-choice quiz for the topic "${moduleTitle}" within the broader subject of "${topic}".
+      
+      ${knowledgeContext ? `
+      GROUNDING SOURCE MATERIAL:
+      The following content is from our official expert-verified knowledge base. 
+      PLEASE generate at least 7 of the 10 questions STRICTLY BASED on the information provided below.
+      
+      """
+      ${knowledgeContext}
+      """
+      ` : ''}
+
+      QUIZ RULES:
+      1. Ensure questions cover technical nuances, common pitfalls, and core principles.
+      2. Each question must have 4 distinct options.
+      3. One option must be clearly correct.
+
       Respond with a JSON object containing a single key "questions".
       "questions" should be an array of objects. Each object must have:
       1. "question" (string): The text of the question.
       2. "options" (array of strings): An array of 4 possible answers.
       3. "correctAnswer" (string): The string of the correct answer, which must be one of the strings from the "options" array.
-
-      Example:
-      {
-        "questions": [
-          {
-            "question": "What is React?",
-            "options": ["A library", "A framework", "A language", "A database"],
-            "correctAnswer": "A library"
-          }
-        ]
-      }
     `;
     return await generateJson(prompt);
   } catch (error) {
@@ -376,7 +364,8 @@ export const getArticlesFromAI = async (topic) => {
 export const generateRoadmapFromRAG = async (topic, context) => {
   try {
     const prompt = `
-      You are an elite educational architect. I have provided below excerpts from a user's study material:
+      You are an elite educational architect specializing in Curriculum Extracting.
+      Below are excerpts from a user's study material regarding "${topic}".
       
       CONTEXT FROM STUDY MATERIAL:
       """
@@ -384,20 +373,86 @@ export const generateRoadmapFromRAG = async (topic, context) => {
       """
       
       TASK:
-      Generate a structured learning roadmap for "${topic}" BASE ENTIRELY ON THE PROVIDED CONTEXT AND GENERAL KNOWLEDGE.
-      The roadmap must be structured as a JSON object with a "title", "description", and an array named "modules".
+      Generate a MASTERCLASS roadmap based on this SPECIFIC context.
       
-      Each module MUST HAVE:
-      1. "title": Specific chapter or concept.
-      2. "description": 1-2 sentences on what will be learned.
-      3. "estimatedTime": e.g., "2 hours".
-      4. "resources": Leave as empty array [].
+      CURRICULUM RULES:
+      1. STRUCTURE: 7-10 progressive modules based exclusively on the context.
+      2. RICH DETAIL: 
+         - "description": 3-4 detailed sentences explaining the core concepts found in the text.
+         - "objectives": 4-5 outcomes extracted from the context.
+         - "keyConcepts": 5-6 terms found in the context.
+      3. REAL RESOURCES:
+         - Provide REAL URLs to official documentation or primary sites related to these specific concepts.
+
+      JSON STRUCTURE:
+      {
+        "title": (string),
+        "description": (string),
+        "difficulty": (string),
+        "modules": [
+          {
+            "title": (string),
+            "description": (string),
+            "objectives": [(string)],
+            "keyConcepts": [(string)],
+            "estimatedTime": (string),
+            "suggestedResources": []
+          }
+        ]
+      }
       
       Respond ONLY with JSON.
     `;
-    return await generateJson(prompt);
+    
+    const roadmap = await generateJson(prompt);
+
+    if (roadmap.modules && Array.isArray(roadmap.modules)) {
+      roadmap.modules = await Promise.all(roadmap.modules.map(async (module, index) => {
+        // Fetch 5 high-quality videos/playlists per module
+        let videos = [];
+        try {
+          videos = await searchYouTubeVideos(`${topic} ${module.title} tutorial`, 5);
+        } catch (err) {
+          console.warn(`⚠️ Video fetch failed for RAG module ${index+1}`);
+        }
+        
+        // Sanitize suggested resources
+        const sanitizedSuggested = (module.suggestedResources || [])
+          .filter(r => r && (typeof r === 'object' || typeof r === 'string'))
+          .map(r => {
+            const allowedTypes = ['video', 'article', 'doc', 'challenge'];
+            if (typeof r === 'string') {
+              return { title: r, url: 'https://www.google.com/search?q=' + encodeURIComponent(r + ' documentation'), type: 'doc' };
+            }
+
+            // Map AI-provided type to allowed enum values
+            let type = (r.type || 'doc').toLowerCase();
+            if (!allowedTypes.includes(type)) {
+              if (type.includes('tutorial') || type.includes('guide')) type = 'article';
+              else if (type.includes('video') || type.includes('youtube')) type = 'video';
+              else type = 'doc';
+            }
+
+            return {
+              title: r.title || 'Resource',
+              url: r.url && r.url.startsWith('http') ? r.url : 'https://www.google.com/search?q=' + encodeURIComponent((r.title || module.title) + ' documentation'),
+              type: type
+            };
+          });
+
+        return {
+          ...module,
+          resources: [
+            ...sanitizedSuggested,
+            ...videos
+          ]
+        };
+      }));
+    }
+
+    return roadmap;
   } catch (error) {
     console.error(`❌ RAG Roadmap Generation Error: ${error.message}`);
-    return generateRoadmapFromAI(topic); // Fallback to standard generation
+    return generateRoadmapFromAI(topic); 
   }
 };

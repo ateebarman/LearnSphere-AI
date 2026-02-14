@@ -7,14 +7,27 @@ const notFound = (req, res, next) => {
 
 // General error handling middleware
 // This catches any error that occurs in our routes
+import fs from 'fs';
+import path from 'path';
+
+// General error handling middleware
 const errorHandler = (err, req, res, next) => {
-  // Sometimes errors come with a status code, if not, default to 500
   const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode);
   
+  // Log to console
+  console.error('❌ Error Middleware Caught:', err.message);
+  
+  // Log to file
+  try {
+    const logMessage = `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} - ${err.message}\n${err.stack}\n\n`;
+    fs.appendFileSync('error.log', logMessage);
+  } catch (logErr) {
+    console.error('Failed to write to error.log:', logErr.message);
+  }
+
+  res.status(statusCode);
   res.json({
     message: err.message,
-    // Include stack trace only if in development mode
     stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
   });
 };

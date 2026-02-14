@@ -1,91 +1,46 @@
-import { google } from 'googleapis';
+import axios from 'axios';
 
-export const searchYouTube = async (query) => {
-  const apiKey = process.env.YOUTUBE_API_KEY;
-  
-  if (!apiKey) {
-    console.warn('YouTube API Key not configured, using demo mode');
-    return getDemoVideos(query);
+/**
+ * Searches YouTube for videos related to a given topic.
+ */
+export const searchYouTubeVideos = async (topic, maxResults = 2) => {
+  // Read key inside the function to ensure it's loaded after dotenv
+  const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
+
+  if (!YOUTUBE_API_KEY) {
+    console.warn('⚠️  YOUTUBE_API_KEY not found in environment');
+    return [];
   }
 
   try {
-    // Use REST API directly instead of googleapis client
-    const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(`${query} tutorial playlist`)}&type=playlist&maxResults=5&key=${apiKey}`;
-    
-    const response = await fetch(searchUrl);
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`YouTube API Error: ${errorData.error.message}`);
-    }
+    const response = await axios.get('https://www.googleapis.com/youtube/v3/search', {
+      params: {
+        part: 'snippet',
+        q: topic, // Use the query exactly as provided by the service
+        maxResults,
+        key: YOUTUBE_API_KEY,
+        type: 'video',
+        relevanceLanguage: 'en',
+        order: 'relevance' // Priority on relevance for specific subtopics
+      }
+    });
 
-    const data = await response.json();
-
-    if (!data.items || data.items.length === 0) {
-      console.log('No YouTube results found, using demo videos');
-      return getDemoVideos(query);
-    }
-
-    return data.items.map((item) => ({
+    return response.data.items.slice(0, maxResults).map(item => ({
       title: item.snippet.title,
+      url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
       description: item.snippet.description,
-      url: `https://www.youtube.com/playlist?list=${item.id.playlistId}`,
       type: 'video',
+      thumbnail: item.snippet.thumbnails?.medium?.url
     }));
   } catch (error) {
-    console.warn('Error fetching YouTube data:', error.message);
-    console.log('Falling back to demo videos for:', query);
-    return getDemoVideos(query);
+    const errorMsg = error.response?.data?.error?.message || error.message;
+    if (errorMsg.toLowerCase().includes('quota') || error.response?.status === 403) {
+      console.warn('⚠️  YouTube API Quota Exceeded. Returning empty results.');
+    } else {
+      console.error('❌ YouTube Search Error:', errorMsg);
+    }
+    return [];
   }
 };
 
-const getDemoVideos = (query) => {
-  // Demo mode - return sample playlists
-    const demoPlaylists = {
-      'react': [
-        {
-          title: 'React.js Crash Course - 2024',
-          description: 'Learn React fundamentals in this comprehensive crash course',
-          url: 'https://www.youtube.com/playlist?list=PLrAXtmErZgOeiKm4sgNOknGvNjby9efdf',
-          type: 'video'
-        },
-        {
-          title: 'Advanced React Patterns',
-          description: 'Deep dive into advanced React patterns and best practices',
-          url: 'https://www.youtube.com/playlist?list=PLrAXtmErZgOecA2oQRIf0gMgZTDNr9cVA',
-          type: 'video'
-        }
-      ],
-      'javascript': [
-        {
-          title: 'JavaScript Basics to Advanced',
-          description: 'Complete JavaScript programming course',
-          url: 'https://www.youtube.com/playlist?list=PLrAXtmErZgOdP_8Tr8pFQQi3_iMgHwSzW',
-          type: 'video'
-        },
-        {
-          title: 'Modern JavaScript ES6+',
-          description: 'Learn modern JavaScript features and syntax',
-          url: 'https://www.youtube.com/playlist?list=PLrAXtmErZgOiKZSZbSq0q_mZch6_7SQ76',
-          type: 'video'
-        }
-      ]
-    };
-
-    const queryLower = query.toLowerCase();
-    if (queryLower.includes('react')) {
-      return demoPlaylists.react;
-    } else if (queryLower.includes('javascript') || queryLower.includes('js')) {
-      return demoPlaylists.javascript;
-    }
-
-    // Generic demo videos for any topic
-    return [
-      {
-        title: `${query} Learning Playlist`,
-        description: `Comprehensive playlist for learning ${query}`,
-        url: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}+tutorial`,
-        type: 'video'
-      }
-    ];
-};
+export const searchYouTube = searchYouTubeVideos;

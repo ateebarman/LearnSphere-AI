@@ -2,29 +2,36 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { generateRoadmap, getUserRoadmaps } from '../services/roadmapService';
+import { getAnalytics } from '../services/analyticsService';
 import { FaPlus, FaSpinner, FaGraduationCap, FaMagic, FaBookOpen } from 'react-icons/fa';
+import SkillTree from '../components/SkillTree';
 
 const Dashboard = () => {
   const { userInfo } = useAuthStore();
   const [topic, setTopic] = useState('');
   const [roadmaps, setRoadmaps] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchRoadmaps = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await getUserRoadmaps();
-        setRoadmaps(data);
+        const [roadmapsData, analyticsData] = await Promise.all([
+          getUserRoadmaps(),
+          getAnalytics()
+        ]);
+        setRoadmaps(roadmapsData);
+        setAnalytics(analyticsData);
       } catch (err) {
-        setError('Failed to fetch roadmaps');
+        setError('Failed to fetch dashboard data');
       }
       setLoading(false);
     };
-    fetchRoadmaps();
+    fetchData();
   }, []);
 
   const handleGenerate = async (e) => {
@@ -52,6 +59,11 @@ const Dashboard = () => {
           Ready to hack your next skill today?
         </p>
       </div>
+
+      {/* Skill Tree Visualizer */}
+      {analytics?.categoryMastery && (
+        <SkillTree masteryData={analytics.categoryMastery} />
+      )}
 
       {/* Generate New Roadmap */}
       <div className="card-premium border-none relative overflow-hidden group">
@@ -98,7 +110,45 @@ const Dashboard = () => {
         </form>
       </div>
 
-      {/* Existing Roadmaps */}
+      {/* Knowledge Library Quick Link */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <Link to="/library" className="card-premium group relative overflow-hidden flex items-center justify-between hover:shadow-2xl transition-all duration-500 border-indigo-500/10 dark:border-indigo-400/10">
+          <div className="relative z-10">
+            <h2 className="text-2xl font-black mb-2 dark:text-white flex items-center gap-2">
+              <FaBookOpen className="text-indigo-600" />
+              <span>Knowledge Base</span>
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">
+              Explore {167} expert-verified technical docs.
+            </p>
+          </div>
+          <div className="p-4 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl text-indigo-600 transition-transform group-hover:rotate-12">
+            <FaBookOpen size={30} />
+          </div>
+          <div className="absolute -bottom-6 -right-6 text-indigo-500/5 text-9xl font-black rotate-12 group-hover:scale-110 transition-transform">
+            DOCS
+          </div>
+        </Link>
+
+        {/* Explore Community Link */}
+        <Link to="/explore" className="card-premium group relative overflow-hidden flex items-center justify-between hover:shadow-2xl transition-all duration-500 border-purple-500/10 dark:border-purple-400/10">
+          <div className="relative z-10">
+            <h2 className="text-2xl font-black mb-2 dark:text-white flex items-center gap-2">
+              <FaGraduationCap className="text-purple-600" />
+              <span>Explore Library</span>
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">
+              Discover community-curated learning paths.
+            </p>
+          </div>
+          <div className="p-4 bg-purple-50 dark:bg-purple-900/40 rounded-2xl text-purple-600 transition-transform group-hover:rotate-12">
+            <FaGraduationCap size={30} />
+          </div>
+          <div className="absolute -bottom-6 -right-6 text-purple-500/5 text-9xl font-black rotate-12 group-hover:scale-110 transition-transform">
+            PATH
+          </div>
+        </Link>
+      </div>
       <div className="space-y-8">
         <div className="flex items-center justify-between border-b dark:border-gray-800 pb-4">
           <h2 className="text-3xl font-bold flex items-center space-x-3">

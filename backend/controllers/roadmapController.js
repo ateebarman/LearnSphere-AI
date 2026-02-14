@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Roadmap from '../models/roadmapModel.js';
+import KnowledgeNode from '../models/knowledgeModel.js';
 import { generateRoadmapFromAI, generateRoadmapFromRAG } from '../services/geminiService.js';
-import { searchYouTube } from '../services/youtubeService.js';
 import { getRelevantContext } from '../services/ragService.js';
 
 
@@ -15,29 +15,18 @@ const generateRoadmap = asyncHandler(async (req, res) => {
     throw new Error('Please provide a topic');
   }
 
-  // 1. Get roadmap structure from Gemini
+  // 1. Get roadmap structure from Gemini (already contains YouTube videos)
   const aiRoadmap = await generateRoadmapFromAI(topic);
 
-  // 2. Enhance modules with YouTube videos
-  const enhancedModules = await Promise.all(
-    aiRoadmap.modules.map(async (module) => {
-      const videos = await searchYouTube(`${module.title} ${topic}`);
-      // Add AI-generated resources and YouTube videos together
-      const allResources = [
-        ...module.resources,
-        ...videos.map((v) => ({ ...v, type: 'video' })),
-      ];
-      return { ...module, resources: allResources };
-    })
-  );
-
-  // 3. Save to database
+  // 2. Save to database
   const roadmap = new Roadmap({
     user: req.user._id,
     title: aiRoadmap.title || `Learning ${topic}`,
     topic: topic,
     description: aiRoadmap.description || `A personalized roadmap for ${topic}`,
-    modules: enhancedModules,
+    modules: aiRoadmap.modules,
+    difficulty: aiRoadmap.difficulty,
+    totalDuration: aiRoadmap.totalDuration
   });
 
   const createdRoadmap = await roadmap.save();
@@ -68,28 +57,18 @@ const generateRAGRoadmap = asyncHandler(async (req, res) => {
 
   console.log(`✅ Found context (${context.length} chars). Generating roadmap...`);
 
-  // 2. Generate roadmap based on context
+  // 2. Generate roadmap based on context (already contains YouTube videos)
   const aiRoadmap = await generateRoadmapFromRAG(topic, context);
 
-  // 3. Enhance with YouTube (optional but good)
-  const enhancedModules = await Promise.all(
-    aiRoadmap.modules.map(async (module) => {
-      const videos = await searchYouTube(`${module.title} ${topic}`);
-      return { 
-        ...module, 
-        resources: videos.map((v) => ({ ...v, type: 'video' })) 
-      };
-    })
-  );
-
-  // 4. Save to DB
+  // 3. Save to DB
   const roadmap = new Roadmap({
     user: req.user._id,
     title: aiRoadmap.title || `Learning ${topic} (from material)`,
     topic: topic,
     description: aiRoadmap.description,
-    modules: enhancedModules,
-    sourceMaterial: materialId
+    modules: aiRoadmap.modules,
+    sourceMaterial: materialId,
+    difficulty: aiRoadmap.difficulty
   });
 
   const createdRoadmap = await roadmap.save();
@@ -117,6 +96,50 @@ const getRoadmapById = asyncHandler(async (req, res) => {
     
     // Allow if owner or if roadmap is public
     if (isOwner || roadmap.isPublic) {
+      // HYPER-LINK INTEGRATION: Deep link modules to Knowledge Base
+      const modulesWithDocs = await Promise.all(roadmap.modules.map(async (module) => {
+        const existingInternalUrls = module.resources
+          .filter(r => r.type === 'doc' && r.url.includes('/library'))
+          .map(r => r.url);
+
+        // Build a search query based on title and key concepts
+        const searchTerms = [
+          module.title,
+          ...(module.keyConcepts || [])
+        ].filter(t => t && t.length > 3);
+
+        if (searchTerms.length === 0) return module;
+
+        // Find relevant internal documents using a single combined regex
+        const searchRegex = new RegExp(searchTerms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i');
+        
+        const internalDocs = await KnowledgeNode.find({
+          $or: [
+            { topic: searchRegex },
+            { category: searchRegex },
+            ...searchTerms.map(term => ({
+              topic: { $regex: term.split(' ')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
+            }))
+          ]
+        }).select('topic category').limit(3);
+
+        internalDocs.forEach(doc => {
+          const docUrl = `/library?topic=${encodeURIComponent(doc.topic)}`;
+          if (!existingInternalUrls.includes(docUrl)) {
+            module.resources.push({
+              title: `Internal Doc: ${doc.topic}`,
+              type: 'doc',
+              url: docUrl,
+              description: `Deep dive into ${doc.topic} from our official knowledge base.`,
+            });
+            existingInternalUrls.push(docUrl);
+          }
+        });
+
+        return module;
+      }));
+
+      roadmap.modules = modulesWithDocs;
       res.json(roadmap);
     } else {
       res.status(403);
