@@ -4,25 +4,61 @@
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 
 const extractJSON = (text) => {
-  // Clean markdown code blocks if present
-  let cleanText = text.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
+  try {
+    // Strategy 1: Find the first { and the last }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
 
-  // Try to extract JSON more aggressively if above fails
-  if (!cleanText.startsWith('{')) {
-    cleanText = text.replace(/```/g, '').trim();
+    if (firstBrace === -1 || lastBrace === -1) {
+      throw new Error('No JSON object found in response');
+    }
+
+    const jsonCandidate = text.substring(firstBrace, lastBrace + 1);
+    
+    // Fix common AI JSON errors before parsing
+    const fixed = jsonCandidate
+      .replace(/,(\s*[}\]])/g, '$1') // remove trailing commas
+      .replace(/[\u201C\u201D\u2018\u2019]/g, '"') // fix "smart" quotes
+      .replace(/\n/g, ' '); // remove newlines for safer parsing
+      
+    return JSON.parse(fixed);
+  } catch (error) {
+    // Strategy 2: More aggressive cleaning
+    let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      try {
+        const candidate = cleaned.substring(firstBrace, lastBrace + 1)
+          .replace(/,(\s*[}\]])/g, '$1')
+          .replace(/[\u201C\u201D\u2018\u2019]/g, '"');
+        return JSON.parse(candidate);
+      } catch (e) {
+        console.error('❌ JSON Parse Failed:', e.message);
+        throw new Error(`Failed to parse JSON: ${e.message}`);
+      }
+    }
+    throw new Error('Invalid JSON format from AI');
   }
-
-  // Find JSON object in text
-  const match = cleanText.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('No JSON found in Groq response');
-
-  return JSON.parse(match[0]);
 };
 
+let currentKeyIndex = 0;
+
 export const generateJsonGroq = async (prompt) => {
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY not set');
+  const keys = Object.keys(process.env)
+    .filter(key => key.startsWith('GROQ_API_KEY'))
+    .map(key => process.env[key])
+    .filter(Boolean);
+  
+  if (keys.length === 0) {
+    throw new Error('No general Groq API keys set (Looking for GROQ_API_KEY, GROQ_API_KEY2, etc.)');
   }
+
+  const apiKey = keys[currentKeyIndex % keys.length];
+  const model = 'llama-3.3-70b-versatile';
+  
+  currentKeyIndex++;
 
   const fullPrompt = `${prompt}\nRespond ONLY with valid JSON. No markdown. No explanations.`;
 
@@ -30,23 +66,24 @@ export const generateJsonGroq = async (prompt) => {
     const res = await fetch(GROQ_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: model,
         messages: [
           { role: 'system', content: 'You are a JSON-only API. Respond with only valid JSON, no markdown, no explanations.' },
           { role: 'user', content: fullPrompt }
         ],
-        temperature: 0.7,
-        max_tokens: 8192
+        temperature: 0.6,
+        max_tokens: 4096
       })
     });
 
     if (!res.ok) {
       const errorData = await res.json();
-      throw new Error(`Groq API error: ${res.status} - ${JSON.stringify(errorData)}`);
+      const msg = errorData?.error?.message || JSON.stringify(errorData);
+      throw new Error(`Groq API error: ${res.status} - ${msg}`);
     }
 
     const data = await res.json();
@@ -55,7 +92,7 @@ export const generateJsonGroq = async (prompt) => {
 
     return extractJSON(text);
   } catch (error) {
-    console.error('❌ Groq API Error:', error.message);
+    console.error(`❌ Groq API Error (Key ${currentKeyIndex % keys.length + 1}, Model ${model}):`, error.message);
     throw error;
   }
 };

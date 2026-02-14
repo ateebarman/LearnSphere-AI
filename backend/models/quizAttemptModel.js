@@ -9,7 +9,6 @@ const quizAttemptSchema = mongoose.Schema(
     },
     roadmap: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
       ref: 'Roadmap',
     },
     moduleTitle: {

@@ -5,6 +5,7 @@ import {
 } from '../services/geminiService.js';
 import QuizAttempt from '../models/quizAttemptModel.js';
 import Roadmap from '../models/roadmapModel.js';
+import KnowledgeNode from '../models/knowledgeModel.js';
 
 // @desc    Generate a quiz for a module
 // @route   POST /api/quizzes/generate
@@ -16,7 +17,20 @@ const generateQuiz = asyncHandler(async (req, res) => {
     throw new Error('Module title and topic are required');
   }
 
-  const quizData = await generateQuizFromAI(moduleTitle, topic);
+  // GROUNDING: Find relevant internal knowledge for the quiz
+  const keywords = [...new Set(moduleTitle.split(' ').concat(topic.split(' ')).filter(word => word.length > 3))];
+  const relevantDocs = await KnowledgeNode.find({
+    $or: [
+      { topic: { $regex: new RegExp(keywords.join('|'), 'i') } },
+      { category: { $regex: new RegExp(keywords.join('|'), 'i') } }
+    ]
+  }).select('topic summary detailedContent').limit(2);
+
+  const knowledgeContext = relevantDocs.map(doc => 
+    `TOPIC: ${doc.topic}\nCONTENT: ${doc.detailedContent}`
+  ).join('\n\n');
+
+  const quizData = await generateQuizFromAI(moduleTitle, topic, knowledgeContext);
   res.json(quizData);
 });
 
@@ -57,19 +71,25 @@ const submitQuiz = asyncHandler(async (req, res) => {
   );
 
   // 3. Save the quiz attempt
-  const quizAttempt = new QuizAttempt({
+  const attemptData = {
     user: req.user._id,
-    roadmap: roadmapId,
     moduleTitle: moduleTitle,
     score: percentageScore,
     answers: detailedAnswers,
     recommendations: feedback,
-  });
+  };
+
+  // Only add roadmap if it's a valid ObjectId
+  if (roadmapId && roadmapId !== 'knowledge' && roadmapId.match(/^[0-9a-fA-F]{24}$/)) {
+    attemptData.roadmap = roadmapId;
+  }
+
+  const quizAttempt = new QuizAttempt(attemptData);
   await quizAttempt.save();
 
-  // 4. Update roadmap progress
-  if (percentageScore >= 70) {
-    const roadmap = await Roadmap.findById(roadmapId);
+  // 4. Update roadmap progress (ONLY if it's a roadmap-linked quiz)
+  if (percentageScore >= 70 && attemptData.roadmap) {
+    const roadmap = await Roadmap.findById(attemptData.roadmap);
     if (roadmap) {
       const module = roadmap.modules.find((m) => m.title === moduleTitle);
       if (module) {

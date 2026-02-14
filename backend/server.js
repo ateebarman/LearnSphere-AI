@@ -23,6 +23,7 @@ import resourceRoutes from './routes/resourceRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import tutorRoutes from './routes/tutorRoutes.js';
 import studyMaterialRoutes from './routes/studyMaterialRoutes.js';
+import knowledgeRoutes from './routes/knowledgeRoutes.js';
 
 initializeAI();
 
@@ -45,6 +46,7 @@ app.use('/api/resources', resourceRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/tutor', tutorRoutes);
 app.use('/api/study-materials', studyMaterialRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
 
 
 // Error Handling Middleware

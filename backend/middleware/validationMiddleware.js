@@ -37,7 +37,12 @@ export const validateQuizGenerate = [
 ];
 
 export const validateQuizSubmit = [
-  body('roadmapId').notEmpty().withMessage('Roadmap ID is required').isMongoId().withMessage('Invalid roadmap ID'),
+  body('roadmapId').notEmpty().withMessage('Roadmap ID is required').custom((value) => {
+    if (value === 'knowledge' || /^[0-9a-fA-F]{24}$/.test(value)) {
+      return true;
+    }
+    throw new Error('Invalid roadmap ID');
+  }),
   body('moduleTitle').trim().notEmpty().withMessage('Module title is required'),
   body('answers').isArray().withMessage('Answers must be an array'),
   body('questions').isArray().withMessage('Questions must be an array'),

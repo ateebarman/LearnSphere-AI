@@ -13,6 +13,7 @@ import TutorChat from './pages/TutorChat';
 import ResourceLibrary from './pages/ResourceLibrary';
 import Explore from './pages/Explore';
 import AdvancedStudy from './pages/AdvancedStudy';
+import KnowledgeLibrary from './pages/KnowledgeLibrary';
 
 import { useEffect } from 'react';
 import { useThemeStore } from './store/useThemeStore';
@@ -46,6 +47,7 @@ function App() {
           <Route path="analytics" element={<Analytics />} />
           <Route path="tutor" element={<TutorChat />} />
           <Route path="resources" element={<ResourceLibrary />} />
+          <Route path="library" element={<KnowledgeLibrary />} />
           <Route path="lab" element={<AdvancedStudy />} />
 
         </Route>

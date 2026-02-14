@@ -1,5 +1,5 @@
 import asyncHandler from 'express-async-handler';
-import { searchYouTube } from '../services/youtubeService.js';
+import { searchYouTubeVideos } from '../services/youtubeService.js';
 import { getArticlesFromAI } from '../services/geminiService.js';
 
 // @desc    Fetch YouTube & AI-generated resources for a topic
@@ -10,7 +10,7 @@ const getResources = asyncHandler(async (req, res) => {
 
   // Fetch in parallel
   const [videos, aiResources] = await Promise.all([
-    searchYouTube(topic),
+    searchYouTubeVideos(topic),
     getArticlesFromAI(topic),
   ]);
 
