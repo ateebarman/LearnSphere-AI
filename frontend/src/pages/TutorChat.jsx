@@ -11,6 +11,7 @@ const TutorChat = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const chatContainerRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   // Redirect if not authenticated
@@ -22,7 +23,13 @@ const TutorChat = () => {
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (chatContainerRef.current) {
+      const container = chatContainerRef.current;
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
   }, [messages, loading]);
 
   const handleSendMessage = async (e) => {
@@ -81,7 +88,7 @@ const TutorChat = () => {
       {/* Main Chat Area */}
       <div className="card-premium flex-grow overflow-hidden flex flex-col p-0 border-none shadow-2xl">
         {/* Messages List */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth custom-scrollbar">
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth custom-scrollbar">
           {messages.length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center h-full text-center space-y-6 opacity-80 animate-in fade-in zoom-in duration-700">
               <div className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-3xl flex items-center justify-center text-5xl text-indigo-600/80">
