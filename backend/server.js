@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 // Load .env FIRST before any other imports
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, '.env') });
+if (!process.env.VERCEL) {
+  dotenv.config({ path: path.join(__dirname, '.env') });
+}
 
 // Now import everything else
 import express from 'express';
@@ -50,4 +52,9 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+export default app;
