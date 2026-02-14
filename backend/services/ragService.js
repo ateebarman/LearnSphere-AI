@@ -1,5 +1,5 @@
 import fs from 'fs';
-import pdf from 'pdf-parse';
+import pdf from 'pdf-parse-fork';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { MongoDBAtlasVectorSearch } from '@langchain/mongodb';
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
