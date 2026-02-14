@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { PDFParse } from 'pdf-parse';
+import pdf from 'pdf-parse';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { MongoDBAtlasVectorSearch } from '@langchain/mongodb';
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
@@ -14,29 +14,25 @@ export const processPDF = async (materialId) => {
   if (!material) return;
 
   try {
-    // 1. Extract Text using PDFParse (v2.x)
+    // 1. Extract Text using stable pdf-parse (v1.1.1)
     const dataBuffer = fs.readFileSync(material.fileUrl);
-    const parser = new PDFParse({ data: dataBuffer });
+    const data = await pdf(dataBuffer);
     
-    try {
-      const textResult = await parser.getText();
-      const infoResult = await parser.getInfo();
-      
-      // Update metadata
-      material.metadata.pageCount = textResult.total;
-      material.metadata.title = infoResult.info?.Title || material.fileName;
-      await material.save();
+    // Update metadata
+    material.metadata.pageCount = data.numpages;
+    material.metadata.title = data.info?.Title || material.fileName;
+    await material.save();
 
-      // 2. Chunk Text
-      const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 1000,
-        chunkOverlap: 200,
-      });
-      
-      const docs = await splitter.createDocuments([textResult.text], [{ 
-        materialId: material._id.toString(),
-        user: material.user.toString() 
-      }]);
+    // 2. Chunk Text
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 1000,
+      chunkOverlap: 200,
+    });
+    
+    const docs = await splitter.createDocuments([data.text], [{ 
+      materialId: material._id.toString(),
+      user: material.user.toString() 
+    }]);
 
       // 3. Initialize Embeddings & Vector Store
       const apiKey = process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEYS?.split(',')[0];
@@ -70,9 +66,6 @@ export const processPDF = async (materialId) => {
       await material.save();
       
       console.log(`✅ Processed material: ${material.fileName}`);
-    } finally {
-      await parser.destroy();
-    }
   } catch (error) {
     console.error(`❌ Error processing PDF: ${error.message}`);
     material.status = 'error';
