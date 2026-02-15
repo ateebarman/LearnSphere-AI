@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import QuizAttempt from '../models/quizAttemptModel.js';
 import Roadmap from '../models/roadmapModel.js';
 import KnowledgeNode from '../models/knowledgeModel.js';
+import CategoryMapping from '../models/categoryMappingModel.js';
 
 // @desc    Get user analytics (progress, weak/strong areas)
 // @route   GET /api/analytics
@@ -70,12 +71,14 @@ const getAnalytics = asyncHandler(async (req, res) => {
   let totalModules = 0;
   let completedModules = 0;
   roadmaps.forEach((roadmap) => {
-    roadmap.modules.forEach((module) => {
-      totalModules += 1;
-      if (module.isCompleted) {
-        completedModules += 1;
-      }
-    });
+    if (roadmap && roadmap.modules && Array.isArray(roadmap.modules)) {
+      roadmap.modules.forEach((module) => {
+        totalModules += 1;
+        if (module && module.isCompleted) {
+          completedModules += 1;
+        }
+      });
+    }
   });
 
   const moduleCompletionRate = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
@@ -83,42 +86,83 @@ const getAnalytics = asyncHandler(async (req, res) => {
   // Calculate estimated learning time
   let estimatedLearningTime = 0;
   roadmaps.forEach((roadmap) => {
-    roadmap.modules.forEach((module) => {
-      if (module.estimatedTime) {
-        const timeStr = module.estimatedTime;
-        if (timeStr.includes('hour')) {
-          const hours = parseInt(timeStr.match(/\d+/)?.[0] || '0');
-          estimatedLearningTime += hours;
-        } else if (timeStr.includes('week')) {
-          const weeks = parseInt(timeStr.match(/\d+/)?.[0] || '0');
-          estimatedLearningTime += weeks * 40;
-        } else if (timeStr.includes('day')) {
-          const days = parseInt(timeStr.match(/\d+/)?.[0] || '0');
-          estimatedLearningTime += days * 8;
+    if (roadmap && roadmap.modules && Array.isArray(roadmap.modules)) {
+      roadmap.modules.forEach((module) => {
+        if (module && module.estimatedTime) {
+          const timeStr = module.estimatedTime;
+          if (timeStr.includes('hour')) {
+            const hours = parseInt(timeStr.match(/\d+/)?.[0] || '0');
+            estimatedLearningTime += hours;
+          } else if (timeStr.includes('week')) {
+            const weeks = parseInt(timeStr.match(/\d+/)?.[0] || '0');
+            estimatedLearningTime += weeks * 40;
+          } else if (timeStr.includes('day')) {
+            const days = parseInt(timeStr.match(/\d+/)?.[0] || '0');
+            estimatedLearningTime += days * 8;
+          }
         }
+      });
+    }
+  });
+
+  // NEW: Category-based Mastery (for Skill Tree)
+  const categoryStats = {
+    'DSA': { totalScore: 0, count: 0, completedModules: 0 },
+    'System Design': { totalScore: 0, count: 0, completedModules: 0 },
+    'OS': { totalScore: 0, count: 0, completedModules: 0 },
+    'Database': { totalScore: 0, count: 0, completedModules: 0 },
+  };
+
+  // Fetch all mappings from DB
+  const dynamicMappings = await CategoryMapping.find();
+
+  const getAttributedCategories = (str) => {
+    if (!str) return ['General'];
+    const lowerStr = str.toLowerCase();
+    const categories = new Set();
+    
+    dynamicMappings.forEach(mapping => {
+      if (lowerStr.includes(mapping.tag)) {
+        mapping.categories.forEach(cat => categories.add(cat));
+      }
+    });
+
+    return categories.size > 0 ? Array.from(categories) : ['General'];
+  };
+
+  // 1. Process Roadmap Progress
+  roadmaps.forEach(roadmap => {
+    if (!roadmap) return;
+    const attributedCats = getAttributedCategories(roadmap.topic || roadmap.title);
+    
+    attributedCats.forEach(cat => {
+      if (!categoryStats[cat]) {
+        categoryStats[cat] = { totalScore: 0, count: 0, completedModules: 0 };
+      }
+      
+      if (roadmap.modules && Array.isArray(roadmap.modules)) {
+        roadmap.modules.forEach(m => {
+          if (m && m.isCompleted) {
+            categoryStats[cat].completedModules += 1;
+          }
+        });
       }
     });
   });
 
-  // NEW: Category-based Mastery (for Skill Tree)
-  const categoryStats = {};
-  
-  // Initialize with all unique categories from knowledge base
-  const allCategories = await KnowledgeNode.distinct('category');
-  allCategories.forEach(cat => {
-    categoryStats[cat] = { totalScore: 0, count: 0, completedModules: 0 };
-  });
-
-  // Map quiz attempts to categories
-  for (const attempt of quizAttempts) {
-    // Try to find the category for this moduleTitle
-    const node = await KnowledgeNode.findOne({ topic: attempt.moduleTitle }).select('category');
-    if (node && categoryStats[node.category]) {
-      categoryStats[node.category].totalScore += attempt.score;
-      categoryStats[node.category].count += 1;
-      if (attempt.score >= 70) {
-        categoryStats[node.category].completedModules += 1;
-      }
+  // 2. Map quiz attempts to categories
+  if (quizAttempts && Array.isArray(quizAttempts)) {
+    for (const attempt of quizAttempts) {
+      if (!attempt) continue;
+      const attributedCats = getAttributedCategories(attempt.moduleTitle);
+      
+      attributedCats.forEach(cat => {
+        if (!categoryStats[cat]) {
+          categoryStats[cat] = { totalScore: 0, count: 0, completedModules: 0 };
+        }
+        categoryStats[cat].totalScore += (attempt.score || 0);
+        categoryStats[cat].count += 1;
+      });
     }
   }
 
@@ -126,9 +170,10 @@ const getAnalytics = asyncHandler(async (req, res) => {
     category: name,
     averageScore: data.count > 0 ? Math.round(data.totalScore / data.count) : 0,
     completionCount: data.completedModules,
+    modulesToNextLevel: 3 - (data.completedModules % 3),
     level: Math.floor(data.completedModules / 3) + 1, // Level up every 3 completed modules
-    progress: Math.min(100, (data.completedModules % 3) * 33.3)
-  })).filter(c => c.completionCount > 0 || c.category === 'DSA' || c.category === 'System Design' || c.category === 'OS');
+    progress: Math.min(100, Math.round(((data.completedModules % 3) / 3) * 100))
+  })).filter(c => c.completionCount > 0 || ['DSA', 'System Design', 'OS', 'Database'].includes(c.category));
 
   res.json({
     // Old format (for backward compatibility)
@@ -147,6 +192,9 @@ const getAnalytics = asyncHandler(async (req, res) => {
     totalModules,
     estimatedLearningTime,
     categoryMastery,
+    topicBreakdown: (typeof topicScores !== 'undefined' && topicScores) ? Object.fromEntries(
+      Object.entries(topicScores).map(([k, v]) => [k, v.count])
+    ) : {},
   });
 });
 
@@ -184,14 +232,19 @@ const getRoadmapStats = asyncHandler(async (req, res) => {
 // @access  Private
 const getQuizStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  const quizAttempts = await QuizAttempt.find({ user: userId }).sort({ createdAt: -1 });
+  const quizAttempts = await QuizAttempt.find({ user: userId })
+    .populate('roadmap', 'title')
+    .sort({ createdAt: -1 });
 
   const stats = quizAttempts.map((attempt) => ({
-    id: attempt._id,
-    moduleName: attempt.moduleTitle,
+    _id: attempt._id,
+    moduleTitle: attempt.moduleTitle,
+    roadmapTitle: attempt.roadmap?.title || 'External Source',
+    roadmapId: attempt.roadmap?._id,
     score: attempt.score,
-    totalQuestions: attempt.totalQuestions,
+    answers: attempt.answers || [],
     createdAt: attempt.createdAt,
+    attemptedAt: attempt.createdAt, // For backward compatibility with frontend
   }));
 
   res.json(stats);

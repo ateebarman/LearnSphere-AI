@@ -17,20 +17,7 @@ const generateQuiz = asyncHandler(async (req, res) => {
     throw new Error('Module title and topic are required');
   }
 
-  // GROUNDING: Find relevant internal knowledge for the quiz
-  const keywords = [...new Set(moduleTitle.split(' ').concat(topic.split(' ')).filter(word => word.length > 3))];
-  const relevantDocs = await KnowledgeNode.find({
-    $or: [
-      { topic: { $regex: new RegExp(keywords.join('|'), 'i') } },
-      { category: { $regex: new RegExp(keywords.join('|'), 'i') } }
-    ]
-  }).select('topic summary detailedContent').limit(2);
-
-  const knowledgeContext = relevantDocs.map(doc => 
-    `TOPIC: ${doc.topic}\nCONTENT: ${doc.detailedContent}`
-  ).join('\n\n');
-
-  const quizData = await generateQuizFromAI(moduleTitle, topic, knowledgeContext);
+  const quizData = await generateQuizFromAI(moduleTitle, topic, '');
   res.json(quizData);
 });
 

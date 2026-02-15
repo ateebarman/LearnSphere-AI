@@ -9,9 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "axios": "^1.7.2",
+    "framer-motion": "^12.34.0",
+    "lucide-react": "^0.564.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hot-toast": "^2.6.0",
     "react-icons": "^5.2.1",
     "react-router-dom": "^6.24.0",
     "zustand": "^4.5.4"
