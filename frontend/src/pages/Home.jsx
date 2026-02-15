@@ -1,185 +1,210 @@
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { FaRocket, FaMapMarkedAlt, FaCheckCircle, FaChartPie, FaRobot, FaBook, FaUsers, FaBolt, FaShieldAlt, FaGraduationCap } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import {
+  Rocket, Map, CheckCircle, PieChart, Bot, BookOpen,
+  Users, Zap, ShieldCheck, GraduationCap, ArrowRight, Sparkles
+} from 'lucide-react';
 
 const Home = () => {
   const { userInfo } = useAuthStore();
 
-  return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-24 px-6 bg-hero-gradient rounded-3xl mb-16">
-        <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-indigo-500 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
-        </div>
+  const fadeIn = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 }
+  };
 
-        <div className="relative text-center space-y-8 max-w-4xl mx-auto">
-          <div className="inline-flex items-center space-x-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-medium text-sm mb-4">
-            <FaRocket className="text-xs" />
-            <span>The Future of Learning is Here</span>
-          </div>
-          <h1 className="text-6xl md:text-7xl font-extrabold tracking-tight leading-tight">
-            Elevate Your Skills with{' '}
+  const staggerContainer = {
+    animate: {
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen">
+      {/* Background Effects */}
+      <div className="absolute top-0 left-0 w-full h-screen pointer-events-none overflow-hidden -z-10">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-500/10 rounded-full blur-[120px] animate-slow-drift will-change-transform" />
+        <div className="absolute bottom-[20%] right-[-5%] w-[35%] h-[35%] bg-secondary-500/10 rounded-full blur-[100px] animate-slow-drift will-change-transform" style={{ animationDelay: '-5s' }} />
+      </div>
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto">
+        <motion.div
+          className="text-center space-y-8 max-w-4xl mx-auto"
+          initial="initial"
+          animate="animate"
+          variants={staggerContainer}
+        >
+          <motion.div
+            variants={fadeIn}
+            className="inline-flex items-center space-x-2 px-4 py-2 rounded-full glass-card border-primary-500/20 text-primary-700 dark:text-primary-300 font-medium text-sm mb-4 ring-1 ring-primary-500/10"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>AI-Powered Learning Transformation</span>
+          </motion.div>
+
+          <motion.h1
+            variants={fadeIn}
+            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] font-display"
+          >
+            Master Anything with{' '}
             <span className="text-gradient">LearnSphere AI</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            Your personalized, AI-powered learning ecosystem. Master complex topics with adaptive paths and real-time guidance.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-5 justify-center pt-8">
+          </motion.h1>
+
+          <motion.p
+            variants={fadeIn}
+            className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed"
+          >
+            Your ultimate personalized ecosystem. Build custom roadmaps, practice with AI tutors, and track your growth in real-time.
+          </motion.p>
+
+          <motion.div
+            variants={fadeIn}
+            className="flex flex-col sm:flex-row gap-5 justify-center pt-8"
+          >
             {userInfo ? (
-              <Link to="/dashboard" className="btn-primary text-lg px-12 py-4 flex items-center justify-center space-x-3">
-                <span>Go to Dashboard</span>
-                <FaRocket />
+              <Link to="/dashboard" className="btn-primary text-lg group">
+                Dashboard
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             ) : (
               <>
-                <Link to="/signup" className="btn-primary text-lg px-10 py-4">
+                <Link to="/signup" className="btn-primary text-lg px-10">
                   Get Started Free
                 </Link>
-                <Link to="/login" className="btn-secondary text-lg px-10 py-4">
+                <Link to="/login" className="btn-secondary text-lg px-10">
                   Sign In
                 </Link>
               </>
             )}
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </section>
 
       {/* Features Section */}
-      <section className="py-20 space-y-16">
-        <div className="text-center space-y-4 max-w-2xl mx-auto">
-          <h2 className="text-4xl md:text-5xl font-bold">Why Choose LearnSphere AI?</h2>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">Powerful features designed to accelerate your learning journey and help you achieve your goals.</p>
+      <section className="py-24 px-6 max-w-7xl mx-auto">
+        <div className="text-center space-y-4 max-w-2xl mx-auto mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold font-display">Engineered for Success</h2>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">Every feature is designed to cut down your learning curve and maximize retention.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
-          <div className="card-hover group">
-            <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center text-2xl text-indigo-600 dark:text-indigo-400 mb-6 group-hover:scale-110 transition-transform">
-              <FaMapMarkedAlt />
-            </div>
-            <h3 className="text-2xl font-bold mb-3">AI-Powered Roadmaps</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Unlock a personalized, data-driven journey for any subject. Our intelligence engine adapts to your pace and goals perfectly.
-            </p>
-          </div>
-
-          <div className="card-hover group">
-            <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/50 rounded-2xl flex items-center justify-center text-2xl text-blue-600 dark:text-blue-400 mb-6 group-hover:scale-110 transition-transform">
-              <FaCheckCircle />
-            </div>
-            <h3 className="text-2xl font-bold mb-3">Dynamic Quizzes</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Challenge yourself with adaptive assessments. Get instant insights into your strength and target areas for improvement.
-            </p>
-          </div>
-
-          <div className="card-hover group">
-            <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/50 rounded-2xl flex items-center justify-center text-2xl text-purple-600 dark:text-purple-400 mb-6 group-hover:scale-110 transition-transform">
-              <FaChartPie />
-            </div>
-            <h3 className="text-2xl font-bold mb-3">Deep Analytics</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Visualize your progress with stunning data visualizations. Track your evolution and celebrate every milestone achieved.
-            </p>
-          </div>
-
-          <div className="card-hover group">
-            <div className="w-14 h-14 bg-green-100 dark:bg-green-900/50 rounded-2xl flex items-center justify-center text-2xl text-green-600 dark:text-green-400 mb-6 group-hover:scale-110 transition-transform">
-              <FaRobot />
-            </div>
-            <h3 className="text-2xl font-bold mb-3">24/7 AI Tutor</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Never get stuck again. Our advanced AI tutor is available anytime to clarify concepts and answer your questions.
-            </p>
-          </div>
-
-          <div className="card-hover group">
-            <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/50 rounded-2xl flex items-center justify-center text-2xl text-orange-600 dark:text-orange-400 mb-6 group-hover:scale-110 transition-transform">
-              <FaBook />
-            </div>
-            <h3 className="text-2xl font-bold mb-3">Curated Content</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Access the world's best learning materials, handpicked and organized by our AI to match your specific learning path.
-            </p>
-          </div>
-
-          <div className="card-hover group">
-            <div className="w-14 h-14 bg-pink-100 dark:bg-pink-900/50 rounded-2xl flex items-center justify-center text-2xl text-pink-600 dark:text-pink-400 mb-6 group-hover:scale-110 transition-transform">
-              <FaUsers />
-            </div>
-            <h3 className="text-2xl font-bold mb-3">Community Wisdom</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-              Collaborate and learn from a global community. share your roadmaps and discover winning strategies from experts.
-            </p>
-          </div>
-        </div>
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+          variants={staggerContainer}
+        >
+          {[
+            { icon: Map, title: "Smart Roadmaps", color: "primary", desc: "AI-generated paths tailored to your current level and ultimate career goals." },
+            { icon: CheckCircle, title: "Adaptive Quizzes", color: "secondary", desc: "Dynamic assessments that identify and bridge your knowledge gaps instantly." },
+            { icon: PieChart, title: "Advanced Analytics", color: "primary", desc: "Visualize your progress with data-rich charts and actionable insights." },
+            { icon: Bot, title: "24/7 AI Tutor", color: "secondary", desc: "Immediate answers and explanations for complex concepts, whenever you need them." },
+            { icon: BookOpen, title: "Knowledge Library", color: "primary", desc: "A vast repository of curated resources, intelligently organized for your path." },
+            { icon: Users, title: "Community Insights", color: "secondary", desc: "Learn from top performers and share your winning strategies with the world." }
+          ].map((feature, idx) => (
+            <motion.div
+              key={idx}
+              variants={fadeIn}
+              className="card-premium group"
+            >
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors group-hover:scale-110 transition-transform duration-300 ${feature.color === 'primary'
+                ? 'bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400'
+                : 'bg-secondary-100 text-secondary-600 dark:bg-secondary-900/40 dark:text-secondary-400'
+                }`}>
+                <feature.icon className="w-7 h-7" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 font-display">{feature.title}</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+                {feature.desc}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
       </section>
 
-      {/* Difference Section */}
-      <section className="py-20">
-        <div className="card-premium grid grid-cols-1 lg:grid-cols-2 gap-12 p-8 md:p-16">
-          <div className="space-y-6">
-            <h2 className="text-4xl font-bold leading-tight">What Makes Us Truly Different?</h2>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              We've combined modern pedagogy with cutting-edge AI to create a learning experience that's as unique as you are.
+      {/* Premium CTA / Difference */}
+      <section className="py-24 px-6 max-w-7xl mx-auto">
+        <div className="card-premium grid grid-cols-1 lg:grid-cols-2 gap-16 p-8 md:p-20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl -mr-32 -mt-32" />
+
+          <div className="space-y-8 relative z-10">
+            <h2 className="text-4xl md:text-5xl font-bold leading-tight font-display">Technologically <span className="text-gradient">Superior</span> Learning</h2>
+            <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
+              We leverage the latest in Large Language Models and cognitive science to provide a learning experience that traditional platforms simply can't match.
             </p>
-            <div className="space-y-4 pt-4">
+
+            <div className="space-y-6 pt-4">
               {[
-                { icon: <FaBolt />, title: "Intelligent Adaptation", desc: "The platform evolves with you, constantly refining your path." },
-                { icon: <FaShieldAlt />, title: "Secure & Trusted", desc: "Your data and progress are protected with bank-grade security." },
-                { icon: <FaGraduationCap />, title: "Science-Based", desc: "Built on principles of active recall and spaced repetition." }
+                { icon: Zap, title: "Intelligent Adaptation", desc: "The platform evolves with you, constantly refining your path." },
+                { icon: ShieldCheck, title: "Secure & Private", desc: "Your data and progress are encrypted and strictly private." },
+                { icon: GraduationCap, title: "Science-Based Methods", desc: "Optimized for active recall and spaced repetition." }
               ].map((item, idx) => (
-                <div key={idx} className="flex gap-5">
-                  <div className="flex-shrink-0 w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                    {item.icon}
+                <div key={idx} className="flex gap-5 group">
+                  <div className="flex-shrink-0 w-12 h-12 glass-card flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform">
+                    <item.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="text-lg font-bold">{item.title}</h4>
-                    <p className="text-gray-600 dark:text-gray-400">{item.desc}</p>
+                    <h4 className="text-lg font-bold font-display">{item.title}</h4>
+                    <p className="text-slate-500 dark:text-slate-400">{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-          <div className="bg-indigo-600/5 dark:bg-indigo-400/5 rounded-3xl border border-indigo-100 dark:border-indigo-900/30 flex items-center justify-center p-12 overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-slate-200 dark:border-slate-800 flex items-center justify-center p-12 relative overflow-hidden group">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <div className="text-center relative z-10 space-y-6">
-              <div className="w-24 h-24 bg-white dark:bg-gray-800 rounded-3xl shadow-xl flex items-center justify-center text-4xl text-indigo-600 mx-auto transform -rotate-6 group-hover:rotate-0 transition-transform">
-                <FaRobot />
+              <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex items-center justify-center mx-auto transform -rotate-12 group-hover:rotate-0 transition-all duration-500 ring-1 ring-slate-200 dark:ring-slate-800">
+                <Bot className="w-12 h-12 text-primary-600" />
               </div>
-              <p className="text-xl font-medium text-indigo-700 dark:text-indigo-300 italic">
+              <p className="text-2xl font-medium text-slate-800 dark:text-slate-100 italic font-display">
                 "LearnSphere AI helped me master Python 3x faster than traditional online courses."
               </p>
-              <div className="text-gray-500 dark:text-gray-400 font-semibold">— Sarah J., Software Engineer</div>
+              <div className="text-slate-500 dark:text-slate-400 font-semibold">— Sarah J., Senior Dev</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
-        <div className="bg-indigo-600 dark:bg-indigo-700 rounded-3xl p-12 md:p-20 text-center text-white space-y-8 relative overflow-hidden">
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-indigo-400/20 rounded-full blur-3xl"></div>
+      {/* Final CTA */}
+      <section className="py-24 px-6">
+        <motion.div
+          className="max-w-5xl mx-auto rounded-[3rem] p-12 md:p-24 text-center text-white relative overflow-hidden bg-primary-600"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+        >
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] -mr-48 -mt-48" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary-400/20 rounded-full blur-[100px] -ml-48 -mb-48" />
 
-          <div className="relative z-10 space-y-4">
-            <h2 className="text-4xl md:text-5xl font-extrabold">Ready to Transformation?</h2>
-            <p className="text-xl text-indigo-100 opacity-90">Join thousands of proactive learners today.</p>
+          <div className="relative z-10 space-y-8">
+            <h2 className="text-4xl md:text-6xl font-black font-display tracking-tight">Ready to Elevate <br />Your Future?</h2>
+            <p className="text-xl text-primary-100 opacity-90 max-w-xl mx-auto">Join the next generation of proactive learners and start your journey today.</p>
             <div className="pt-8">
               {userInfo ? (
-                <Link to="/dashboard" className="inline-block bg-white text-indigo-600 px-12 py-4 rounded-xl font-bold hover:bg-gray-50 transition-all transform hover:scale-105 shadow-xl shadow-black/20">
+                <Link to="/dashboard" className="inline-flex bg-white text-primary-600 px-12 py-5 rounded-2xl font-bold hover:bg-slate-50 transition-all transform hover:scale-105 shadow-2xl shadow-black/20 text-lg">
                   Access Your Dashboard
                 </Link>
               ) : (
-                <Link to="/signup" className="inline-block bg-white text-indigo-600 px-12 py-4 rounded-xl font-bold hover:bg-gray-50 transition-all transform hover:scale-105 shadow-xl shadow-black/20">
-                  Get Started Now
+                <Link to="/signup" className="inline-flex bg-white text-primary-600 px-12 py-5 rounded-2xl font-bold hover:bg-slate-50 transition-all transform hover:scale-105 shadow-2xl shadow-black/20 text-lg">
+                  Join for Free
                 </Link>
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-12 px-6 text-center text-slate-500 border-t border-slate-200 dark:border-slate-800">
+        <p>© {new Date().getFullYear()} LearnSphere AI. Empowering minds globally.</p>
+      </footer>
     </div>
   );
 };

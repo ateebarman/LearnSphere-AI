@@ -31,10 +31,10 @@ const SkillNode = ({ category, level, progress, averageScore }) => {
         <div className="relative group">
             {/* Node Hexagon */}
             <div className="flex flex-col items-center">
-                <div className={`w-20 h-20 relative flex items-center justify-center transition-transform duration-500 group-hover:scale-110`}>
+                <div className={`w-20 h-20 relative flex items-center justify-center transition-transform duration-500 group-hover:scale-110 will-change-transform`}>
                     {/* Hexagon Background */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${activeColor} opacity-20 blur-xl group-hover:opacity-40 transition-opacity`}></div>
-                    <div className={`absolute inset-0 bg-gradient-to-br ${activeColor} clip-hex border-2 border-white/10 shadow-lg shadow-black/20`}></div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${activeColor} opacity-20 blur-lg group-hover:opacity-40 transition-opacity will-change-[opacity,filter]`}></div>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${activeColor} clip-hex border-2 border-white/10 shadow-lg shadow-black/20 will-change-transform`}></div>
 
                     {/* Icon */}
                     <div className="relative z-10 text-2xl text-white drop-shadow-md">
@@ -59,24 +59,29 @@ const SkillNode = ({ category, level, progress, averageScore }) => {
 
                 {/* Label */}
                 <div className="mt-4 text-center">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-white transition-colors">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
                         {category}
                     </h4>
                     <div className="flex items-center justify-center gap-1 mt-1">
-                        <span className="text-xs font-black text-white">LVL {level}</span>
-                        <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
-                        <span className="text-[10px] font-bold text-gray-400">{averageScore}%</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white">LVL {level}</span>
+                        <span className="w-1 h-1 bg-slate-300 dark:bg-gray-600 rounded-full"></span>
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-gray-400">{averageScore}% Score</span>
                     </div>
                 </div>
             </div>
 
             {/* Tooltip */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mb-4 px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none whitespace-nowrap shadow-2xl">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full mb-4 px-3 py-2 bg-gray-900 border border-gray-800 rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none whitespace-nowrap shadow-2xl">
                 <p className="text-xs font-bold text-white mb-1">Expertise in {category}</p>
-                <div className="w-32 h-1 bg-gray-800 rounded-full overflow-hidden">
+                <div className="w-36 h-1 bg-gray-800 rounded-full overflow-hidden">
                     <div className="h-full bg-indigo-500" style={{ width: `${progress}%` }}></div>
                 </div>
-                <p className="text-[10px] text-gray-400 mt-1 uppercase font-black">{Math.round(progress)}% to next level</p>
+                <div className="flex justify-between items-center mt-1.5">
+                    <p className="text-[9px] text-gray-400 uppercase font-black">{Math.round(progress)}% MASTERY</p>
+                    <p className="text-[9px] text-indigo-400 uppercase font-black">
+                        {progress === 0 && level > 1 ? "Level Up! Clear 3 more" : `${3 - (Math.round((progress / 100) * 3))} more modules`}
+                    </p>
+                </div>
             </div>
 
             <style dangerouslySetInnerHTML={{
@@ -100,7 +105,7 @@ const SkillTree = ({ masteryData }) => {
 
             <div className="flex items-center justify-between mb-10">
                 <div>
-                    <h2 className="text-2xl font-black text-white flex items-center gap-3">
+                    <h2 className="text-2xl font-black text-slate-950 dark:text-white flex items-center gap-3">
                         <span className="p-2 bg-indigo-500/20 text-indigo-400 rounded-xl">
                             <FaShieldAlt />
                         </span>
@@ -110,9 +115,9 @@ const SkillTree = ({ masteryData }) => {
                         Visualize your technical growth across core domains
                     </p>
                 </div>
-                <div className="px-4 py-2 bg-gray-900/50 border border-gray-800 rounded-2xl">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Total Mastery</span>
-                    <div className="text-lg font-black text-white">
+                <div className="px-4 py-2 bg-slate-100/50 dark:bg-gray-900/50 border border-slate-200 dark:border-gray-800 rounded-2xl">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 dark:text-indigo-400">Total Mastery</span>
+                    <div className="text-lg font-black text-slate-900 dark:text-white">
                         {Math.round(masteryData.reduce((acc, m) => acc + m.level, 0))} Points
                     </div>
                 </div>
@@ -130,7 +135,7 @@ const SkillTree = ({ masteryData }) => {
                 ))}
             </div>
 
-            <div className="mt-12 pt-8 border-t border-gray-800/50 flex items-center justify-between">
+            <div className="mt-12 pt-8 border-t border-slate-200 dark:border-gray-800/50 flex items-center justify-between">
                 <div className="flex gap-4">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-slate-500 rounded-sm"></div>

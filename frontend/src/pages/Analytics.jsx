@@ -213,7 +213,7 @@ const Analytics = () => {
                   <tbody className="divide-y dark:divide-gray-800">
                     {roadmapStats.map((roadmap) => {
                       const completion = roadmap.modules && roadmap.modules.length > 0
-                        ? (roadmap.modules.filter(m => m.completed).length / roadmap.modules.length) * 100
+                        ? (roadmap.modules.filter(m => m.isCompleted).length / roadmap.modules.length) * 100
                         : 0;
 
                       return (
@@ -286,8 +286,8 @@ const Analytics = () => {
                       return (
                         <tr key={quiz._id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                           <td className="px-8 py-6">
-                            <div className="font-bold text-gray-900 dark:text-white truncate max-w-xs">{quiz.quizId || 'Community Topic'}</div>
-                            <div className="text-xs text-gray-500 mt-1">ID: {quiz.roadmapId?.substring(0, 8)}...</div>
+                            <div className="font-bold text-gray-900 dark:text-white truncate max-w-xs">{quiz.moduleTitle}</div>
+                            <div className="text-xs text-gray-500 mt-1">{quiz.roadmapTitle}</div>
                           </td>
                           <td className="px-8 py-6 text-center font-black">{totalQuestions}</td>
                           <td className="px-8 py-6 text-center font-black text-green-600 dark:text-green-400">{correctCount}</td>
@@ -304,7 +304,7 @@ const Analytics = () => {
                           <td className="px-8 py-6 text-sm text-gray-500 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               <FaCalendarAlt />
-                              {new Date(quiz.attemptedAt).toLocaleDateString()}
+                              {quiz.attemptedAt ? new Date(quiz.attemptedAt).toLocaleDateString() : 'N/A'}
                             </div>
                           </td>
                         </tr>

@@ -18,7 +18,7 @@ export const initializeGemini = () => {
 
   if (apiKeys.length > 0) {
     apiKeys.forEach(key => requestHistory.set(key, []));
-    console.log(`✅ Gemini Service initialized with ${apiKeys.length} keys (Model: 1.5 Pro)`);
+    console.log(`✅ Gemini Service initialized with ${apiKeys.length} keys (Using 2.5 Pro & 2.0 Flash only)`);
   } else {
     console.log('⚠️  No Gemini API keys found - will use demo mode');
   }
@@ -62,9 +62,13 @@ const extractJSON = (text) => {
     const jsonCandidate = text.substring(firstBrace, lastBrace + 1);
     
     // Fix common AI JSON errors before parsing
-    let fixed = jsonCandidate
+    const fixed = jsonCandidate
       .replace(/,(\s*[}\]])/g, '$1') // remove trailing commas
-      .replace(/[\u201C\u201D]/g, '"'); // fix "smart" quotes
+      .replace(/[\u201C\u201D]/g, '"') // fix "smart" quotes
+      .replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, contents) => {
+        // Replace raw newlines inside the string contents with escaped \n
+        return '"' + contents.replace(/\n/g, '\\n') + '"';
+      });
       
     return JSON.parse(fixed);
   } catch (parseError) {
@@ -94,74 +98,72 @@ CRITICAL INSTRUCTIONS:
 - All commas and brackets must be valid
 - Test your JSON is parseable before responding`;
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${currentKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: fullPrompt }] }],
-          generationConfig: {
-            temperature: 0.6,
-            topK: 1,
-            topP: 1,
-            maxOutputTokens: 4096 
-          },
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_MEDIUM_AND_ABOVE'
+  const models = [
+    'gemini-2.5-pro',
+    'gemini-2.0-flash'
+  ];
+
+  let lastError = null;
+
+  for (const modelId of models) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: fullPrompt }] }],
+            generationConfig: {
+              temperature: 0.6,
+              topK: 1,
+              topP: 1,
+              maxOutputTokens: 8192,
+              responseMimeType: 'application/json'
             }
-          ]
-        })
+          })
+        }
+      );
+
+      const data = await res.json();
+
+      // Check for specifically 429 quota errors
+      if (res.status === 429 || data.error?.code === 429) {
+        console.warn(`⚠️ Model ${modelId} rate limited on key ${retryCount + 1}.`);
+        continue;
       }
-    );
 
-    const data = await res.json();
+      if (!res.ok) {
+        throw new Error(`API_ERROR_${res.status}: ${data.error?.message}`);
+      }
 
-    // Check for quota exhaustion
-    if (res.status === 429 || data.error?.code === 429) {
-      throw new Error('QUOTA_EXHAUSTED');
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      try {
+        const result = extractJSON(text);
+        console.log(`✅ Success with Gemini ${modelId} on key ${retryCount + 1}`);
+        return result;
+      } catch (e) {
+        console.log(`--- RAW GEMINI TEXT (${modelId}) ---`);
+        console.log(text);
+        console.log('-----------------------');
+        throw e;
+      }
+    } catch (err) {
+      lastError = err;
+      console.warn(`❌ Gemini ${modelId} failed: ${err.message}`);
     }
+  }
 
-    if (!res.ok) {
-      console.error(`Gemini API error (${res.status}):`, data.error?.message || 'Unknown error');
-      throw new Error(`API_ERROR_${res.status}`);
-    }
-
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-      throw new Error('Invalid response structure from Gemini API');
-    }
-
-    const text = data.candidates[0].content.parts[0].text;
-    if (!text) throw new Error('Empty Gemini response');
-
-    return extractJSON(text);
-  } catch (error) {
-    // Failover to next key if quota exhausted or rate limited
-    if ((error.message === 'QUOTA_EXHAUSTED' || error.message.includes('429')) && retryCount < apiKeys.length - 1) {
-      console.warn(`🔄 Gemini key rate-limited. Retrying with next key... (${retryCount + 1}/${apiKeys.length})`);
+  // If we reach here, it means all models failed on this key
+  if (lastError?.message.includes('429') || lastError?.message.includes('QUOTA') || lastError?.message.includes('API_ERROR_429')) {
+    if (retryCount < apiKeys.length - 1) {
+      console.warn(`🔄 Key ${retryCount + 1} exhausted. Trying next key...`);
       return generateJsonGemini(prompt, retryCount + 1);
     }
-
-    if (error.message === 'QUOTA_EXHAUSTED') {
-      console.warn('⚠️  All Gemini keys rate-limited — switching provider or demo mode');
-    } else {
-      console.warn(`⚠️  Gemini API failed:`, error.message);
-    }
-    throw error;
+    throw new Error('QUOTA_EXHAUSTED_ALL_KEYS');
   }
+
+  throw lastError || new Error('All Gemini models failed on current key');
 };

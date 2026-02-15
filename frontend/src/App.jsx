@@ -14,9 +14,13 @@ import ResourceLibrary from './pages/ResourceLibrary';
 import Explore from './pages/Explore';
 import AdvancedStudy from './pages/AdvancedStudy';
 import KnowledgeLibrary from './pages/KnowledgeLibrary';
+import CodingArena from './pages/CodingArena';
+import CodingList from './pages/CodingList';
+import ScrollToTop from './components/ScrollToTop';
 
 import { useEffect } from 'react';
 import { useThemeStore } from './store/useThemeStore';
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const { darkMode } = useThemeStore();
@@ -30,29 +34,41 @@ function App() {
   }, [darkMode]);
 
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        {/* Public Routes */}
-        <Route index element={<Home />} />
-        <Route path="login" element={<Login />} />
-        <Route path="signup" element={<Signup />} />
-        <Route path="explore" element={<Explore />} />
+    <>
+      <ScrollToTop />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          className: 'dark:bg-slate-900 dark:text-white dark:border-slate-800 border',
+          duration: 4000,
+        }}
+      />
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          {/* Public Routes */}
+          <Route index element={<Home />} />
+          <Route path="login" element={<Login />} />
+          <Route path="signup" element={<Signup />} />
+          <Route path="explore" element={<Explore />} />
 
-        {/* Private Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="roadmap/:id" element={<RoadmapView />} />
-          <Route path="quiz/:roadmapId/:moduleTitle" element={<QuizPage />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="tutor" element={<TutorChat />} />
-          <Route path="resources" element={<ResourceLibrary />} />
-          <Route path="library" element={<KnowledgeLibrary />} />
-          <Route path="lab" element={<AdvancedStudy />} />
+          {/* Private Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="roadmap/:id" element={<RoadmapView />} />
+            <Route path="quiz/:roadmapId/:moduleTitle" element={<QuizPage />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="tutor" element={<TutorChat />} />
+            <Route path="resources" element={<ResourceLibrary />} />
+            <Route path="library" element={<KnowledgeLibrary />} />
+            <Route path="lab" element={<AdvancedStudy />} />
+            <Route path="coding" element={<CodingList />} />
+            <Route path="coding/:slug" element={<CodingArena />} />
 
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
