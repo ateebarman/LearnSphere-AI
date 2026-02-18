@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaCheckCircle, FaVideo, FaBook, FaCode, FaChevronDown, FaChevronUp, FaExternalLinkAlt, FaChevronRight } from 'react-icons/fa';
+import { FaCheckCircle, FaVideo, FaBook, FaCode, FaChevronDown, FaChevronUp, FaExternalLinkAlt, FaChevronRight, FaClock, FaBrain, FaLock, FaFire } from 'react-icons/fa';
 
 // Helper component for the resource icons
 const ResourceIcon = ({ type }) => {
@@ -11,14 +11,30 @@ const ResourceIcon = ({ type }) => {
     case 'doc':
       return <FaBook className="text-blue-500" />;
     case 'challenge':
+    case 'course':
       return <FaCode className="text-green-500" />;
     default:
       return <FaBook className="text-indigo-500" />;
   }
 };
 
+const difficultyColor = (d) => {
+  if (d === 'Easy' || d === 'Beginner') return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+  if (d === 'Medium' || d === 'Intermediate') return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+  return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+};
+
+const importanceColor = (imp) => {
+  if (imp === 'Critical') return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+  if (imp === 'High') return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
+  if (imp === 'Medium') return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+  return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+};
+
 const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = true }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  const effortTotal = (module.effortEstimate?.readingMinutes || 0) + (module.effortEstimate?.practiceMinutes || 0) + (module.effortEstimate?.assessmentMinutes || 0);
 
   return (
     <div className={`card-premium overflow-hidden transition-all duration-300 ${isOpen ? 'ring-2 ring-indigo-500/20' : ''}`}>
@@ -42,6 +58,20 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = t
               <span>Node {index + 1}</span>
               <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
               <span>{module.estimatedTime}</span>
+              {module.difficulty && (
+                <>
+                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] border ${difficultyColor(module.difficulty)}`}>{module.difficulty}</span>
+                </>
+              )}
+              {module.interviewImportance && module.interviewImportance !== 'Medium' && (
+                <>
+                  <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] border ${importanceColor(module.interviewImportance)}`}>
+                    <FaFire className="inline w-2 h-2 mr-0.5" />{module.interviewImportance}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -56,6 +86,32 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = t
             <p className="text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
               {module.description}
             </p>
+
+            {/* Effort Estimation & Signals */}
+            {(effortTotal > 0 || module.conceptWeight) && (
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                {module.effortEstimate?.readingMinutes > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded text-[10px] font-bold border border-blue-100 dark:border-blue-900/30">
+                    <FaBook className="w-2 h-2" /> {module.effortEstimate.readingMinutes}min reading
+                  </span>
+                )}
+                {module.effortEstimate?.practiceMinutes > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 rounded text-[10px] font-bold border border-emerald-100 dark:border-emerald-900/30">
+                    <FaCode className="w-2 h-2" /> {module.effortEstimate.practiceMinutes}min practice
+                  </span>
+                )}
+                {module.effortEstimate?.assessmentMinutes > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded text-[10px] font-bold border border-amber-100 dark:border-amber-900/30">
+                    <FaClock className="w-2 h-2" /> {module.effortEstimate.assessmentMinutes}min assessment
+                  </span>
+                )}
+                {module.conceptWeight > 0 && (
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded text-[10px] font-bold border border-purple-100 dark:border-purple-900/30">
+                    <FaBrain className="w-2 h-2" /> Weight: {module.conceptWeight}/10
+                  </span>
+                )}
+              </div>
+            )}
 
             {(module.objectives?.length > 0 || module.keyConcepts?.length > 0) && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t dark:border-gray-800">
@@ -88,7 +144,93 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = t
             )}
           </div>
 
-          {/* Resources Grid */}
+          {/* Practice Problems Section */}
+          {module.practiceProblems?.length > 0 && module.practiceProblems.some(p => p.title || p.url) && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-black uppercase tracking-widest text-emerald-500 flex items-center gap-2">
+                <FaCode className="text-xs" /> Practice Problems
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {module.practiceProblems.filter(p => p.title || p.url).map((problem, i) => {
+                  const isInternal = problem.source === 'internal' || problem.url?.startsWith('/');
+                  const LinkComponent = isInternal ? Link : 'a';
+                  const linkProps = isInternal
+                    ? { to: problem.url }
+                    : { href: problem.url, target: '_blank', rel: 'noopener noreferrer' };
+
+                  return (
+                    <LinkComponent
+                      key={i}
+                      {...linkProps}
+                      className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-2xl group hover:border-emerald-500 dark:hover:border-emerald-500 transition-all hover:shadow-md"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg">
+                          <FaCode className="text-emerald-500" />
+                        </div>
+                        <div>
+                          <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-emerald-500 transition-colors line-clamp-1">
+                            {problem.title}
+                          </span>
+                          {problem.difficulty && (
+                            <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ml-0 mt-1 inline-block ${difficultyColor(problem.difficulty)}`}>
+                              {problem.difficulty}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {isInternal ? (
+                        <FaChevronRight className="text-[10px] text-gray-400 group-hover:text-emerald-500 shrink-0" />
+                      ) : (
+                        <FaExternalLinkAlt className="text-[10px] text-gray-400 group-hover:text-emerald-500 shrink-0" />
+                      )}
+                    </LinkComponent>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Learning Resources Section */}
+          {module.learningResources?.length > 0 && module.learningResources.some(r => r.title || r.url) && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-black uppercase tracking-widest text-violet-500 flex items-center gap-2">
+                <FaBrain className="text-xs" /> Learning Resources
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {module.learningResources.filter(r => r.title || r.url).map((res, i) => {
+                  const isInternal = res.source === 'internal' || res.url?.startsWith('/');
+                  const LinkComponent = isInternal ? Link : 'a';
+                  const linkProps = isInternal
+                    ? { to: res.url }
+                    : { href: res.url, target: '_blank', rel: 'noopener noreferrer' };
+                  return (
+                    <LinkComponent
+                      key={i}
+                      {...linkProps}
+                      className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-2xl group hover:border-violet-500 dark:hover:border-violet-500 transition-all hover:shadow-md"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-violet-50 dark:bg-violet-900/30 rounded-lg">
+                          <ResourceIcon type={res.type} />
+                        </div>
+                        <span className="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-violet-500 transition-colors line-clamp-1">
+                          {res.title}
+                        </span>
+                      </div>
+                      {isInternal ? (
+                        <FaChevronRight className="text-[10px] text-gray-400 group-hover:text-violet-500" />
+                      ) : (
+                        <FaExternalLinkAlt className="text-[10px] text-gray-400 group-hover:text-violet-500" />
+                      )}
+                    </LinkComponent>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Resources Grid (existing videos + articles) */}
           <div className="space-y-6">
             {/* Videos Section */}
             {module.resources?.some(r => r.type === 'video') && (
@@ -165,6 +307,19 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = t
               </div>
             )}
           </div>
+
+          {/* Unlock Criteria Notice */}
+          {module.unlockCriteria && (module.unlockCriteria.masteryThreshold > 0 || module.unlockCriteria.quizScore > 0 || module.unlockCriteria.problemsSolved > 0) && (
+            <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-2xl">
+              <FaLock className="text-amber-500 shrink-0" />
+              <div className="text-xs text-amber-700 dark:text-amber-300 font-bold">
+                <span className="font-black uppercase tracking-wider text-[10px]">Unlock Criteria: </span>
+                {module.unlockCriteria.masteryThreshold > 0 && <span>Mastery ≥ {module.unlockCriteria.masteryThreshold}%  </span>}
+                {module.unlockCriteria.quizScore > 0 && <span>• Quiz ≥ {module.unlockCriteria.quizScore}%  </span>}
+                {module.unlockCriteria.problemsSolved > 0 && <span>• Solve ≥ {module.unlockCriteria.problemsSolved} problems</span>}
+              </div>
+            </div>
+          )}
 
           {isOwner && (
             <div className="pt-4">

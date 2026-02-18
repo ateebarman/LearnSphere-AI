@@ -6,7 +6,7 @@
   :root {
     --primary: 139 92 246;
     --primary-foreground: 255 255 255;
-    scroll-behavior: smooth;
+    /* scroll-behavior: smooth; -- DISABLED GLOBALLY FOR PERFORMANCE */
   }
 
   body {
@@ -46,13 +46,14 @@
     @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all duration-300 dark:bg-slate-900 dark:border-slate-800 dark:text-white dark:focus:ring-primary-500/20;
   }
 
+  /* OPTIMIZED: Reduced backdrop-blur, added will-change */
   .card-premium {
-    @apply bg-white/70 backdrop-blur-xl rounded-3xl shadow-xl shadow-slate-200/50 border border-white/20 p-6 transition-all duration-500 dark:bg-slate-900/60 dark:border-white/5 dark:shadow-none hover:shadow-2xl hover:shadow-primary-500/10 hover:-translate-y-1 transform;
-    will-change: transform, opacity;
+    @apply bg-white/70 backdrop-blur-sm rounded-3xl shadow-lg shadow-slate-200/50 border border-white/20 p-6 transition-all duration-300 dark:bg-slate-900/60 dark:border-white/5 dark:shadow-none hover:shadow-xl hover:-translate-y-1 transform-gpu;
+    will-change: transform;
   }
 
   .glass-card {
-    @apply bg-white/40 backdrop-blur-md border border-white/20 dark:bg-slate-950/40 dark:border-slate-800/50 rounded-3xl;
+    @apply bg-white/40 backdrop-blur-sm border border-white/20 dark:bg-slate-950/40 dark:border-slate-800/50 rounded-3xl;
   }
 
   .text-gradient {
@@ -103,7 +104,9 @@
   }
 }
 
+/* OPTIMIZED: Hardware acceleration for background */
 .mesh-bg {
   @apply bg-mesh-gradient opacity-50 pointer-events-none fixed inset-0 z-[-1];
   transform: translateZ(0);
+  will-change: transform;
 }

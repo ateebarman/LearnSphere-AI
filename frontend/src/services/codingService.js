@@ -5,6 +5,11 @@ export const generateQuestions = async (topic) => {
   return data;
 };
 
+export const generateAIExtension = async (topic) => {
+  const { data } = await api.post('/coding/generate-ai', { topic, count: 5 });
+  return data;
+};
+
 export const runCode = async (questionId, code, language) => {
   const { data } = await api.post('/coding/run', { questionId, code, language });
   return data;
@@ -27,5 +32,10 @@ export const getProblemBySlug = async (slug) => {
 
 export const getProgress = async (topic) => {
   const { data } = await api.get('/coding/progress', { params: { topic } });
+  return data;
+};
+
+export const getSubmissions = async (questionId) => {
+  const { data } = await api.get(`/coding/submissions/${questionId}`);
   return data;
 };

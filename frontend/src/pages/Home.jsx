@@ -1,210 +1,200 @@
-import { Link } from 'react-router-dom';
-import { useAuthStore } from '../store/useAuthStore';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
-  Rocket, Map, CheckCircle, PieChart, Bot, BookOpen,
-  Users, Zap, ShieldCheck, GraduationCap, ArrowRight, Sparkles
+  Sparkles, Map, BrainCircuit, BarChart3,
+  BookOpen, Users, Terminal, CheckCircle2,
+  ArrowRight, Zap, Target, ShieldCheck
 } from 'lucide-react';
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.2 }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
+  }
+};
+
 const Home = () => {
-  const { userInfo } = useAuthStore();
-
-  const fadeIn = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  };
-
-  const staggerContainer = {
-    animate: {
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
   return (
-    <div className="relative min-h-screen">
-      {/* Background Effects */}
-      <div className="absolute top-0 left-0 w-full h-screen pointer-events-none overflow-hidden -z-10">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-500/10 rounded-full blur-[120px] animate-slow-drift will-change-transform" />
-        <div className="absolute bottom-[20%] right-[-5%] w-[35%] h-[35%] bg-secondary-500/10 rounded-full blur-[100px] animate-slow-drift will-change-transform" style={{ animationDelay: '-5s' }} />
-      </div>
-
+    <div className="relative space-y-32 pb-24">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto">
+      <section className="relative pt-20 pb-16 text-center overflow-hidden">
         <motion.div
-          className="text-center space-y-8 max-w-4xl mx-auto"
-          initial="initial"
-          animate="animate"
-          variants={staggerContainer}
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="max-w-4xl mx-auto space-y-8 relative z-10"
         >
-          <motion.div
-            variants={fadeIn}
-            className="inline-flex items-center space-x-2 px-4 py-2 rounded-full glass-card border-primary-500/20 text-primary-700 dark:text-primary-300 font-medium text-sm mb-4 ring-1 ring-primary-500/10"
-          >
+          <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-600 dark:text-primary-400 text-sm font-bold tracking-wide uppercase">
             <Sparkles className="w-4 h-4" />
-            <span>AI-Powered Learning Transformation</span>
+            Next-Gen AI Learning Platform
           </motion.div>
 
           <motion.h1
-            variants={fadeIn}
-            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] font-display"
+            variants={itemVariants}
+            className="text-6xl md:text-8xl font-black leading-[1.1] tracking-tight"
           >
-            Master Anything with{' '}
+            Master Any Skill with{' '}
             <span className="text-gradient">LearnSphere AI</span>
           </motion.h1>
 
           <motion.p
-            variants={fadeIn}
+            variants={itemVariants}
             className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed"
           >
-            Your ultimate personalized ecosystem. Build custom roadmaps, practice with AI tutors, and track your growth in real-time.
+            Your personalized, AI-powered learning companion. Break through complexity with adaptive roadmaps, real-time tutoring, and interactive coding labs.
           </motion.p>
 
-          <motion.div
-            variants={fadeIn}
-            className="flex flex-col sm:flex-row gap-5 justify-center pt-8"
-          >
-            {userInfo ? (
-              <Link to="/dashboard" className="btn-primary text-lg group">
-                Dashboard
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            ) : (
-              <>
-                <Link to="/signup" className="btn-primary text-lg px-10">
-                  Get Started Free
-                </Link>
-                <Link to="/login" className="btn-secondary text-lg px-10">
-                  Sign In
-                </Link>
-              </>
-            )}
+          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
+            <Link to="/signup" className="btn-primary text-lg px-10 py-4 group">
+              Start Your Journey
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link to="/explore" className="btn-secondary text-lg px-10 py-4">
+              Explore Roadmaps
+            </Link>
           </motion.div>
         </motion.div>
+
+        {/* Decorative Elements */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none -z-10">
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-primary-500/10 rounded-full blur-[120px] animate-pulse-subtle" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-slow-drift" />
+        </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 px-6 max-w-7xl mx-auto">
-        <div className="text-center space-y-4 max-w-2xl mx-auto mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold font-display">Engineered for Success</h2>
-          <p className="text-slate-600 dark:text-slate-400 text-lg">Every feature is designed to cut down your learning curve and maximize retention.</p>
+      {/* Statistics Section */}
+      <motion.section
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-8 px-4"
+      >
+        {[
+          { label: 'Active Learners', value: '10k+', icon: Users },
+          { label: 'AI Roadmaps', value: '500+', icon: Map },
+          { label: 'Quiz Questions', value: '25k+', icon: BrainCircuit },
+          { label: 'Success Rate', value: '94%', icon: Target }
+        ].map((stat, i) => (
+          <div key={i} className="card-premium flex flex-col items-center text-center space-y-2">
+            <stat.icon className="w-6 h-6 text-primary-500 mb-2" />
+            <span className="text-4xl font-black text-slate-900 dark:text-white">{stat.value}</span>
+            <span className="text-sm font-semibold text-slate-500 uppercase tracking-widest">{stat.label}</span>
+          </div>
+        ))}
+      </motion.section>
+
+      {/* Core Features */}
+      <section className="space-y-16">
+        <div className="text-center space-y-4">
+          <h2 className="text-4xl md:text-5xl font-black">Built for the Future of Learning</h2>
+          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Our ecosystem combines advanced AI models with proven memory science to accelerate your career.</p>
         </div>
 
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-          initial="initial"
-          whileInView="animate"
-          viewport={{ once: true }}
-          variants={staggerContainer}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {[
-            { icon: Map, title: "Smart Roadmaps", color: "primary", desc: "AI-generated paths tailored to your current level and ultimate career goals." },
-            { icon: CheckCircle, title: "Adaptive Quizzes", color: "secondary", desc: "Dynamic assessments that identify and bridge your knowledge gaps instantly." },
-            { icon: PieChart, title: "Advanced Analytics", color: "primary", desc: "Visualize your progress with data-rich charts and actionable insights." },
-            { icon: Bot, title: "24/7 AI Tutor", color: "secondary", desc: "Immediate answers and explanations for complex concepts, whenever you need them." },
-            { icon: BookOpen, title: "Knowledge Library", color: "primary", desc: "A vast repository of curated resources, intelligently organized for your path." },
-            { icon: Users, title: "Community Insights", color: "secondary", desc: "Learn from top performers and share your winning strategies with the world." }
-          ].map((feature, idx) => (
+            {
+              title: 'AI Roadmaps',
+              desc: 'Customized paths generated by LLMs based on your current knowledge and goals.',
+              icon: Map,
+              color: 'text-blue-500'
+            },
+            {
+              title: 'Adaptive Quizzes',
+              desc: 'Smart assessments that identify your weak spots and help you focus where it matters.',
+              icon: BrainCircuit,
+              color: 'text-indigo-500'
+            },
+            {
+              title: 'Coding Arena',
+              desc: 'Real-time code execution environment with AI-powered feedback and hints.',
+              icon: Terminal,
+              color: 'text-emerald-500'
+            },
+            {
+              title: 'Infinite Knowledge',
+              desc: 'Access our RAG-powered library that learns from every document you provide.',
+              icon: BookOpen,
+              color: 'text-violet-500'
+            },
+            {
+              title: 'Performance Insights',
+              desc: 'Granular tracking of your progress across all domains and sub-skills.',
+              icon: BarChart3,
+              color: 'text-pink-500'
+            },
+            {
+              title: 'Enterprise Security',
+              desc: 'Military-grade encryption for your private learning materials and data.',
+              icon: ShieldCheck,
+              color: 'text-amber-500'
+            }
+          ].map((feature, i) => (
             <motion.div
-              key={idx}
-              variants={fadeIn}
+              key={i}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              whileHover={{ y: -8 }}
+              transition={{ duration: 0.3 }}
+              viewport={{ once: true }}
               className="card-premium group"
             >
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors group-hover:scale-110 transition-transform duration-300 ${feature.color === 'primary'
-                ? 'bg-primary-100 text-primary-600 dark:bg-primary-900/40 dark:text-primary-400'
-                : 'bg-secondary-100 text-secondary-600 dark:bg-secondary-900/40 dark:text-secondary-400'
-                }`}>
-                <feature.icon className="w-7 h-7" />
+              <div className={`w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center ${feature.color} mb-6 transition-colors group-hover:bg-primary-600 group-hover:text-white`}>
+                <feature.icon className="w-8 h-8" />
               </div>
-              <h3 className="text-2xl font-bold mb-3 font-display">{feature.title}</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                {feature.desc}
-              </p>
+              <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{feature.desc}</p>
             </motion.div>
           ))}
-        </motion.div>
-      </section>
-
-      {/* Premium CTA / Difference */}
-      <section className="py-24 px-6 max-w-7xl mx-auto">
-        <div className="card-premium grid grid-cols-1 lg:grid-cols-2 gap-16 p-8 md:p-20 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-3xl -mr-32 -mt-32" />
-
-          <div className="space-y-8 relative z-10">
-            <h2 className="text-4xl md:text-5xl font-bold leading-tight font-display">Technologically <span className="text-gradient">Superior</span> Learning</h2>
-            <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
-              We leverage the latest in Large Language Models and cognitive science to provide a learning experience that traditional platforms simply can't match.
-            </p>
-
-            <div className="space-y-6 pt-4">
-              {[
-                { icon: Zap, title: "Intelligent Adaptation", desc: "The platform evolves with you, constantly refining your path." },
-                { icon: ShieldCheck, title: "Secure & Private", desc: "Your data and progress are encrypted and strictly private." },
-                { icon: GraduationCap, title: "Science-Based Methods", desc: "Optimized for active recall and spaced repetition." }
-              ].map((item, idx) => (
-                <div key={idx} className="flex gap-5 group">
-                  <div className="flex-shrink-0 w-12 h-12 glass-card flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform">
-                    <item.icon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-lg font-bold font-display">{item.title}</h4>
-                    <p className="text-slate-500 dark:text-slate-400">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-slate-200 dark:border-slate-800 flex items-center justify-center p-12 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="text-center relative z-10 space-y-6">
-              <div className="w-24 h-24 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl flex items-center justify-center mx-auto transform -rotate-12 group-hover:rotate-0 transition-all duration-500 ring-1 ring-slate-200 dark:ring-slate-800">
-                <Bot className="w-12 h-12 text-primary-600" />
-              </div>
-              <p className="text-2xl font-medium text-slate-800 dark:text-slate-100 italic font-display">
-                "LearnSphere AI helped me master Python 3x faster than traditional online courses."
-              </p>
-              <div className="text-slate-500 dark:text-slate-400 font-semibold">— Sarah J., Senior Dev</div>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-24 px-6">
-        <motion.div
-          className="max-w-5xl mx-auto rounded-[3rem] p-12 md:p-24 text-center text-white relative overflow-hidden bg-primary-600"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-        >
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] -mr-48 -mt-48" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary-400/20 rounded-full blur-[100px] -ml-48 -mb-48" />
+      {/* CTA Section */}
+      <motion.section
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="relative"
+      >
+        <div className="bg-gradient-to-br from-primary-600 to-indigo-900 rounded-[3rem] p-12 md:p-24 text-center text-white space-y-8 overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[100px] -rotate-45 translate-x-1/2 -translate-y-1/2" />
 
-          <div className="relative z-10 space-y-8">
-            <h2 className="text-4xl md:text-6xl font-black font-display tracking-tight">Ready to Elevate <br />Your Future?</h2>
-            <p className="text-xl text-primary-100 opacity-90 max-w-xl mx-auto">Join the next generation of proactive learners and start your journey today.</p>
-            <div className="pt-8">
-              {userInfo ? (
-                <Link to="/dashboard" className="inline-flex bg-white text-primary-600 px-12 py-5 rounded-2xl font-bold hover:bg-slate-50 transition-all transform hover:scale-105 shadow-2xl shadow-black/20 text-lg">
-                  Access Your Dashboard
-                </Link>
-              ) : (
-                <Link to="/signup" className="inline-flex bg-white text-primary-600 px-12 py-5 rounded-2xl font-bold hover:bg-slate-50 transition-all transform hover:scale-105 shadow-2xl shadow-black/20 text-lg">
-                  Join for Free
-                </Link>
-              )}
-            </div>
+          <h2 className="text-4xl md:text-6xl font-black max-w-3xl mx-auto leading-tight">
+            Don't Just Learn. <br /><span className="text-indigo-200">Engineer Your Career.</span>
+          </h2>
+
+          <p className="text-xl text-primary-100 max-w-xl mx-auto">
+            Join 10,000+ developers and students using LearnSphere AI to master complex topics 3x faster.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
+            <Link to="/signup" className="bg-white text-indigo-900 px-10 py-4 rounded-2xl font-black hover:bg-slate-50 transition-all flex items-center justify-center gap-2 group shadow-2xl">
+              Unlock Full Access
+              <Zap className="w-5 h-5 fill-current transition-transform group-hover:scale-125" />
+            </Link>
+            <Link to="/explore" className="bg-transparent border-2 border-white/20 px-10 py-4 rounded-2xl font-black hover:bg-white/10 transition-all">
+              Browse Case Studies
+            </Link>
           </div>
-        </motion.div>
-      </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-6 text-center text-slate-500 border-t border-slate-200 dark:border-slate-800">
-        <p>© {new Date().getFullYear()} LearnSphere AI. Empowering minds globally.</p>
-      </footer>
+          <div className="pt-12 grid grid-cols-2 md:grid-cols-4 gap-4 opacity-70 border-t border-white/10">
+            {['Adaptive AI', '24/7 Tutoring', 'Free Starter', 'Expert Paths'].map((item, i) => (
+              <div key={i} className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest">
+                <CheckCircle2 className="w-4 h-4" /> {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.section>
     </div>
   );
 };

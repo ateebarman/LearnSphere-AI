@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -16,6 +17,7 @@ import AdvancedStudy from './pages/AdvancedStudy';
 import KnowledgeLibrary from './pages/KnowledgeLibrary';
 import CodingArena from './pages/CodingArena';
 import CodingList from './pages/CodingList';
+import AdminDashboard from './pages/AdminDashboard';
 import ScrollToTop from './components/ScrollToTop';
 
 import { useEffect } from 'react';
@@ -65,6 +67,10 @@ function App() {
             <Route path="coding" element={<CodingList />} />
             <Route path="coding/:slug" element={<CodingArena />} />
 
+            {/* Admin Routes */}
+            <Route element={<AdminRoute />}>
+              <Route path="admin" element={<AdminDashboard />} />
+            </Route>
           </Route>
         </Route>
       </Routes>

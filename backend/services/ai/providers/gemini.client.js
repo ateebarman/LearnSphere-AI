@@ -9,16 +9,15 @@ const RPM_LIMIT = 15;
 const requestHistory = new Map(); // Key -> Array of timestamps
 
 export const initializeGemini = () => {
-  apiKeys = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY2,
-    process.env.GEMINI_API_KEY3,
-    process.env.GEMINI_API_KEY4
-  ].filter(Boolean);
+  apiKeys = [];
+  for (let i = 1; i <= 10; i++) {
+    const key = process.env[`GEMINI_API_KEY${i}`];
+    if (key) apiKeys.push(key);
+  }
 
   if (apiKeys.length > 0) {
     apiKeys.forEach(key => requestHistory.set(key, []));
-    console.log(`✅ Gemini Service initialized with ${apiKeys.length} keys (Using 2.5 Pro & 2.0 Flash only)`);
+    console.log(`✅ Gemini Service initialized with ${apiKeys.length} keys (Rotating across: gemini-flash-latest, 1.5-flash, 2.0-flash)`);
   } else {
     console.log('⚠️  No Gemini API keys found - will use demo mode');
   }
@@ -40,7 +39,7 @@ const getNextApiKey = async () => {
     if (history.length < RPM_LIMIT) {
       currentKeyIndex = (index + 1) % apiKeys.length;
       history.push(now);
-      return key;
+      return { key, index };
     }
   }
 
@@ -83,10 +82,11 @@ const extractJSON = (text) => {
 };
 
 export const generateJsonGemini = async (prompt, retryCount = 0) => {
-  const currentKey = await getNextApiKey();
-  if (!currentKey) {
+  const result = await getNextApiKey();
+  if (!result) {
     throw new Error('No Gemini API key configured');
   }
+  const { key: currentKey, index: keyIndex } = result;
 
   const fullPrompt = `${prompt}
 
@@ -99,19 +99,22 @@ CRITICAL INSTRUCTIONS:
 - Test your JSON is parseable before responding`;
 
   const models = [
-    'gemini-2.5-pro',
-    'gemini-2.0-flash'
+    'gemini-flash-latest'
   ];
 
   let lastError = null;
 
   for (const modelId of models) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
     try {
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${currentKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             contents: [{ parts: [{ text: fullPrompt }] }],
             generationConfig: {
@@ -127,9 +130,9 @@ CRITICAL INSTRUCTIONS:
 
       const data = await res.json();
 
-      // Check for specifically 429 quota errors
       if (res.status === 429 || data.error?.code === 429) {
-        console.warn(`⚠️ Model ${modelId} rate limited on key ${retryCount + 1}.`);
+        console.warn(`⚠️ Model ${modelId} rate limited on Key ${keyIndex + 1}.`);
+        lastError = new Error(`QUOTA_EXHAUSTED: ${data.error?.message}`);
         continue;
       }
 
@@ -142,28 +145,33 @@ CRITICAL INSTRUCTIONS:
       
       try {
         const result = extractJSON(text);
-        console.log(`✅ Success with Gemini ${modelId} on key ${retryCount + 1}`);
+        console.log(`✅ Success with Gemini ${modelId} using Key ${keyIndex + 1}`);
         return result;
       } catch (e) {
         console.log(`--- RAW GEMINI TEXT (${modelId}) ---`);
         console.log(text);
         console.log('-----------------------');
         throw e;
+      } finally {
+        clearTimeout(timeoutId);
       }
     } catch (err) {
       lastError = err;
-      console.warn(`❌ Gemini ${modelId} failed: ${err.message}`);
+      if (err.name === 'AbortError') {
+        console.warn(`❌ Gemini ${modelId} timed out on Key ${keyIndex + 1}`);
+      } else {
+        console.warn(`❌ Gemini ${modelId} failed on Key ${keyIndex + 1}: ${err.message}`);
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
-  // If we reach here, it means all models failed on this key
-  if (lastError?.message.includes('429') || lastError?.message.includes('QUOTA') || lastError?.message.includes('API_ERROR_429')) {
-    if (retryCount < apiKeys.length - 1) {
-      console.warn(`🔄 Key ${retryCount + 1} exhausted. Trying next key...`);
-      return generateJsonGemini(prompt, retryCount + 1);
-    }
-    throw new Error('QUOTA_EXHAUSTED_ALL_KEYS');
+  // If we reach here, all models failed on this key. Try the next key.
+  if (retryCount < apiKeys.length - 1) {
+    console.warn(`🔄 Key ${keyIndex + 1} failed. Attempting failover to next key...`);
+    return generateJsonGemini(prompt, retryCount + 1);
   }
 
-  throw lastError || new Error('All Gemini models failed on current key');
+  throw lastError || new Error('All Gemini keys and models failed');
 };

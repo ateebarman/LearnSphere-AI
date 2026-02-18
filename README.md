@@ -32,7 +32,8 @@ LearnSphere AI is designed to solve the "Paradox of Choice" in online learning. 
 
 ## ✨ Key Features
 - 🎓 **AI Tutor Chat** — Real-time 1-on-1 tutoring with Groq LLM (Llama-3).
-- 🗺️ **Personalized Roadmaps** — 8-module progressive paths generated via Gemini 1.5.
+- � **Coding Arena** — Integrated Monaco Editor with multi-language support (C++, Python, JS) and real-time compilation via Judge0.
+- �🗺️ **Personalized Roadmaps** — 8-module progressive paths generated via Gemini 1.5.
 - 📄 **RAG Roadmap (New)** — Upload your own PDFs to generate a curriculum based strictly on your document.
 - 📚 **Resource Library** — Search for tutorials and articles independently of roadmaps.
 - 📊 **Dynamic Skill Tree** — Gamified visualization of your technical growth.
@@ -44,28 +45,36 @@ LearnSphere AI is designed to solve the "Paradox of Choice" in online learning. 
 
 ## 🧠 Detailed Technical Implementation
 
-### 1. Personalized AI Roadmap Generation
+### 1. Coding Arena & Compiler Engine
+**Problem:** Most learning platforms lack a verified environment to practice code.
+**Implementation:**
+- **Editor**: Embedded `Monaco Editor` (VS Code's core) with custom themes, syntax highlighting, and intellisense for C++, Python, and JavaScript.
+- **Compilation**: Code is bundled with test inputs and sent to a self-hosted or cloud `Judge0` instance.
+- **Test Harness**: The backend `compilerService.js` wraps user code with a custom test runner that executes against hidden test cases.
+- **State Management**: Persists your latest code drafts in local storage so you never lose progress during network drops.
+
+### 2. Personalized AI Roadmap Generation
 **Problem:** Most AI roadmaps provide broken links and generic descriptions.
 **Implementation:** 
 - **The Engine**: Uses `geminiService.js` to process topic queries.
 - **Precision Validation**: A proprietary sanitization layer checks every suggested URL. If the AI provides a "placeholder" or broken link, the system executes a **Scoped Google Search** (e.g., `site:docs.python.org + [topic]`) or defaults to verified domains like GeeksForGeeks or MDN.
 - **Multi-Media Integration**: Each module in the roadmap is enriched with a `searchYouTubeVideos` service call that anchors queries using module titles AND `keyConcepts` for high-precision results.
 
-### 2. RAG-Enabled Roadmaps (Study Material)
+### 3. RAG-Enabled Roadmaps (Study Material)
 **Problem:** Generic AI doesn't know about your specific lecture notes or proprietary docs.
 **Implementation:**
 - **Parsing**: Uses `pdf-parse` for robust text extraction.
 - **Contextual Curriculum**: `ragService.js` builds a unique prompt that feeds extracted text into Gemini, tasking it to act as an "Educational Architect" that extracts 7-10 modules *exclusively* from the provided text.
 - **Reliability**: Prevents a user's roadmap from drifting into external topics, ensuring it's a perfect companion for specific exam preparation.
 
-### 3. Dynamic Quiz Assessment System
+### 4. Dynamic Quiz Assessment System
 **Functionality:** Assessments that actually match what you just studied.
 **Implementation:**
 - **On-Demand Generation**: When you click "Take Quiz", `quizController.js` identifies the module title & parent topic.
 - **Grounding Switch**: The system can toggle between "General Knowledge" (pure LLM) and "Knowledge-Based" (pulling from our internal Knowledge Node database) to ensure quiz correctness.
 - **Scoring Engine**: Evaluates JSON payloads of answers, calculates percentage, and stores results in a `QuizAttempt` collection to fuel your "Weak Areas" analysis.
 
-### 4. Learning Analytics & Dynamic Skill Tree
+### 5. Learning Analytics & Dynamic Skill Tree
 **Problem:** How do you map 10,000 possible topics into 5 core levels?
 **Implementation:**
 - **Category Mappings**: Uses a `CategoryMapping` model with over 150+ expert-defined tags (e.g., "b-tree" -> DSA, "mutex" -> OS).
@@ -73,7 +82,7 @@ LearnSphere AI is designed to solve the "Paradox of Choice" in online learning. 
 - **Production-Safe Seeder**: `seedMappings.js` uses MongoDB `bulkWrite` with `upsert: true` to allow frequent tag updates without ever deleting existing user progress.
 - **Visuals**: React component `SkillTree.jsx` calculates SVG `strokeDasharray` on the fly to show smooth, hexagonal progress bars with theme-responsive glassmorphism.
 
-### 5. AI Tutor Chat (Streaming)
+### 6. AI Tutor Chat (Streaming)
 **Implementation:**
 - **Low Latency**: Utilizes Groq Cloud with `llama-3.3-70b-versatile`.
 - **Session Context**: The frontend `TutorChat.jsx` maintains a message state that is sent with every request to maintain conversation history.
@@ -85,14 +94,16 @@ LearnSphere AI is designed to solve the "Paradox of Choice" in online learning. 
 - **Frontend**: 
   - React 18 (Vite)
   - Tailwind CSS (Premium Glassmorphism Design)
-  - Framer Motion (Planned for micro-animations)
+  - Monaco Editor (Code Editing)
+  - Framer Motion (Animations)
   - Axios (API Communication)
 - **Backend**: 
   - Node.js & Express
   - MongoDB (via Mongoose)
   - JWT (Authentication & Security)
+  - Judge0 (Code Compilation)
 - **AI Infrastructure**: 
-  - Google Gemini 1.5 Flash (Roadmap/Quiz engine)
+  - Google Gemini 2.0 Flash (Roadmap/Quiz engine)
   - Groq Cloud (Llama-3 Tutor engine)
 - **APIs**: 
   - YouTube Data API v3 (Resource sourcing)

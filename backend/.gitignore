@@ -6,3 +6,9 @@ node_modules/
 .DS_Store
 dist/
 build/
+
+# AI Testing and Data
+scripts/test*
+scripts/gemini*
+data/problems/
+data/knowledge/

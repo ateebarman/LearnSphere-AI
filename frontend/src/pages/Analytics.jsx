@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { getAnalytics, getRoadmapStats, getQuizStats } from '../services/analyticsService';
-import { FaSpinner, FaBook, FaClipboardList, FaChartBar, FaClock, FaTrophy, FaCalendarAlt } from 'react-icons/fa';
+import { getAnalytics, getRoadmapStats, getQuizStats, getCodingAnalytics } from '../services/analyticsService';
+import { FaSpinner, FaBook, FaClipboardList, FaChartBar, FaClock, FaTrophy, FaCalendarAlt, FaCode, FaFire, FaCheckCircle, FaExclamationCircle, FaHistory } from 'react-icons/fa';
 
 const Analytics = () => {
   const [analytics, setAnalytics] = useState(null);
   const [roadmapStats, setRoadmapStats] = useState([]);
   const [quizStats, setQuizStats] = useState([]);
+  const [codingAnalytics, setCodingAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeView, setActiveView] = useState('overview');
   const [errorMessage, setErrorMessage] = useState('');
@@ -27,6 +28,9 @@ const Analytics = () => {
 
       const quizData = await getQuizStats();
       setQuizStats(quizData || []);
+
+      const codingData = await getCodingAnalytics();
+      setCodingAnalytics(codingData);
     } catch (err) {
       setErrorMessage('Failed to load analytics data');
       console.error(err);
@@ -73,6 +77,7 @@ const Analytics = () => {
             { id: 'overview', label: 'Overview', icon: FaChartBar },
             { id: 'roadmaps', label: 'Roadmaps', icon: FaBook },
             { id: 'quizzes', label: 'Quizzes', icon: FaClipboardList },
+            { id: 'coding', label: 'Coding Arena', icon: FaCode },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -320,6 +325,161 @@ const Analytics = () => {
                 <p className="mt-2">Testing your knowledge is the fastest way to learn!</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Coding Arena Tab */}
+        {activeView === 'coding' && codingAnalytics && (
+          <div className="space-y-12 animate-in slide-in-from-bottom duration-500">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { label: 'Problems Solved', value: codingAnalytics.stats.totalSolved, icon: FaCheckCircle, color: 'emerald' },
+                { label: 'Current Streak', value: `${codingAnalytics.stats.streak} Days`, icon: FaFire, color: 'orange' },
+                { label: 'Global Accuracy', value: `${codingAnalytics.stats.accuracy}%`, icon: FaTrophy, color: 'indigo' },
+              ].map((stat, idx) => (
+                <div key={idx} className="card-premium group">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">{stat.label}</p>
+                      <p className="text-4xl font-black text-gray-900 dark:text-white">{stat.value}</p>
+                    </div>
+                    <div className={`p-4 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-950/30 text-${stat.color}-600 dark:text-${stat.color}-400 transition-transform group-hover:scale-110`}>
+                      <stat.icon size={28} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Difficulty Breakdown */}
+              <div className="card-premium h-full">
+                <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                  <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
+                  Proficiency Level
+                </h2>
+                <div className="space-y-8">
+                  {Object.entries(codingAnalytics.difficultyBreakdown).map(([level, count]) => {
+                    const total = codingAnalytics.stats.totalSolved || 1;
+                    const percent = (count / total) * 100;
+                    const colorClasses = {
+                      Easy: 'bg-emerald-500',
+                      Medium: 'bg-amber-500',
+                      Hard: 'bg-rose-500'
+                    };
+                    const textClasses = {
+                      Easy: 'text-emerald-500',
+                      Medium: 'text-amber-500',
+                      Hard: 'text-rose-500'
+                    };
+                    return (
+                      <div key={level} className="space-y-3">
+                        <div className="flex justify-between items-end">
+                          <p className={`font-bold transition-colors ${textClasses[level]}`}>{level}</p>
+                          <p className="text-2xl font-black text-gray-900 dark:text-white">{count}</p>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-3 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-1000 ${colorClasses[level]}`}
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Weekly Activity */}
+              <div className="card-premium">
+                <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                  <div className="w-2 h-8 bg-orange-600 rounded-full"></div>
+                  Contribution Heatmap
+                </h2>
+                <div className="flex items-end justify-between h-48 gap-3 pt-4 px-2">
+                  {codingAnalytics.activity.map((day, idx) => {
+                    const max = Math.max(...codingAnalytics.activity.map(a => a.count), 5);
+                    const height = (day.count / max) * 100;
+                    const dateObj = new Date(day.date);
+                    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+
+                    return (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-4 group h-full justify-end">
+                        <div className="relative w-full flex flex-col items-center justify-end h-full">
+                          <div className="absolute -top-10 px-3 py-1.5 bg-gray-900 dark:bg-indigo-600 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 whitespace-nowrap z-10 shadow-xl font-bold">
+                            {day.count} submissons
+                          </div>
+                          <div
+                            className="w-full bg-orange-100 dark:bg-orange-900/20 group-hover:bg-orange-200 dark:group-hover:bg-orange-800/40 transition-all rounded-t-xl"
+                            style={{ height: `${height}%`, minHeight: day.count > 0 ? '6px' : '0' }}
+                          >
+                            <div className="w-full h-full bg-orange-500 rounded-t-xl opacity-80" />
+                          </div>
+                        </div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{dayName.charAt(0)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Submission History */}
+            <div className="card-premium border-none p-0 overflow-hidden shadow-2xl">
+              <div className="p-8 border-b dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/20">
+                <h2 className="text-3xl font-bold flex items-center gap-4">
+                  <FaHistory className="text-indigo-600" />
+                  Recent Submissions
+                </h2>
+              </div>
+              {codingAnalytics.recentSubmissions && codingAnalytics.recentSubmissions.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-gray-50 dark:bg-gray-950/50 text-gray-400 uppercase text-xs font-black tracking-widest border-b dark:border-gray-800">
+                        <th className="px-8 py-5">Problem</th>
+                        <th className="px-8 py-5">Result</th>
+                        <th className="px-8 py-5">Lang</th>
+                        <th className="px-8 py-5 text-center">Runtime</th>
+                        <th className="px-8 py-5">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y dark:divide-gray-800">
+                      {codingAnalytics.recentSubmissions.map((sub) => (
+                        <tr key={sub._id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                          <td className="px-8 py-6">
+                            <div className="font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors">{sub.question?.title}</div>
+                            <div className={`text-[10px] font-black uppercase tracking-widest mt-1 ${sub.question?.difficulty === 'Easy' ? 'text-emerald-500' :
+                                sub.question?.difficulty === 'Medium' ? 'text-amber-500' : 'text-rose-500'
+                              }`}>
+                              {sub.question?.difficulty}
+                            </div>
+                          </td>
+                          <td className="px-8 py-6">
+                            <span className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-black w-fit ${sub.status === 'Accepted'
+                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400'
+                              }`}>
+                              {sub.status === 'Accepted' ? <FaCheckCircle /> : <FaExclamationCircle />}
+                              {sub.status}
+                            </span>
+                          </td>
+                          <td className="px-8 py-6 font-mono text-[10px] uppercase font-bold text-gray-400">{sub.language}</td>
+                          <td className="px-8 py-6 text-center font-black text-gray-700 dark:text-gray-300">{sub.runtime ? `${sub.runtime}ms` : '--'}</td>
+                          <td className="px-8 py-6 text-sm text-gray-400 font-medium">{new Date(sub.createdAt).toLocaleDateString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-20 text-center opacity-30">
+                  <FaCode size={48} className="mx-auto mb-4" />
+                  <p className="text-xl font-bold">No submissions found.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
