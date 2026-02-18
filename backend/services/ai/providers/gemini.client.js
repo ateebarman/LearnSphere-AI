@@ -50,35 +50,32 @@ const getNextApiKey = async () => {
 };
 
 const extractJSON = (text) => {
+  // Strategy 1: Direct Parse
   try {
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-    
-    if (firstBrace === -1 || lastBrace === -1) {
-      throw new Error('No JSON object found in response');
-    }
-
-    const jsonCandidate = text.substring(firstBrace, lastBrace + 1);
-    
-    // Fix common AI JSON errors before parsing
-    const fixed = jsonCandidate
-      .replace(/,(\s*[}\]])/g, '$1') // remove trailing commas
-      .replace(/[\u201C\u201D]/g, '"') // fix "smart" quotes
-      .replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, contents) => {
-        // Replace raw newlines inside the string contents with escaped \n
-        return '"' + contents.replace(/\n/g, '\\n') + '"';
-      });
-      
-    return JSON.parse(fixed);
-  } catch (parseError) {
-    console.error('❌ Gemini JSON Extract Failed:', parseError.message);
-    // Last ditch: try to see if it's just raw text within code blocks
-    let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    if (cleaned.startsWith('{')) {
+    return JSON.parse(text);
+  } catch (e1) {
+    // Strategy 2: Substring
+    try {
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        const candidate = text.substring(firstBrace, lastBrace + 1);
+        const fixed = candidate
+          .replace(/,(\s*[}\]])/g, '$1') // remove trailing commas
+          .replace(/[\u201C\u201D]/g, '"') // fix "smart" quotes
+          .replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match, contents) => {
+              // Replace raw newlines inside the string contents with escaped \n
+              return '"' + contents.replace(/\n/g, '\\n') + '"';
+          });
+        return JSON.parse(fixed);
+      }
+    } catch (e2) {
+      // Strategy 3: Markdown clean
+      let cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
       try { return JSON.parse(cleaned); } catch (e) {}
     }
-    throw new Error(`JSON parsing failed: ${parseError.message}`);
   }
+  throw new Error('Failed to extract valid JSON from Gemini response');
 };
 
 export const generateJsonGemini = async (prompt, retryCount = 0) => {
@@ -91,12 +88,9 @@ export const generateJsonGemini = async (prompt, retryCount = 0) => {
   const fullPrompt = `${prompt}
 
 CRITICAL INSTRUCTIONS:
-- Respond ONLY with valid JSON, nothing else
-- Do NOT wrap in markdown code blocks
-- Do NOT include any text before or after the JSON
-- Ensure all strings use double quotes
-- All commas and brackets must be valid
-- Test your JSON is parseable before responding`;
+- Respond ONLY with valid JSON.
+- If you are generating code strings, ensure all internal quotes are escaped (\") and newlines are escaped (\\n).
+- Do NOT wrap in markdown code blocks.`;
 
   const models = [
     'gemini-flash-latest'
@@ -106,7 +100,7 @@ CRITICAL INSTRUCTIONS:
 
   for (const modelId of models) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60s timeout
 
     try {
       const res = await fetch(

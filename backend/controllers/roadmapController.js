@@ -1,12 +1,141 @@
 import asyncHandler from 'express-async-handler';
 import Roadmap from '../models/roadmapModel.js';
 import KnowledgeNode from '../models/knowledgeModel.js';
+import CodingQuestion from '../models/codingQuestionModel.js';
 import { generateRoadmapFromAI, generateRoadmapFromRAG } from '../services/geminiService.js';
 import { getRelevantContext } from '../services/ragService.js';
+import { generateJson } from '../services/ai/index.js';
+import { searchYouTubeVideos } from '../services/youtubeService.js';
+import { getResourcesForTopic } from '../services/resourceDatabase.js';
 
 
-// @desc    Generate a new roadmap
-// @route   POST /api/roadmaps
+// @desc    Get an AI roadmap preview (not saved)
+// @route   POST /api/roadmaps/preview
+// @access  Private
+const getRoadmapPreview = asyncHandler(async (req, res) => {
+  const { topic, difficulty, targetRole } = req.body;
+  if (!topic) {
+    res.status(400);
+    throw new Error('Topic is required');
+  }
+
+  const prompt = `
+    You are a World-Class Educational Architect and Career Coach creating an intelligent learning roadmap.
+    Generate a comprehensive, structured roadmap for: "${topic}"
+    ${difficulty ? `Target difficulty: ${difficulty}` : ''}
+    ${targetRole ? `Target role: ${targetRole}` : ''}
+
+    Return a JSON object with ALL fields filled:
+    {
+      "title": "Mastering ${topic}",
+      "topic": "${topic}",
+      "description": "A comprehensive, interview-focused learning path... (2-3 sentences)",
+      "difficulty": "${difficulty || 'Intermediate'}",
+      "totalDuration": "X Weeks",
+      "learningGoals": ["Goal 1: ...", "Goal 2: ...", "Goal 3: ...", "Goal 4: ..."],
+      "targetRoles": ["SDE-1", "Backend Engineer", ...],
+      "expectedOutcomes": ["Outcome 1: ...", "Outcome 2: ...", "Outcome 3: ..."],
+      "skillsCovered": ["Skill1", "Skill2", "Skill3", ...],
+      "tags": ["tag1", "tag2", "tag3", ...],
+      "prerequisites": ["Prerequisite 1", "Prerequisite 2", ...],
+      "modules": [
+        {
+          "title": "Module Title",
+          "description": "3-4 sentences on what this module covers and why",
+          "estimatedTime": "X hours",
+          "difficulty": "Beginner" | "Intermediate" | "Advanced",
+          "objectives": ["Objective 1", "Objective 2", "Objective 3", "Objective 4"],
+          "keyConcepts": ["Concept 1", "Concept 2", "Concept 3", "Concept 4", "Concept 5"],
+          "practiceProblems": [
+            { "title": "Problem Name", "url": "https://leetcode.com/problems/...", "difficulty": "Easy" | "Medium" | "Hard", "source": "external" }
+          ],
+          "learningResources": [
+            { "title": "Official Documentation", "url": "https://real-url.com/docs", "type": "doc", "source": "external" }
+          ],
+          "quizConfig": { "autoGenerate": true, "topic": "Module-specific topic", "questionCount": 5 },
+          "effortEstimate": { "readingMinutes": 30, "practiceMinutes": 45, "assessmentMinutes": 15 },
+          "interviewImportance": "Critical" | "High" | "Medium" | "Low",
+          "conceptWeight": 1-10,
+          "unlockCriteria": { "masteryThreshold": 60, "quizScore": 70, "problemsSolved": 2 }
+        }
+      ]
+    }
+    Return ONLY valid JSON.
+  `;
+
+  const data = await generateJson(prompt);
+
+  // Enrichment
+  const enrichedModules = await Promise.all(data.modules.map(async (module) => {
+    const youtubeVideos = await searchYouTubeVideos(`${module.title} tutorial developer`, 2);
+    const staticResources = getResourcesForTopic(module.title);
+    
+    const internalKnowledge = await KnowledgeNode.find({
+      $or: [
+        { topic: { $regex: new RegExp(module.title, 'i') } },
+        { keywords: { $in: (module.keyConcepts || []).map(k => new RegExp(k, 'i')) } }
+      ]
+    }).limit(2).select('topic slug summary');
+
+    const internalProblems = await CodingQuestion.find({
+      $or: [
+        { title: { $regex: new RegExp(module.title, 'i') } },
+        { topic: { $in: (module.keyConcepts || []).map(k => k.toLowerCase()) } }
+      ]
+    }).limit(2).select('title slug difficulty topic');
+
+    return {
+      ...module,
+      learningResources: [
+        ...youtubeVideos,
+        ...staticResources.slice(0, 2),
+        ...internalKnowledge.map(k => ({ title: `Internal: ${k.topic}`, url: `/knowledge/${k.slug}`, type: 'doc', source: 'internal' })),
+        ...(module.learningResources || [])
+      ].slice(0, 6),
+      practiceProblems: [
+        ...internalProblems.map(p => ({ title: `Internal: ${p.title}`, url: `/problems/${p.slug}`, difficulty: p.difficulty, source: 'internal' })),
+        ...(module.practiceProblems || [])
+      ].slice(0, 4)
+    };
+  }));
+
+  res.json({ ...data, modules: enrichedModules });
+});
+
+const createRoadmap = asyncHandler(async (req, res) => {
+  const {
+    title, topic, description, difficulty, totalDuration, modules,
+    learningGoals, targetRoles, expectedOutcomes, skillsCovered, tags, prerequisites, isPublic
+  } = req.body;
+
+  const roadmap = new Roadmap({
+    user: req.user._id,
+    title, topic, description, difficulty, totalDuration,
+    learningGoals: learningGoals || [],
+    targetRoles: targetRoles || [],
+    expectedOutcomes: expectedOutcomes || [],
+    skillsCovered: skillsCovered || [],
+    tags: tags || [],
+    prerequisites: prerequisites || [],
+    isPublic: isPublic || false,
+    modules: (modules || []).map((m, i) => ({
+      ...m,
+      order: i,
+      knowledgeRefs: m.knowledgeRefs || [],
+      practiceProblems: m.practiceProblems || [],
+      learningResources: m.learningResources || [],
+      quizConfig: m.quizConfig || { autoGenerate: true, topic: m.title, questionCount: 5 },
+      effortEstimate: m.effortEstimate || { readingMinutes: 30, practiceMinutes: 45, assessmentMinutes: 15 },
+      unlockCriteria: m.unlockCriteria || { masteryThreshold: 0, quizScore: 0, problemsSolved: 0 },
+    }))
+  });
+
+  const createdRoadmap = await roadmap.save();
+  res.status(201).json(createdRoadmap);
+});
+
+// @desc    Generate a new roadmap (Legacy/Direct)
+// @route   POST /api/roadmaps/direct
 // @access  Private
 const generateRoadmap = asyncHandler(async (req, res) => {
   const { topic } = req.body;
@@ -15,10 +144,8 @@ const generateRoadmap = asyncHandler(async (req, res) => {
     throw new Error('Please provide a topic');
   }
 
-  // 1. Get roadmap structure from Gemini (already contains YouTube videos)
   const aiRoadmap = await generateRoadmapFromAI(topic);
 
-  // 2. Save to database
   const roadmap = new Roadmap({
     user: req.user._id,
     title: aiRoadmap.title || `Learning ${topic}`,
@@ -259,12 +386,80 @@ const cloneRoadmap = asyncHandler(async (req, res) => {
   res.status(201).json({ roadmapId: savedRoadmap._id });
 });
 
+// @desc    Update a roadmap
+// @route   PUT /api/roadmaps/:id
+// @access  Private
+const updateRoadmap = asyncHandler(async (req, res) => {
+  const roadmap = await Roadmap.findById(req.params.id);
+
+  if (!roadmap) {
+    res.status(404);
+    throw new Error('Roadmap not found');
+  }
+
+  // Check if user is owner
+  if (roadmap.user.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to update this roadmap');
+  }
+
+  // Update fields
+  const { 
+    title, topic, description, difficulty, totalDuration, 
+    modules, learningGoals, targetRoles, expectedOutcomes, 
+    skillsCovered, tags, prerequisites, isPublic 
+  } = req.body;
+
+  roadmap.title = title || roadmap.title;
+  roadmap.topic = topic || roadmap.topic;
+  roadmap.description = description || roadmap.description;
+  roadmap.difficulty = difficulty || roadmap.difficulty;
+  roadmap.totalDuration = totalDuration || roadmap.totalDuration;
+  roadmap.modules = modules || roadmap.modules;
+  roadmap.learningGoals = learningGoals || roadmap.learningGoals;
+  roadmap.targetRoles = targetRoles || roadmap.targetRoles;
+  roadmap.expectedOutcomes = expectedOutcomes || roadmap.expectedOutcomes;
+  roadmap.skillsCovered = skillsCovered || roadmap.skillsCovered;
+  roadmap.tags = tags || roadmap.tags;
+  roadmap.prerequisites = prerequisites || roadmap.prerequisites;
+  
+  if (isPublic !== undefined) roadmap.isPublic = isPublic;
+
+  const updatedRoadmap = await roadmap.save();
+  res.json(updatedRoadmap);
+});
+
+// @desc    Delete a roadmap
+// @route   DELETE /api/roadmaps/:id
+// @access  Private
+const deleteRoadmap = asyncHandler(async (req, res) => {
+  const roadmap = await Roadmap.findById(req.params.id);
+
+  if (!roadmap) {
+    res.status(404);
+    throw new Error('Roadmap not found');
+  }
+
+  // Check if user is owner
+  if (roadmap.user.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Not authorized to delete this roadmap');
+  }
+
+  await roadmap.deleteOne();
+  res.json({ message: 'Roadmap deleted successfully' });
+});
+
 export { 
+  getRoadmapPreview,
+  createRoadmap,
   generateRoadmap, 
   generateRAGRoadmap,
   getRoadmapById, 
   getUserRoadmaps, 
   getPublicRoadmaps, 
   toggleRoadmapVisibility, 
-  cloneRoadmap 
+  cloneRoadmap,
+  updateRoadmap,
+  deleteRoadmap
 };

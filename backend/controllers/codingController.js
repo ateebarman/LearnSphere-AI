@@ -64,12 +64,12 @@ export const generateQuestions = asyncHandler(async (req, res) => {
 // @route   POST /api/coding/generate-ai
 // @access  Private
 export const triggerAiGeneration = asyncHandler(async (req, res) => {
-  const { topic, count = 1 } = req.body;
+  const { topic, description = '', count = 1 } = req.body;
   
   const results = [];
   for (let i = 0; i < count; i++) {
     try {
-      const data = await generateCodingQuestionFromAI(topic);
+      const data = await generateCodingQuestionFromAI(topic, description);
       const question = await CodingQuestion.create({
         topic: topic.toLowerCase(),
         ...data

@@ -1,5 +1,7 @@
 import express from 'express';
 import {
+  getRoadmapPreview,
+  createRoadmap,
   generateRoadmap,
   generateRAGRoadmap,
   getRoadmapById,
@@ -7,6 +9,8 @@ import {
   getPublicRoadmaps,
   toggleRoadmapVisibility,
   cloneRoadmap,
+  updateRoadmap,
+  deleteRoadmap,
 } from '../controllers/roadmapController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { validateRoadmap } from '../middleware/validationMiddleware.js';
@@ -17,14 +21,19 @@ const router = express.Router();
 router.get('/public/list', getPublicRoadmaps);
 
 // User's roadmaps and generate new one
-router.route('/').post(protect, validateRoadmap, generateRoadmap).get(protect, getUserRoadmaps);
+router.post('/preview', protect, getRoadmapPreview);
+router.post('/direct', protect, generateRoadmap);
+router.route('/').post(protect, validateRoadmap, createRoadmap).get(protect, getUserRoadmaps);
 
 // Generate RAG-based roadmap
 router.post('/rag', protect, generateRAGRoadmap);
 
 
 // Roadmap details (protected - can view own or public)
-router.get('/:id', protect, getRoadmapById);
+router.route('/:id')
+  .get(protect, getRoadmapById)
+  .put(protect, updateRoadmap)
+  .delete(protect, deleteRoadmap);
 
 // Toggle visibility (protected - owner only)
 router.put('/:id/visibility', protect, toggleRoadmapVisibility);

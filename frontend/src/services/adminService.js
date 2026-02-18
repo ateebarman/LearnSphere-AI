@@ -22,8 +22,8 @@ export const deleteProblem = async (id) => {
   return data;
 };
 
-export const aiGenerateProblem = async (topic) => {
-  const { data } = await api.post('/admin/problems/ai-generate', { topic });
+export const aiGenerateProblem = async (topic, description = '') => {
+  const { data } = await api.post('/admin/problems/ai-generate', { topic, description });
   return data;
 };
 
@@ -64,6 +64,11 @@ export const createAdminRoadmap = async (roadmapData) => {
   return data;
 };
 
+export const updateAdminRoadmap = async (id, roadmapData) => {
+  const { data } = await api.put(`/admin/roadmaps/${id}`, roadmapData);
+  return data;
+};
+
 export const deleteRoadmap = async (id) => {
   const { data } = await api.delete(`/admin/roadmaps/${id}`);
   return data;
@@ -71,5 +76,10 @@ export const deleteRoadmap = async (id) => {
 
 export const aiGenerateRoadmap = async (topic, difficulty, targetRole) => {
   const { data } = await api.post('/admin/roadmaps/ai-generate', { topic, difficulty, targetRole });
+  return data;
+};
+
+export const aiGenerateModule = async (topic, difficulty, currentModuleCount) => {
+  const { data } = await api.post('/admin/roadmaps/ai-generate-module', { topic, difficulty, currentModuleCount });
   return data;
 };

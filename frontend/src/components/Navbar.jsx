@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Search, GraduationCap,
   BookOpen, Beaker, BarChart3, User,
-  LogOut, Sun, Moon, Sparkles, Code2, Shield
+  LogOut, Sun, Moon, Sparkles, Code2, Shield, Calendar
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -20,12 +20,12 @@ const Navbar = () => {
 
   const navLinks = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/planner', label: 'Planner', icon: Calendar },
     { to: '/tutor', label: 'AI Tutor', icon: GraduationCap },
     { to: '/explore', label: 'Explore', icon: Search },
     { to: '/library', label: 'Docs', icon: BookOpen },
     { to: '/lab', label: 'Lab', icon: Beaker },
     { to: '/coding', label: 'Coding', icon: Code2 },
-    { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
   return (

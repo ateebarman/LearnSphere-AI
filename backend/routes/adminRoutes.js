@@ -17,7 +17,9 @@ import {
   // Roadmaps
   getAdminRoadmaps,
   createAdminRoadmap,
+  updateAdminRoadmap,
   aiGenerateRoadmap,
+  aiGenerateModule,
   deleteRoadmap,
 } from '../controllers/adminController.js';
 
@@ -45,7 +47,9 @@ router.delete('/knowledge/:id', deleteKnowledge);
 // Roadmap Management
 router.get('/roadmaps', getAdminRoadmaps);
 router.post('/roadmaps', createAdminRoadmap);
+router.put('/roadmaps/:id', updateAdminRoadmap);
 router.post('/roadmaps/ai-generate', aiGenerateRoadmap);
+router.post('/roadmaps/ai-generate-module', aiGenerateModule);
 router.delete('/roadmaps/:id', deleteRoadmap);
 
 export default router;

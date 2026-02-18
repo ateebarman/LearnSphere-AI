@@ -18,6 +18,7 @@ import KnowledgeLibrary from './pages/KnowledgeLibrary';
 import CodingArena from './pages/CodingArena';
 import CodingList from './pages/CodingList';
 import AdminDashboard from './pages/AdminDashboard';
+import MyPlanner from './pages/MyPlanner';
 import ScrollToTop from './components/ScrollToTop';
 
 import { useEffect } from 'react';
@@ -66,6 +67,7 @@ function App() {
             <Route path="lab" element={<AdvancedStudy />} />
             <Route path="coding" element={<CodingList />} />
             <Route path="coding/:slug" element={<CodingArena />} />
+            <Route path="planner" element={<MyPlanner />} />
 
             {/* Admin Routes */}
             <Route element={<AdminRoute />}>

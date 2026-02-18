@@ -15,31 +15,38 @@ const extractJSON = (text) => {
       });
   };
 
+  // Strategy 1: Direct Parse (Fastest, trusts the model)
   try {
-    const firstBrace = text.indexOf('{');
-    const lastBrace = text.lastIndexOf('}');
-
-    if (firstBrace === -1 || lastBrace === -1) {
-      throw new Error('No JSON object found in response');
-    }
-
-    const jsonCandidate = text.substring(firstBrace, lastBrace + 1);
-    return JSON.parse(clean(jsonCandidate));
-  } catch (error) {
-    // Strategy 2: Aggressive markdown removal
-    let cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-    const firstBrace = cleanedText.indexOf('{');
-    const lastBrace = cleanedText.lastIndexOf('}');
-    
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      try {
-        const candidate = cleanedText.substring(firstBrace, lastBrace + 1);
-        return JSON.parse(clean(candidate));
-      } catch (e) {
-        throw new Error(`JSON parsing failed: ${e.message}`);
+    return JSON.parse(text);
+  } catch (e1) {
+    // Strategy 2: Extract substring between braces (Handles conversational filler)
+    try {
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        const candidate = text.substring(firstBrace, lastBrace + 1);
+        try {
+          return JSON.parse(candidate);
+        } catch (e2) {
+          // Strategy 3: Clean and Parse (Fixes unescaped newlines/chars)
+          return JSON.parse(clean(candidate));
+        }
+      }
+    } catch (e3) {
+      // Strategy 4: Final fallback - aggressive markdown removal and cleaning
+      let cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const firstBrace = cleanedText.indexOf('{');
+      const lastBrace = cleanedText.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        try {
+          const candidate = cleanedText.substring(firstBrace, lastBrace + 1);
+          return JSON.parse(clean(candidate));
+        } catch (e4) {
+          throw new Error(`Invalid JSON format: ${e4.message}`);
+        }
       }
     }
-    throw new Error(`Invalid JSON format: ${error.message}`);
+    throw new Error(`JSON Extraction Failed: ${e1.message}`);
   }
 };
 
