@@ -1,0 +1,27 @@
+# Professional Interview Prep & Internal Guides
+INTERVIEW_GUIDE_ADVANCED.md
+GUIDE_SDE_CURRICULUM.md
+PROBLEM_TEMPLATE.txt
+*.pdf
+*.docx
+
+# Environment and Secrets
+.env
+.env.local
+.env.*.local
+.vscode/
+.idea/
+
+# Dependencies & Build
+node_modules/
+dist/
+build/
+.DS_Store
+Thumbs.db
+
+# Project Specific
+backend/scripts/gemini*
+backend/scripts/test*
+backend/data/
+frontend/dist/
+frontend/build/

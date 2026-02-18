@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Shield, LayoutDashboard, Code2, BookOpen, Map, Trash2, Plus,
-    Sparkles, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight,
+    Sparkles, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, ChevronLeft,
     Search, AlertTriangle, Play, Eye, Save, ArrowLeft, Users, FileText,
     Zap, Database, BarChart3, X, Link2, BookMarked, Edit3
 } from 'lucide-react';
@@ -22,6 +22,9 @@ const AdminDashboard = () => {
 
     // Problems state
     const [problems, setProblems] = useState([]);
+    const [problemsPage, setProblemsPage] = useState(1);
+    const [problemsTotalPages, setProblemsTotalPages] = useState(1);
+    const [problemsTotal, setProblemsTotal] = useState(0);
     const [showAddProblem, setShowAddProblem] = useState(false);
     const [problemForm, setProblemForm] = useState({
         title: '', problemStatement: '', difficulty: 'Easy', topic: 'arrays + strings',
@@ -44,6 +47,9 @@ const AdminDashboard = () => {
 
     // Knowledge state
     const [knowledge, setKnowledge] = useState([]);
+    const [knowledgePage, setKnowledgePage] = useState(1);
+    const [knowledgeTotalPages, setKnowledgeTotalPages] = useState(1);
+    const [knowledgeTotal, setKnowledgeTotal] = useState(0);
     const [showAddKnowledge, setShowAddKnowledge] = useState(false);
     const [knowledgeForm, setKnowledgeForm] = useState({
         topic: '', category: 'DSA', summary: '', detailedContent: '',
@@ -60,6 +66,9 @@ const AdminDashboard = () => {
 
     // Roadmaps state
     const [roadmaps, setRoadmaps] = useState([]);
+    const [roadmapsPage, setRoadmapsPage] = useState(1);
+    const [roadmapsTotalPages, setRoadmapsTotalPages] = useState(1);
+    const [roadmapsTotal, setRoadmapsTotal] = useState(0);
     const [showAddRoadmap, setShowAddRoadmap] = useState(false);
     const [aiRoadmapTopic, setAiRoadmapTopic] = useState('');
     const [aiRoadmapDifficulty, setAiRoadmapDifficulty] = useState('Intermediate');
@@ -93,37 +102,49 @@ const AdminDashboard = () => {
 
     useEffect(() => { fetchStats(); }, []);
     useEffect(() => {
-        if (activeSection === 'problems') fetchProblems();
-        if (activeSection === 'knowledge') fetchKnowledge();
+        if (activeSection === 'problems') fetchProblems(problemsPage);
+        if (activeSection === 'knowledge') fetchKnowledge(knowledgePage);
         if (activeSection === 'roadmaps') {
-            fetchRoadmaps();
-            fetchProblems();
-            fetchKnowledge();
+            fetchRoadmaps(roadmapsPage);
+            fetchProblems(1);
+            fetchKnowledge(1);
         }
-    }, [activeSection]);
+    }, [activeSection, problemsPage, knowledgePage, roadmapsPage]);
 
     const fetchStats = async () => {
         try { const data = await getAdminStats(); setStats(data); }
         catch { toast.error('Failed to load stats'); }
         finally { setLoading(false); }
     };
-    const fetchProblems = async () => {
-        try { setProblems(await getAdminProblems()); }
-        catch { toast.error('Failed to load problems'); }
+    const fetchProblems = async (page = 1) => {
+        try {
+            const res = await getAdminProblems(page);
+            setProblems(res.problems || []);
+            setProblemsTotalPages(res.pages || 1);
+            setProblemsTotal(res.total || 0);
+        } catch { toast.error('Failed to load problems'); }
     };
-    const fetchKnowledge = async () => {
-        try { setKnowledge(await getAdminKnowledge()); }
-        catch { toast.error('Failed to load knowledge'); }
+    const fetchKnowledge = async (page = 1) => {
+        try {
+            const res = await getAdminKnowledge(page);
+            setKnowledge(res.nodes || []);
+            setKnowledgeTotalPages(res.pages || 1);
+            setKnowledgeTotal(res.total || 0);
+        } catch { toast.error('Failed to load knowledge'); }
     };
-    const fetchRoadmaps = async () => {
-        try { setRoadmaps(await getAdminRoadmaps()); }
-        catch { toast.error('Failed to load roadmaps'); }
+    const fetchRoadmaps = async (page = 1) => {
+        try {
+            const res = await getAdminRoadmaps(page);
+            setRoadmaps(res.roadmaps || []);
+            setRoadmapsTotalPages(res.pages || 1);
+            setRoadmapsTotal(res.total || 0);
+        } catch { toast.error('Failed to load roadmaps'); }
     };
 
     // === PROBLEM HANDLERS ===
     const handleDeleteProblem = async (id, title) => {
         if (!window.confirm(`Delete "${title}"? This also removes all submissions.`)) return;
-        try { await deleteProblem(id); toast.success('Problem deleted'); fetchProblems(); }
+        try { await deleteProblem(id); toast.success('Problem deleted'); fetchProblems(problemsPage); }
         catch { toast.error('Failed to delete'); }
     };
 
@@ -160,7 +181,7 @@ const AdminDashboard = () => {
                 inputSchema: {}, outputSchema: {},
                 functionSignature: { methodName: '', parameters: [{ name: '', type: '' }], returnType: '' }
             });
-            fetchProblems();
+            fetchProblems(problemsPage);
         } catch (err) { toast.error(err.response?.data?.message || 'Creation failed', { id: tid }); }
     };
 
@@ -218,14 +239,14 @@ const AdminDashboard = () => {
             await createProblem({ ...aiPreview, validated: true });
             toast.success('Problem committed!', { id: tid });
             setAiPreview(null); setValidationResult(null); setAiTopic('');
-            fetchProblems();
+            fetchProblems(problemsPage);
         } catch (err) { toast.error(err.response?.data?.message || 'Commit failed', { id: tid }); }
     };
 
     // === KNOWLEDGE HANDLERS ===
     const handleDeleteKnowledge = async (id, topic) => {
         if (!window.confirm(`Delete knowledge entry "${topic}"?`)) return;
-        try { await deleteKnowledge(id); toast.success('Entry deleted'); fetchKnowledge(); }
+        try { await deleteKnowledge(id); toast.success('Entry deleted'); fetchKnowledge(knowledgePage); }
         catch { toast.error('Failed to delete'); }
     };
 
@@ -265,7 +286,7 @@ const AdminDashboard = () => {
                 implementations: [{ language: 'JavaScript', code: '', explanation: '' }],
                 furtherReading: [{ title: '', url: '', source: 'external', knowledgeRef: null }]
             });
-            fetchKnowledge();
+            fetchKnowledge(knowledgePage);
         } catch (err) { toast.error(err.response?.data?.message || 'Creation failed', { id: tid }); }
     };
 
@@ -312,7 +333,7 @@ const AdminDashboard = () => {
     // === ROADMAP HANDLERS ===
     const handleDeleteRoadmap = async (id, title) => {
         if (!window.confirm(`Delete roadmap "${title}"?`)) return;
-        try { await deleteRoadmap(id); toast.success('Roadmap deleted'); fetchRoadmaps(); }
+        try { await deleteRoadmap(id); toast.success('Roadmap deleted'); fetchRoadmaps(roadmapsPage); }
         catch { toast.error('Failed to delete'); }
     };
 
@@ -349,7 +370,7 @@ const AdminDashboard = () => {
                 skillsCovered: [''], tags: '', prerequisites: [''],
                 modules: [{ ...defaultModule }]
             });
-            fetchRoadmaps();
+            fetchRoadmaps(roadmapsPage);
         } catch (err) { toast.error(err.response?.data?.message || 'Action failed', { id: tid }); }
     };
 
@@ -476,6 +497,53 @@ const AdminDashboard = () => {
         </div>
     );
 
+    const Pagination = ({ current, total, onPageChange }) => (
+        <div className="flex items-center justify-between px-6 py-4 border-t border-white/5 bg-slate-900/10">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
+                Page <span className="text-white">{current}</span> of <span className="text-white">{total}</span>
+            </p>
+            <div className="flex items-center gap-2">
+                <button
+                    disabled={current <= 1}
+                    onClick={() => onPageChange(current - 1)}
+                    className="p-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                >
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-1">
+                    {[...Array(total)].map((_, i) => {
+                        const page = i + 1;
+                        // Only show first, last, and pages around current
+                        if (page === 1 || page === total || (page >= current - 1 && page <= current + 1)) {
+                            return (
+                                <button
+                                    key={page}
+                                    onClick={() => onPageChange(page)}
+                                    className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all ${current === page
+                                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20'
+                                        : 'text-slate-500 hover:text-white hover:bg-white/5'
+                                        }`}
+                                >
+                                    {page}
+                                </button>
+                            );
+                        } else if (page === current - 2 || page === current + 2) {
+                            return <span key={page} className="text-slate-600 px-1">...</span>;
+                        }
+                        return null;
+                    })}
+                </div>
+                <button
+                    disabled={current >= total}
+                    onClick={() => onPageChange(current + 1)}
+                    className="p-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                >
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+    );
+
     const sidebarItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'problems', label: 'Problems', icon: Code2 },
@@ -557,7 +625,7 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h1 className="text-3xl font-black text-white mb-1">Problem Management</h1>
-                                        <p className="text-slate-500 text-sm">{problems.length} problems in curriculum</p>
+                                        <p className="text-slate-500 text-sm">{problemsTotal} problems in curriculum</p>
                                     </div>
                                     <button onClick={() => setShowAddProblem(!showAddProblem)}
                                         className="px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary-500 transition-all shadow-lg shadow-primary-500/20">
@@ -752,6 +820,13 @@ const AdminDashboard = () => {
                                             ))}
                                         </tbody>
                                     </table>
+                                    {problemsTotalPages > 1 && (
+                                        <Pagination
+                                            current={problemsPage}
+                                            total={problemsTotalPages}
+                                            onPageChange={setProblemsPage}
+                                        />
+                                    )}
                                 </div>
                             </motion.div>
                         )}
@@ -762,7 +837,7 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h1 className="text-3xl font-black text-white mb-1">Knowledge Base</h1>
-                                        <p className="text-slate-500 text-sm">{knowledge.length} entries</p>
+                                        <p className="text-slate-500 text-sm">{knowledgeTotal} entries</p>
                                     </div>
                                     <button onClick={() => setShowAddKnowledge(!showAddKnowledge)}
                                         className="px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary-500 transition-all">
@@ -1000,6 +1075,13 @@ const AdminDashboard = () => {
                                             ))}
                                         </tbody>
                                     </table>
+                                    {knowledgeTotalPages > 1 && (
+                                        <Pagination
+                                            current={knowledgePage}
+                                            total={knowledgeTotalPages}
+                                            onPageChange={setKnowledgePage}
+                                        />
+                                    )}
                                 </div>
                             </motion.div>
                         )}
@@ -1010,7 +1092,7 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h1 className="text-3xl font-black text-white mb-1">Community Roadmaps</h1>
-                                        <p className="text-slate-500 text-sm">{roadmaps.length} public roadmaps</p>
+                                        <p className="text-slate-500 text-sm">{roadmapsTotal} public roadmaps</p>
                                     </div>
                                     <button onClick={() => setShowAddRoadmap(!showAddRoadmap)}
                                         className="px-4 py-2 bg-primary-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary-500 transition-all">
@@ -1330,6 +1412,15 @@ const AdminDashboard = () => {
                                         </div>
                                     ))}
                                 </div>
+                                {roadmapsTotalPages > 1 && (
+                                    <div className="mt-6 bg-slate-900/30 border border-white/5 rounded-2xl overflow-hidden">
+                                        <Pagination
+                                            current={roadmapsPage}
+                                            total={roadmapsTotalPages}
+                                            onPageChange={setRoadmapsPage}
+                                        />
+                                    </div>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>

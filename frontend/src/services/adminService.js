@@ -7,8 +7,8 @@ export const getAdminStats = async () => {
 };
 
 // Problems
-export const getAdminProblems = async () => {
-  const { data } = await api.get('/admin/problems');
+export const getAdminProblems = async (page = 1, limit = 15) => {
+  const { data } = await api.get(`/admin/problems?page=${page}&limit=${limit}`);
   return data;
 };
 
@@ -33,8 +33,8 @@ export const validateProblem = async (problemData) => {
 };
 
 // Knowledge Base
-export const getAdminKnowledge = async () => {
-  const { data } = await api.get('/admin/knowledge');
+export const getAdminKnowledge = async (page = 1, limit = 15) => {
+  const { data } = await api.get(`/admin/knowledge?page=${page}&limit=${limit}`);
   return data;
 };
 
@@ -54,8 +54,8 @@ export const deleteKnowledge = async (id) => {
 };
 
 // Roadmaps
-export const getAdminRoadmaps = async () => {
-  const { data } = await api.get('/admin/roadmaps');
+export const getAdminRoadmaps = async (page = 1, limit = 15) => {
+  const { data } = await api.get(`/admin/roadmaps?page=${page}&limit=${limit}`);
   return data;
 };
 

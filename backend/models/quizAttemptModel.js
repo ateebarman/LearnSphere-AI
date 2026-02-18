@@ -34,5 +34,9 @@ const quizAttemptSchema = mongoose.Schema(
   }
 );
 
+// Indexes for performance
+quizAttemptSchema.index({ user: 1, roadmap: 1 }); // To check module completion status
+quizAttemptSchema.index({ user: 1, createdAt: -1 }); // To fetch user history
+
 const QuizAttempt = mongoose.model('QuizAttempt', quizAttemptSchema);
 export default QuizAttempt;

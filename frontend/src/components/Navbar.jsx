@@ -26,6 +26,7 @@ const Navbar = () => {
     { to: '/library', label: 'Docs', icon: BookOpen },
     { to: '/lab', label: 'Lab', icon: Beaker },
     { to: '/coding', label: 'Coding', icon: Code2 },
+    { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   ];
 
   return (

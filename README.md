@@ -1,168 +1,133 @@
 # LearnSphere AI 🚀
+> **The Ultimate Intelligent Learning Platform**
 
-> **LearnSphere AI** is a next-generation local-first learning platform that leverages state-of-the-art AI (Gemini/Groq) to generate personalized roadmaps, RAG-driven curriculum from PDFs, and dynamic assessments — all unified under a gamified, tag-based Skill Tree.
+**LearnSphere AI** is an advanced, AI-powered educational ecosystem designed to streamline the journey from beginner to expert. By combining **Large Language Models (Gemini, Llama-3)**, **Vector Search (RAG)**, and **Redis-backed Performance Optimization**, it delivers personalized roadmaps, high-fidelity coding practice, and a verified knowledge library—all tracked via a gamified Analytics engine.
 
 ---
 
 ## 📑 Table of Contents
-- [Project Overview](#project-overview)
-- [Key Features](#key-features)
-- [Detailed Technical Implementation](#detailed-technical-implementation)
-  - [Personalized AI Roadmap Generation](#1-personalized-ai-roadmap-generation)
-  - [RAG-Enabled Roadmaps (Study Material Analysis)](#2-rag-enabled-roadmaps)
-  - [Dynamic Quiz Assessment System](#3-dynamic-quiz-assessment-system)
-  - [Learning Analytics & Dynamic Skill Tree](#4-learning-analytics--dynamic-skill-tree)
-  - [AI Tutor Chat (Streaming)](#5-ai-tutor-chat)
-  - [Resource Library (Independent Search)](#6-resource-library-independent-search)
-- [Tech Stack](#tech-stack)
-- [Repository Structure](#repository-structure)
-- [Environment Variables](#environment-variables)
-- [Local Setup](#local-setup)
-- [API Endpoints](#api-endpoints)
-- [Testing & Scripts](#testing--scripts)
-- [Troubleshooting](#troubleshooting)
-- [Future Roadmap](#future-roadmap)
-
----
-
-## 🏁 Project Overview
-LearnSphere AI is designed to solve the "Paradox of Choice" in online learning. Instead of browsing thousands of courses, users provide a topic or a document, and the platform constructs a validated, high-quality learning journey. It bridges the gap between raw AI output and verified educational content by integrating real-world resources (YouTube, Official Docs) and tracking mastery via a dynamic Skill Tree.
+- [✨ Key Features](#-key-features)
+- [🏗️ System Architecture](#️-system-architecture)
+- [⚡ Performance & Database Optimization](#-performance--database-optimization)
+- [🛡️ Admin & Control Engine](#️-admin--control-engine)
+- [🧠 Core Modules Detailed](#-core-modules-detailed)
+  - [1. Personalized AI Roadmaps](#1-personalized-ai-roadmaps)
+  - [2. Coding Arena & Judge System](#2-coding-arena--judge-system)
+  - [3. Knowledge Base (Docs 2.0)](#3-knowledge-base-docs-20)
+  - [4. RAG Engine (PDF Analysis)](#4-rag-engine-pdf-analysis)
+- [🧪 Testing & Benchmarking](#-testing--benchmarking)
+- [🛠 Tech Stack](#-tech-stack)
+- [🚀 Rapid Deployment](#-rapid-deployment)
+- [🔑 Environment Configuration](#-environment-configuration)
 
 ---
 
 ## ✨ Key Features
-- 🎓 **AI Tutor Chat** — Real-time 1-on-1 tutoring with Groq LLM (Llama-3).
-- � **Coding Arena** — Integrated Monaco Editor with multi-language support (C++, Python, JS) and real-time compilation via Judge0.
-- �🗺️ **Personalized Roadmaps** — 8-module progressive paths generated via Gemini 1.5.
-- 📄 **RAG Roadmap (New)** — Upload your own PDFs to generate a curriculum based strictly on your document.
-- 📚 **Resource Library** — Search for tutorials and articles independently of roadmaps.
-- 📊 **Dynamic Skill Tree** — Gamified visualization of your technical growth.
-- 📝 **AI Quiz System** — Dynamic assessments that generate questions based on your specific learning module.
-- 🔐 **Secure JWT Auth** — Protected routes and personalized data syncing.
-- 🔍 **Explorer Gallery** — Share your roadmaps with the community or clone theirs.
+
+| Feature | Description |
+| :--- | :--- |
+| **AI Roadmap Architect** | Generates 8-15 module progressive paths with real video & doc verification. |
+| **RAG Study Material** | Upload PDFs to generate custom curricula based strictly on your documents. |
+| **Coding Arena** | Monaco-powered editor with real-time C++, Python, and JS execution. |
+| **Knowledge Base** | High-density docs with ELI5 intuition, complexity analysis, and code snippets. |
+| **Dynamic Analytics** | Real-time mastery tracking through quizzes and roadmap completion. |
+| **AI Tutor Chat** | 1-on-1 real-time tutoring using Llama-3 (Groq) with conversation memory. |
+| **Admin OS** | Fully integrated CRUD dashboard with AI content generation tools. |
 
 ---
 
-## 🧠 Detailed Technical Implementation
+## ⚡ Performance & Database Optimization
+*Engineered for scale and millisecond latency.*
 
-### 1. Coding Arena & Compiler Engine
-**Problem:** Most learning platforms lack a verified environment to practice code.
-**Implementation:**
-- **Editor**: Embedded `Monaco Editor` (VS Code's core) with custom themes, syntax highlighting, and intellisense for C++, Python, and JavaScript.
-- **Compilation**: Code is bundled with test inputs and sent to a self-hosted or cloud `Judge0` instance.
-- **Test Harness**: The backend `compilerService.js` wraps user code with a custom test runner that executes against hidden test cases.
-- **State Management**: Persists your latest code drafts in local storage so you never lose progress during network drops.
+### 1. Redis Caching (Upstash)
+We implement a **multi-tier caching strategy** using Redis to reduce MongoDB load by ~85%:
+- **Knowledge Base Detail**: Individual topic pages cached for 1 hour.
+- **Community Roadmaps**: Public list cached for 30 minutes; individual details for 1 hour.
+- **Analytics Overview**: Heavy aggregation results cached for 10 minutes per user.
+- **Problem Lists**: Paginated search results cached for 10 minutes.
 
-### 2. Personalized AI Roadmap Generation
-**Problem:** Most AI roadmaps provide broken links and generic descriptions.
-**Implementation:** 
-- **The Engine**: Uses `geminiService.js` to process topic queries.
-- **Precision Validation**: A proprietary sanitization layer checks every suggested URL. If the AI provides a "placeholder" or broken link, the system executes a **Scoped Google Search** (e.g., `site:docs.python.org + [topic]`) or defaults to verified domains like GeeksForGeeks or MDN.
-- **Multi-Media Integration**: Each module in the roadmap is enriched with a `searchYouTubeVideos` service call that anchors queries using module titles AND `keyConcepts` for high-precision results.
+### 2. Advanced MongoDB Indexing
+Optimized query execution using compound and text indexes:
+- `Roadmap`: `{ user: 1, createdAt: -1 }` for instant dashboard loads.
+- `Submission`: `{ user: 1, question: 1, status: 1 }` for checking problem solve status.
+- `QuizAttempt`: `{ user: 1, roadmap: 1 }` for module completion checks.
 
-### 3. RAG-Enabled Roadmaps (Study Material)
-**Problem:** Generic AI doesn't know about your specific lecture notes or proprietary docs.
-**Implementation:**
-- **Parsing**: Uses `pdf-parse` for robust text extraction.
-- **Contextual Curriculum**: `ragService.js` builds a unique prompt that feeds extracted text into Gemini, tasking it to act as an "Educational Architect" that extracts 7-10 modules *exclusively* from the provided text.
-- **Reliability**: Prevents a user's roadmap from drifting into external topics, ensuring it's a perfect companion for specific exam preparation.
+### 3. Query Efficiency
+- **Lean Queries**: All read-only operations use `.lean()` to bypass Mongoose hydration overhead.
+- **Partial Projections**: Fetching only required fields (`.select()`) to minimize network payload.
+- **Standardized Pagination**: Uniform `page` and `limit` (default 15) across all Admin and Library endpoints.
 
-### 4. Dynamic Quiz Assessment System
-**Functionality:** Assessments that actually match what you just studied.
-**Implementation:**
-- **On-Demand Generation**: When you click "Take Quiz", `quizController.js` identifies the module title & parent topic.
-- **Grounding Switch**: The system can toggle between "General Knowledge" (pure LLM) and "Knowledge-Based" (pulling from our internal Knowledge Node database) to ensure quiz correctness.
-- **Scoring Engine**: Evaluates JSON payloads of answers, calculates percentage, and stores results in a `QuizAttempt` collection to fuel your "Weak Areas" analysis.
+---
 
-### 5. Learning Analytics & Dynamic Skill Tree
-**Problem:** How do you map 10,000 possible topics into 5 core levels?
-**Implementation:**
-- **Category Mappings**: Uses a `CategoryMapping` model with over 150+ expert-defined tags (e.g., "b-tree" -> DSA, "mutex" -> OS).
-- **Fuzzy Attribution Engine**: The `analyticsController.js` uses a set-based intersection logic. If your roadmap title or module title contains any known tags, that progress is "attributed" to the parent pillar.
-- **Production-Safe Seeder**: `seedMappings.js` uses MongoDB `bulkWrite` with `upsert: true` to allow frequent tag updates without ever deleting existing user progress.
-- **Visuals**: React component `SkillTree.jsx` calculates SVG `strokeDasharray` on the fly to show smooth, hexagonal progress bars with theme-responsive glassmorphism.
+## 🛡️ Admin & Control Engine
+*The power to manage an entire curriculum.*
 
-### 6. AI Tutor Chat (Streaming)
-**Implementation:**
-- **Low Latency**: Utilizes Groq Cloud with `llama-3.3-70b-versatile`.
-- **Session Context**: The frontend `TutorChat.jsx` maintains a message state that is sent with every request to maintain conversation history.
-- **Streaming**: Implemented using basic POST/long-polling or standard JSON responses (planned migration to Server-Sent Events).
+The **Admin Dashboard** provides a professional-grade interface for content curators:
+- **Problem Management**: Create, Edit, or **AI-Generate** coding problems including test cases and starter code.
+- **Knowledge Library**: Bulk manage documentation. Includes an **AI Knowledge Generator** that creates 500+ word deep-dives, ELI5 intuition, and complexity markers.
+- **Roadmap Operations**: Create official roadmaps or "Officialize" community-generated ones.
+- **Validation Suite**: Built-in logic to test and validate problem correctness before publishing.
+
+---
+
+## 🧠 Core Modules Detailed
+
+### 1. Personalized AI Roadmaps
+Unlike standard AI lists, LearnSphere roadmaps are **Hyper-Linked Ecosystems**:
+- **Resource Sourcing**: Dynamically fetches the top 2-4 YouTube tutorials for every module.
+- **Library Integration**: Automatically links module topics to our internal **Knowledge Base** entries.
+- **Effort Estimation**: Provides reading and practice time estimates (minutes) for every module.
+- **Unlock Criteria**: Gamified gating ensuring users master a module (Quiz 70%+) before proceeding.
+
+### 2. Coding Arena & Judge System
+Integrated with **Judge0** for high-performance code execution:
+- **Languages**: Full support for `JavaScript`, `Python`, and `C++`.
+- **Infrastructure**: Test case runner that compares `STDOUT` against expected outputs with precision.
+- **Feedback**: Instant pass/fail status with detailed error logs and time/memory execution metrics.
+
+### 3. Knowledge Base (Docs 2.0)
+Our knowledge nodes are more than just text:
+- **Intuition (ELI5)**: Real-world analogies for complex concepts (e.g., "Think of a Hash Table like a Library Catalog").
+- **Multi-Lang Examples**: Most topics include code in 3+ languages.
+- **Complexity Analysis**: Big O time and space complexity clearly tagged for interview prep.
+- **Further Reading**: Curated links to official MDN, GeeksForGeeks, or documentation.
+
+---
+
+## 🧪 Testing & Benchmarking
+We take performance seriously. Use these scripts to verify your setup:
+
+- **`verifyDbSetup.js`**: Checks MongoDB index presence and Redis connectivity.
+- **`dbBenchmark.js`**: Measures API response times (Cold vs. Warm cache) for Analytics, Library, and Roadmaps.
+- **`geminiStressTest.js`**: Validates AI API rate-limiting handling and key rotation.
 
 ---
 
 ## 🛠 Tech Stack
-- **Frontend**: 
-  - React 18 (Vite)
-  - Tailwind CSS (Premium Glassmorphism Design)
-  - Monaco Editor (Code Editing)
-  - Framer Motion (Animations)
-  - Axios (API Communication)
-- **Backend**: 
-  - Node.js & Express
-  - MongoDB (via Mongoose)
-  - JWT (Authentication & Security)
-  - Judge0 (Code Compilation)
-- **AI Infrastructure**: 
-  - Google Gemini 2.0 Flash (Roadmap/Quiz engine)
-  - Groq Cloud (Llama-3 Tutor engine)
-- **APIs**: 
-  - YouTube Data API v3 (Resource sourcing)
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, Vite, Framer Motion, Tailwind CSS, Lucide React, Monaco Editor. |
+| **Backend** | Node.js, Express, Mongoose, ioredis. |
+| **AI Models** | Google Gemini 2.0 Flash, Meta Llama 3.3 (Groq). |
+| **Database/Cache** | MongoDB Atlas, Upstash Redis. |
+| **Execution** | Judge0 API (Remote Compiler). |
 
 ---
 
-## � Repository Structure
-```bash
-├── backend/
-│   ├── config/           # DB connections and Provider settings
-│   ├── controllers/      # Business logic (Auth, Analytics, Quiz, etc.)
-│   ├── middleware/       # Auth protection, Request validation
-│   ├── models/           # Mongoose Schemas (User, Roadmap, QuizAttempt, Mappings)
-│   ├── routes/           # RESTful API Endpoints
-│   ├── services/         # Core AI logic (Gemini, Groq, YouTube, RAG)
-│   └── seedMappings.js   # Skill Tree topic database seeder
-├── frontend/
-│   ├── src/
-│   │   ├── components/   # UI Elements (SkillTree, Navbar, RoadmapCard)
-│   │   ├── pages/        # Dashboard, Tutor, Explore, Analytics
-│   │   ├── services/     # Frontend API wrappers
-│   │   └── utils/        # Formatters and theme helpers
-```
+## 🚀 Rapid Deployment
 
----
-
-## 🔑 Environment Variables
-Create a `.env` in the `backend/` folder:
-```env
-PORT=5001
-MONGO_URI=mongodb+srv://...
-JWT_SECRET=your_jwt_secret
-
-# AI Keys
-GEMINI_API_KEYS=key1,key2      # Supports rotation
-YOUTUBE_API_KEY=your_key
-GROQ_API_KEY=your_groq_key     # For Roadmaps
-TUTOR_GROQ_API_KEY=your_key    # Dedicated key for Tutor (Rate-Limit protection)
-```
-
----
-
-## 🚀 Local Setup
-
-### 1. Prerequisites
-- Node.js (v18+)
-- MongoDB (Local or Atlas)
-- Valid API keys for Gemini/YouTube.
-
-### 2. Backend Initialization
+### 1. Backend Prep
 ```bash
 cd backend
 npm install
-# [Configure .env]
-node seedMappings.js  # CRITICAL: This links roadmap topics to the Skill Tree
-node server.js
+# Configure .env (see below)
+node scripts/seedMappings.js   # Populate Skill Tree categories
+node scripts/seedKnowledge.js # Populate initial Knowledge Base
+npm run dev
 ```
 
-### 3. Frontend Initialization
+### 2. Frontend Prep
 ```bash
 cd frontend
 npm install
@@ -171,46 +136,26 @@ npm run dev
 
 ---
 
-## � API Endpoints
+## 🔑 Environment Configuration
+Create `backend/.env` with the following:
 
-### Authentication
-- `POST /api/auth/signup` - Register new user
-- `POST /api/auth/login` - Authenticate & get JWT
+```env
+# Infrastructure
+PORT=5001
+MONGO_URI=your_mongodb_uri
+REDIS_URL=your_upstash_redis_url
+JWT_SECRET=your_super_secret_key
 
-### Roadmaps
-- `POST /api/roadmaps/generate` - Generate AI roadmap
-- `POST /api/roadmaps/rag` - Generate roadmap from PDF context
-- `GET /api/roadmaps/public/list` - Fetch community roadmaps
-- `POST /api/roadmaps/:id/clone` - Copy a public roadmap to your account
+# AI Configuration
+GEMINI_API_KEYS=key1,key2,key3 # Comma-separated for rotation
+GROQ_API_KEY=your_key           # General AI
+TUTOR_GROQ_API_KEY=your_key     # High-priority Tutor Chat key
 
-### Quizzes
-- `POST /api/quizzes/generate` - Create dynamic questions
-- `POST /api/quizzes/submit` - Submit answers & update Skill Tree progress
-
----
-
-## 🧪 Testing & Scripts
-Use the built-in test runners to verify integrations:
-- `node backend/test-gemini.js` - Validates AI availability.
-- `node backend/test-youtube.js` - Validates video sourcing.
-- `node backend/testAPIs.js` - End-to-end API route check.
+# External Services
+YOUTUBE_API_KEY=your_key
+JUDGE0_BASE_URL=https://ce.judge0.com        # Default public instance
+JUDGE0_API_KEY=your_key                       # OPTIONAL (For RapidAPI/Private instances)
+```
 
 ---
-
-## � Troubleshooting
-- **Skill Tree is 0%**: Did you run `node backend/seedMappings.js`? The system needs the tag database to map topics.
-- **Roadmap Generation Fails**: Check if you have hit the Gemini Free Tier rate limits (implemented with key rotation in the backend to mitigate this).
-- **Invalid Dates**: Ensure you are using a modern browser (Chrome 110+) for proper Intl date parsing.
-
----
-
-## � Future Roadmap
-- [ ] **Collaborative Roadmaps**: Multi-user editing.
-- [ ] **Flashcard Support**: Automatically generate Anki-style cards from roadmap modules.
-- [ ] **Mobile App**: React Native port for learning on the go.
-- [ ] **Community Ratings**: Upvote/Downvote the best public roadmaps.
-
----
-
-## 📄 License
-This project is for educational purposes. All AI models used are subject to their respective provider terms (Google/Groq).
+*Created with ❤️ by the LearnSphere AI Team.*

@@ -45,5 +45,8 @@ const submissionSchema = mongoose.Schema(
   }
 );
 
+// Index for quickly checking if a user has solved a question
+submissionSchema.index({ user: 1, question: 1, status: 1 });
+
 const Submission = mongoose.model('Submission', submissionSchema);
 export default Submission;

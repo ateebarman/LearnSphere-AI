@@ -18,10 +18,25 @@ import { getResourcesForTopic } from '../services/resourceDatabase.js';
 // @route   GET /api/admin/problems
 // @access  Admin
 export const getAdminProblems = asyncHandler(async (req, res) => {
-  const problems = await CodingQuestion.find()
-    .select('title difficulty topic slug acceptanceRate submissionStats validated createdAt')
-    .sort({ createdAt: 1 });
-  res.json(problems);
+  const { page = 1, limit = 15 } = req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [problems, total] = await Promise.all([
+    CodingQuestion.find()
+      .select('title difficulty topic slug acceptanceRate submissionStats validated createdAt')
+      .sort({ createdAt: 1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    CodingQuestion.countDocuments()
+  ]);
+  
+  res.json({
+    problems,
+    page: Number(page),
+    pages: Math.ceil(total / Number(limit)),
+    total
+  });
 });
 
 // @desc    Create a problem manually
@@ -180,10 +195,25 @@ export const validateProblem = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/knowledge
 // @access  Admin
 export const getAdminKnowledge = asyncHandler(async (req, res) => {
-  const nodes = await KnowledgeNode.find()
-    .select('topic category summary createdAt updatedAt')
-    .sort({ category: 1, topic: 1 });
-  res.json(nodes);
+  const { page = 1, limit = 15 } = req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [nodes, total] = await Promise.all([
+    KnowledgeNode.find()
+      .select('topic category summary createdAt updatedAt')
+      .sort({ category: 1, topic: 1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    KnowledgeNode.countDocuments()
+  ]);
+
+  res.json({
+    nodes,
+    page: Number(page),
+    pages: Math.ceil(total / Number(limit)),
+    total
+  });
 });
 
 // @desc    Create knowledge entry manually
@@ -298,11 +328,26 @@ export const deleteKnowledge = asyncHandler(async (req, res) => {
 // @route   GET /api/admin/roadmaps
 // @access  Admin
 export const getAdminRoadmaps = asyncHandler(async (req, res) => {
-  const roadmaps = await Roadmap.find({ isPublic: true })
-    .populate('user', 'name email')
-    .select('title topic description difficulty user createdAt modules progress')
-    .sort({ createdAt: -1 });
-  res.json(roadmaps);
+  const { page = 1, limit = 15 } = req.query;
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [roadmaps, total] = await Promise.all([
+    Roadmap.find({ isPublic: true })
+      .populate('user', 'name email')
+      .select('title topic description difficulty user createdAt modules progress')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    Roadmap.countDocuments({ isPublic: true })
+  ]);
+  
+  res.json({
+    roadmaps,
+    page: Number(page),
+    pages: Math.ceil(total / Number(limit)),
+    total
+  });
 });
 
 // @desc    Create a manual public roadmap (admin)

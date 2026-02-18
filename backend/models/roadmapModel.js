@@ -116,5 +116,8 @@ const roadmapSchema = mongoose.Schema(
   }
 );
 
+// Index for fetching user's roadmaps quickly (sorted by newest)
+roadmapSchema.index({ user: 1, createdAt: -1 });
+
 const Roadmap = mongoose.model('Roadmap', roadmapSchema);
 export default Roadmap;

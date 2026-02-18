@@ -26,6 +26,7 @@
     "express-rate-limit": "^8.2.1",
     "express-validator": "^7.0.0",
     "googleapis": "^140.0.1",
+    "ioredis": "^5.9.3",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^1.2.23",
     "mongoose": "^8.4.5",
