@@ -25,6 +25,7 @@ import tutorRoutes from './routes/tutorRoutes.js';
 import studyMaterialRoutes from './routes/studyMaterialRoutes.js';
 import knowledgeRoutes from './routes/knowledgeRoutes.js';
 import codingRoutes from './routes/codingRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 initializeAI();
 
@@ -49,6 +50,7 @@ app.use('/api/tutor', tutorRoutes);
 app.use('/api/study-materials', studyMaterialRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/coding', codingRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 // Error Handling Middleware

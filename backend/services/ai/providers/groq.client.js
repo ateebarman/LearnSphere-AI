@@ -43,30 +43,36 @@ const extractJSON = (text) => {
   }
 };
 
+let apiKeys = [];
 let currentKeyIndex = 0;
 
-export const generateJsonGroq = async (prompt, modelOverride = null) => {
-  const apiKeys = [
-    process.env.GROQ_API_KEY,
-    process.env.GROQ_API_KEY2,
-    process.env.GROQ_API_KEY3,
-    process.env.GROQ_API_KEY4
-  ].filter(Boolean);
-
-  if (apiKeys.length === 0) {
-    throw new Error('No Groq API keys configured');
+export const initializeGroq = () => {
+  apiKeys = [];
+  for (let i = 1; i <= 10; i++) {
+    const key = process.env[`GROQ_API_KEY${i}`];
+    if (key) apiKeys.push(key);
   }
+  console.log(`✅ Groq Service initialized with ${apiKeys.length} keys`);
+};
 
-  const model = modelOverride || 'llama-3.3-70b-versatile';
+export const generateJsonGroq = async (prompt, retryCount = 0) => {
+  if (apiKeys.length === 0) initializeGroq();
+  if (apiKeys.length === 0) throw new Error('No Groq API keys configured');
+
   const apiKey = apiKeys[currentKeyIndex];
+  const model = 'llama-3.3-70b-versatile';
 
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout
+
     const res = await fetch(GROQ_ENDPOINT, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json'
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model,
         messages: [
@@ -81,21 +87,35 @@ export const generateJsonGroq = async (prompt, modelOverride = null) => {
       })
     });
 
+    clearTimeout(timeoutId);
     const data = await res.json();
 
     if (!res.ok) {
-      // Rotate key on rate limit
       if (res.status === 429) {
-        currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
-        console.warn(`🔄 Groq key rate-limited. Switched to key ${currentKeyIndex + 1}`);
+        console.warn(`🔄 Groq Key ${currentKeyIndex + 1} rate-limited.`);
+        if (retryCount < apiKeys.length - 1) {
+          currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
+          return generateJsonGroq(prompt, retryCount + 1);
+        }
       }
-      throw new Error(`Groq API Error (Key ${currentKeyIndex + 1}, Model ${model}): ${data.error?.message || 'Unknown error'}`);
+      throw new Error(`Groq API Error: ${data.error?.message || 'Unknown'}`);
     }
 
     const content = data.choices[0].message.content;
     return extractJSON(content);
   } catch (error) {
-    console.error(`❌ Groq Error:`, error.message);
+    if (error.name === 'AbortError') {
+      console.warn(`❌ Groq Key ${currentKeyIndex + 1} timed out.`);
+    } else {
+      console.error(`❌ Groq Error (Key ${currentKeyIndex + 1}):`, error.message);
+    }
+    
+    // Failover to next key on ANY error
+    if (retryCount < apiKeys.length - 1) {
+      currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
+      console.log(`🔄 Attempting Groq failover to Key ${currentKeyIndex + 1}...`);
+      return generateJsonGroq(prompt, retryCount + 1);
+    }
     throw error;
   }
 };

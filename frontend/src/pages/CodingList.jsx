@@ -18,7 +18,7 @@ import {
     Flame
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getProblems } from '../services/codingService';
+import { getProblems, generateAIExtension } from '../services/codingService';
 import toast from 'react-hot-toast';
 
 const CodingList = () => {
@@ -26,14 +26,24 @@ const CodingList = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [problems, setProblems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [generating, setGenerating] = useState(false);
     const [stats, setStats] = useState({ total: 0, pages: 1, currentPage: 1 });
 
     const currentTopic = searchParams.get('topic') || '';
     const currentDifficulty = searchParams.get('difficulty') || '';
     const currentSearch = searchParams.get('search') || '';
+    const currentStatus = searchParams.get('status') || 'all';
     const currentPage = parseInt(searchParams.get('page') || '1');
 
-    const topics = ['Data Structures', 'Algorithms', 'Dynamic Programming', 'Graph Algorithms', 'Bit Manipulation'];
+    const topics = [
+        'Arrays + Strings',
+        'HashMap / Hashing',
+        'Linked List',
+        'Stack + Queue',
+        'Trees + Heap',
+        'Graph',
+        'Dynamic Programming'
+    ];
     const difficulties = ['Easy', 'Medium', 'Hard'];
 
     useEffect(() => {
@@ -47,6 +57,7 @@ const CodingList = () => {
                 topic: currentTopic,
                 difficulty: currentDifficulty,
                 search: currentSearch,
+                status: currentStatus === 'all' ? '' : currentStatus,
                 page: currentPage,
                 limit: 15
             });
@@ -74,6 +85,21 @@ const CodingList = () => {
         setSearchParams(newParams);
     };
 
+    const handleGenerate = async () => {
+        const topic = currentTopic || currentSearch || 'Algorithms';
+        setGenerating(true);
+        const tid = toast.loading(`Generating 5 ${topic} problems...`);
+        try {
+            await generateAIExtension(topic);
+            toast.success('Generated 5 new problems!', { id: tid });
+            fetchProblems();
+        } catch (err) {
+            toast.error('Failed to generate problems', { id: tid });
+        } finally {
+            setGenerating(false);
+        }
+    };
+
     const handlePageChange = (newPage) => {
         const newParams = new URLSearchParams(searchParams);
         newParams.set('page', newPage.toString());
@@ -92,7 +118,7 @@ const CodingList = () => {
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 font-sans relative overflow-hidden">
             {/* Background Mesh */}
-            <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary-500/10 via-slate-950 to-slate-950 pointer-events-none z-0" />
+            <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary-500/10 via-slate-950 to-slate-950 pointer-events-none z-0 transform-gpu will-change-transform" />
             <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 pointer-events-none z-0" />
 
             <div className="max-w-7xl mx-auto px-6 py-12 relative z-10 space-y-12">
@@ -131,14 +157,27 @@ const CodingList = () => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="flex items-center gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-sm shadow-xl"
+                        className="flex items-center gap-1 bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-sm shadow-xl"
                     >
-                        <button className="px-6 py-3 bg-primary-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-primary-500/20 hover:bg-primary-500 hover:scale-105 transition-all active:scale-95">
-                            <Sparkles className="w-4 h-4" />
-                            Recommended
+                        <button
+                            onClick={() => handleFilterChange('status', 'all')}
+                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'all' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            All
                         </button>
-                        <button className="px-6 py-3 text-slate-400 hover:text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-white/5">
-                            All Problems
+                        <button
+                            onClick={() => handleFilterChange('status', 'solved')}
+                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'solved' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <CheckCircle2 className="w-3.5 h-3.5 inline mr-1.5" />
+                            Solved
+                        </button>
+                        <button
+                            onClick={() => handleFilterChange('status', 'unsolved')}
+                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'unsolved' ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Circle className="w-3.5 h-3.5 inline mr-1.5" />
+                            Unsolved
                         </button>
                     </motion.div>
                 </div>
@@ -179,8 +218,8 @@ const CodingList = () => {
                         <button
                             onClick={() => handleFilterChange('topic', '')}
                             className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${!currentTopic
-                                    ? 'bg-white text-slate-950 border-white shadow-lg shadow-white/10 scale-105'
-                                    : 'bg-slate-950/50 text-slate-500 hover:text-white border-white/5 hover:border-white/20'
+                                ? 'bg-white text-slate-950 border-white shadow-lg shadow-white/10 scale-105'
+                                : 'bg-slate-950/50 text-slate-500 hover:text-white border-white/5 hover:border-white/20'
                                 }`}
                         >
                             All
@@ -190,14 +229,16 @@ const CodingList = () => {
                                 key={t}
                                 onClick={() => handleFilterChange('topic', t)}
                                 className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${currentTopic === t.toLowerCase() || currentTopic === t
-                                        ? 'bg-primary-600 text-white border-primary-500 shadow-lg shadow-primary-500/20 scale-105'
-                                        : 'bg-slate-950/50 text-slate-500 hover:text-white border-white/5 hover:border-white/20'
+                                    ? 'bg-primary-600 text-white border-primary-500 shadow-lg shadow-primary-500/20 scale-105'
+                                    : 'bg-slate-950/50 text-slate-500 hover:text-white border-white/5 hover:border-white/20'
                                     }`}
                             >
                                 {t}
                             </button>
                         ))}
                     </div>
+
+
                 </motion.div>
 
                 {/* Problem Table */}
@@ -205,7 +246,7 @@ const CodingList = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="bg-slate-900/30 border border-white/5 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-sm"
+                    className="bg-slate-900/30 border border-white/5 rounded-3xl overflow-hidden shadow-xl"
                 >
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-32 space-y-4">
@@ -313,8 +354,8 @@ const CodingList = () => {
                                     key={p}
                                     onClick={() => handlePageChange(p)}
                                     className={`w-10 h-10 rounded-lg text-xs font-black transition-all ${stats.currentPage === p
-                                            ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20 scale-110'
-                                            : 'text-slate-500 hover:text-white hover:bg-white/5'
+                                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20 scale-110'
+                                        : 'text-slate-500 hover:text-white hover:bg-white/5'
                                         }`}
                                 >
                                     {p}

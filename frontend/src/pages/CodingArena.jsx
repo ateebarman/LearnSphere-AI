@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
     Code2,
     Play,
@@ -20,25 +22,23 @@ import {
     ArrowLeft,
     CheckCircle2,
     Bug,
-    Layout,
     PanelLeft,
-    PanelBottom
+    PanelBottom,
+    History,
+    Copy,
+    ClipboardCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import {
-    getProblemBySlug,
-    runCode,
-    submitCode,
-    getProgress
-} from '../services/codingService';
+import { getProblemBySlug, runCode, submitCode, getProgress, getSubmissions } from '../services/codingService';
+import { getProfile } from '../services/authService';
 import { useAuthStore } from '../store/useAuthStore';
 import toast from 'react-hot-toast';
 
 const CodingArena = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
-    const { userInfo } = useAuthStore();
+    const { userInfo, setUserInfo } = useAuthStore();
 
     const [question, setQuestion] = useState(null);
     const [code, setCode] = useState('');
@@ -50,6 +50,8 @@ const CodingArena = () => {
     const [timer, setTimer] = useState(0);
     const [isTimerActive, setIsTimerActive] = useState(false);
     const [activeCaseIndex, setActiveCaseIndex] = useState(0);
+    const [submissions, setSubmissions] = useState([]);
+    const [fetchingSubmissions, setFetchingSubmissions] = useState(false);
 
     // UI Tabs
     const [leftTab, setLeftTab] = useState('description');
@@ -103,6 +105,25 @@ const CodingArena = () => {
         }
     };
 
+    const fetchSubmissions = async () => {
+        if (!question?._id) return;
+        setFetchingSubmissions(true);
+        try {
+            const data = await getSubmissions(question._id);
+            setSubmissions(data || []);
+        } catch (err) {
+            console.error('Submissions fetch failed');
+        } finally {
+            setFetchingSubmissions(false);
+        }
+    };
+
+    useEffect(() => {
+        if (leftTab === 'submissions' && question?._id) {
+            fetchSubmissions();
+        }
+    }, [leftTab, question?._id]);
+
     const getStarterCode = (lang) => {
         if (!question?.starterCode) return getDefaultTemplate(lang);
 
@@ -113,12 +134,25 @@ const CodingArena = () => {
 
     useEffect(() => {
         if (question) {
-            const template = getStarterCode(language);
-            setCode(template);
+            const draft = localStorage.getItem(`draft_${slug}_${language}`);
+            if (draft) {
+                setCode(draft);
+                toast.success(`Restored ${language} draft`, { duration: 2000, position: 'bottom-center' });
+            } else {
+                const template = getStarterCode(language);
+                setCode(template);
+            }
             setTimer(0);
             setIsTimerActive(true);
         }
-    }, [question, language]);
+    }, [question, language, slug]);
+
+    // Save draft as the user types
+    useEffect(() => {
+        if (question && code && !loading) {
+            localStorage.setItem(`draft_${slug}_${language}`, code);
+        }
+    }, [code, question, language, slug, loading]);
 
 
     useEffect(() => {
@@ -200,6 +234,14 @@ const CodingArena = () => {
                 toast.success('Accepted! All test cases passed.');
                 setIsTimerActive(false);
                 fetchProgress(question.topic);
+
+                if (leftTab === 'submissions') {
+                    fetchSubmissions();
+                }
+
+                // Refresh global streak
+                const profile = await getProfile();
+                setUserInfo(profile);
             } else {
                 toast.error(`Wrong Answer: Only ${res.passed}/${res.total} passed.`);
             }
@@ -258,7 +300,7 @@ const CodingArena = () => {
                 <div className="flex items-center gap-4">
                     <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
                         <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                        <span className="text-[11px] font-bold text-slate-300">{progress?.streak || 0} Day Streak</span>
+                        <span className="text-[11px] font-bold text-slate-300">{userInfo?.streak || 0} Day Streak</span>
                     </div>
 
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
@@ -279,7 +321,7 @@ const CodingArena = () => {
                 {/* Left Panel */}
                 <div style={{ width: leftPanelWidth }} className="flex flex-col border-r border-white/5 bg-slate-950 flex-shrink-0">
                     <div className="flex items-center bg-slate-900/50 px-2 h-10 border-b border-white/5 gap-1">
-                        {['description', 'editorial', 'solutions'].map((tab) => (
+                        {['description', 'editorial', 'submissions'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setLeftTab(tab)}
@@ -290,7 +332,7 @@ const CodingArena = () => {
                             >
                                 {tab === 'description' && <FileText className="w-3.5 h-3.5" />}
                                 {tab === 'editorial' && <Trophy className="w-3.5 h-3.5" />}
-                                {tab === 'solutions' && <Settings className="w-3.5 h-3.5" />}
+                                {tab === 'submissions' && <History className="w-3.5 h-3.5" />}
                                 {tab}
                                 {leftTab === tab && (
                                     <motion.div layoutId="activeTabL" className="absolute bottom-0 left-0 w-full h-[1px] bg-primary-500 shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
@@ -299,7 +341,7 @@ const CodingArena = () => {
                         ))}
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar scroll-smooth will-change-transform">
                         {leftTab === 'description' && question ? (
                             <motion.div
                                 initial={{ opacity: 0, y: 10 }}
@@ -315,30 +357,39 @@ const CodingArena = () => {
                                         </div>
                                     </div>
 
-                                    <div className="prose prose-invert prose-sm max-w-none text-slate-300/90 leading-relaxed font-sans">
-                                        {question.problemStatement}
+                                    <div className="prose prose-invert prose-sm max-w-none text-slate-300/90 leading-relaxed font-sans prose-pre:bg-slate-900/50 prose-pre:border prose-pre:border-white/5 prose-code:text-primary-300">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {(question.examples?.length > 0 || question.visibleTestCases?.length > 0)
+                                                ? question.problemStatement.split(/##?\s*Example/i)[0].trim()
+                                                : question.problemStatement
+                                            }
+                                        </ReactMarkdown>
                                     </div>
                                 </div>
 
                                 <div className="space-y-6">
-                                    {question.examples.map((ex, i) => (
+                                    {(question.examples?.length > 0 ? question.examples : question.visibleTestCases?.slice(0, 3).map(tc => ({
+                                        input: tc.input,
+                                        output: tc.expectedOutput,
+                                        explanation: ''
+                                    })))?.map((ex, i) => (
                                         <div key={i} className="group">
-                                            <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                                Example {i + 1}
+                                            <h4 className="text-[13px] font-bold text-slate-300 mb-2 flex items-center gap-2">
+                                                Example {i + 1}:
                                             </h4>
-                                            <div className="bg-slate-900/50 border border-white/5 rounded-xl p-5 font-mono text-[13px] space-y-4 shadow-xl shadow-black/20 group-hover:border-primary-500/20 transition-colors">
-                                                <div>
-                                                    <span className="text-slate-500 font-bold block mb-1.5 text-[10px] uppercase">Input</span>
-                                                    <div className="text-white bg-black/40 p-2.5 rounded-lg border border-white/5 font-medium">{ex.input}</div>
+                                            <div className="bg-slate-900/40 border border-white/5 rounded-xl p-5 font-mono text-[13px] space-y-4 shadow-xl shadow-black/20 group-hover:border-primary-500/20 transition-all">
+                                                <div className="flex gap-4">
+                                                    <span className="text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Input</span>
+                                                    <div className="text-white bg-black/30 px-3 py-1.5 rounded-lg border border-white/5 flex-1 break-all">{ex.input}</div>
                                                 </div>
-                                                <div>
-                                                    <span className="text-slate-500 font-bold block mb-1.5 text-[10px] uppercase">Output</span>
-                                                    <div className="text-emerald-400 bg-emerald-950/10 p-2.5 rounded-lg border border-emerald-500/10 font-bold shadow-[0_0_15px_-5px_rgba(52,211,153,0.1)]">{ex.output}</div>
+                                                <div className="flex gap-4">
+                                                    <span className="text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Output</span>
+                                                    <div className="text-emerald-400 bg-emerald-950/20 px-3 py-1.5 rounded-lg border border-emerald-500/10 flex-1 font-bold break-all shadow-[0_0_15px_-5px_rgba(52,211,153,0.1)]">{ex.output}</div>
                                                 </div>
                                                 {ex.explanation && (
-                                                    <div className="pt-2 border-t border-white/5">
-                                                        <span className="text-slate-500 font-bold block mb-1 text-[10px] uppercase">Explanation</span>
-                                                        <div className="text-slate-400 text-sm italic leading-relaxed">{ex.explanation}</div>
+                                                    <div className="flex gap-4 pt-2 border-t border-white/5">
+                                                        <span className="text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Explanation</span>
+                                                        <div className="text-slate-400 text-sm italic leading-relaxed flex-1">{ex.explanation}</div>
                                                     </div>
                                                 )}
                                             </div>
@@ -359,6 +410,98 @@ const CodingArena = () => {
                                         ))}
                                     </div>
                                 </div>
+                            </motion.div>
+                        ) : leftTab === 'submissions' ? (
+                            <motion.div
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="space-y-4"
+                            >
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <History className="w-5 h-5 text-primary-500" />
+                                        Submissions
+                                    </h2>
+                                    <button
+                                        onClick={fetchSubmissions}
+                                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white"
+                                        title="Refresh"
+                                    >
+                                        <RotateCcw className="w-4 h-4" />
+                                    </button>
+                                </div>
+
+                                {fetchingSubmissions ? (
+                                    <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+                                        <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                                        <span className="text-xs uppercase font-black tracking-widest animate-pulse">Fetching History...</span>
+                                    </div>
+                                ) : submissions.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {submissions.map((sub, i) => (
+                                            <div
+                                                key={sub._id}
+                                                className="bg-slate-900/50 border border-white/5 rounded-xl p-4 hover:border-primary-500/30 transition-all group relative overflow-hidden"
+                                            >
+                                                <div className="flex items-center justify-between mb-3 relative z-10">
+                                                    <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${sub.status === 'Accepted'
+                                                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                                        }`}>
+                                                        {sub.status}
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-500 font-mono">
+                                                        {new Date(sub.createdAt).toLocaleDateString()} {new Date(sub.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4 mb-4 relative z-10">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="p-1.5 bg-slate-800 rounded-lg">
+                                                            <Code2 className="w-3 h-3 text-slate-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[9px] font-black uppercase text-slate-600 tracking-tighter">Language</p>
+                                                            <p className="text-[11px] font-bold text-slate-300 uppercase">{sub.language}</p>
+                                                        </div>
+                                                    </div>
+                                                    {sub.runtime && (
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="p-1.5 bg-slate-800 rounded-lg">
+                                                                <Clock className="w-3 h-3 text-slate-400" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-[9px] font-black uppercase text-slate-600 tracking-tighter">Runtime</p>
+                                                                <p className="text-[11px] font-bold text-slate-300">{sub.runtime}ms</p>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <button
+                                                    onClick={() => {
+                                                        const lang = sub.language.toLowerCase() === 'c++' ? 'cpp' : sub.language.toLowerCase();
+                                                        setLanguage(lang);
+                                                        // Use a short delay or ensure the effect doesn't overwrite it
+                                                        setTimeout(() => setCode(sub.code), 10);
+                                                        toast.success(`Restored ${sub.language} version`);
+                                                    }}
+                                                    className="w-full py-2 bg-slate-800 hover:bg-primary-600 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-primary-500 relative z-10"
+                                                >
+                                                    View & Restore Code
+                                                </button>
+
+                                                {/* Background Accent */}
+                                                <div className={`absolute top-0 right-0 w-24 h-24 blur-[60px] opacity-10 rounded-full -mr-12 -mt-12 transition-colors ${sub.status === 'Accepted' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center py-20 text-slate-600 opacity-40">
+                                        <History className="w-12 h-12 mb-3" />
+                                        <p className="text-xs font-black uppercase tracking-widest">No Submissions Yet</p>
+                                    </div>
+                                )}
                             </motion.div>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-slate-600 opacity-20">
@@ -607,7 +750,7 @@ const CodingArena = () => {
                                                                     <div className={`w-2 h-2 rounded-full ${r.passed ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-rose-500 shadow-[0_0_10px_#f43f5e]'}`} />
                                                                     <span className="text-[11px] font-black text-slate-400 tracking-tighter uppercase">CASE {i + 1}</span>
                                                                     <div className={`text-[10px] font-black px-2 py-0.5 rounded tracking-widest uppercase border ${r.passed ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
-                                                                        {r.status}
+                                                                        {(!r.passed && r.status === 'Accepted') ? 'Wrong Answer' : r.status}
                                                                     </div>
                                                                 </div>
                                                                 {r.time && <span className="text-[10px] text-slate-600 font-mono font-bold tracking-widest flex items-center gap-1"><Clock className="w-3 h-3" /> {Math.round(r.time * 100)} MS</span>}
@@ -631,9 +774,26 @@ const CodingArena = () => {
                                                             </div>
 
                                                             {(r.stderr || r.compile_output) && (
-                                                                <div className="mt-4 p-3 bg-black/60 rounded border border-rose-900/30 text-rose-300 font-mono text-[11px] whitespace-pre-wrap">
-                                                                    <div className="flex items-center gap-2 mb-2 text-rose-500 font-bold uppercase text-[9px] tracking-widest"><Bug className="w-3 h-3" /> Debug Info</div>
-                                                                    {r.stderr || r.compile_output}
+                                                                <div className="mt-4 p-3 bg-black/60 rounded border border-rose-900/30 text-rose-300 font-mono text-[11px] whitespace-pre-wrap relative group/error">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <div className="flex items-center gap-2 text-rose-500 font-bold uppercase text-[9px] tracking-widest">
+                                                                            <Bug className="w-3 h-3" />
+                                                                            {r.compile_output ? 'Compilation Error' : 'Runtime Error Details'}
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                navigator.clipboard.writeText(r.stderr || r.compile_output);
+                                                                                toast.success('Error copied to clipboard');
+                                                                            }}
+                                                                            className="opacity-0 group-hover/error:opacity-100 transition-opacity p-1 hover:bg-white/5 rounded text-slate-500 hover:text-white"
+                                                                            title="Copy Error"
+                                                                        >
+                                                                            <Copy className="w-3 h-3" />
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className="max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
+                                                                        {r.stderr || r.compile_output}
+                                                                    </div>
                                                                 </div>
                                                             )}
                                                         </div>

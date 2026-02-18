@@ -14,3 +14,8 @@ export const getQuizStats = async () => {
   const { data } = await api.get('/analytics/quizzes');
   return data;
 };
+
+export const getCodingAnalytics = async () => {
+  const { data } = await api.get('/coding/analytics');
+  return data;
+};

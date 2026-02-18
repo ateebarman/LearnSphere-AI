@@ -88,11 +88,11 @@ const getUserRoadmaps = asyncHandler(async (req, res) => {
 // @route   GET /api/roadmaps/:id
 // @access  Private
 const getRoadmapById = asyncHandler(async (req, res) => {
-  const roadmap = await Roadmap.findById(req.params.id);
+  const roadmap = await Roadmap.findById(req.params.id).populate('user', 'name email avatar');
 
   if (roadmap) {
     // Check if user is owner
-    const isOwner = roadmap.user.toString() === req.user._id.toString();
+    const isOwner = roadmap.user._id ? roadmap.user._id.toString() === req.user._id.toString() : roadmap.user.toString() === req.user._id.toString();
     
     // Allow if owner or if roadmap is public
     if (isOwner || roadmap.isPublic) {
@@ -157,7 +157,7 @@ const getRoadmapById = asyncHandler(async (req, res) => {
 const getPublicRoadmaps = asyncHandler(async (req, res) => {
   const roadmaps = await Roadmap.find({ isPublic: true })
     .select('-modules -progress')
-    .populate('user', 'name email')
+    .populate('user', 'name email avatar')
     .sort({ createdAt: -1 });
   
   res.json({ roadmaps });
@@ -211,16 +211,44 @@ const cloneRoadmap = asyncHandler(async (req, res) => {
     title: `${sourceRoadmap.title} (Clone)`,
     topic: sourceRoadmap.topic,
     description: sourceRoadmap.description,
+    difficulty: sourceRoadmap.difficulty,
+    totalDuration: sourceRoadmap.totalDuration,
+    learningGoals: sourceRoadmap.learningGoals || [],
+    targetRoles: sourceRoadmap.targetRoles || [],
+    expectedOutcomes: sourceRoadmap.expectedOutcomes || [],
+    skillsCovered: sourceRoadmap.skillsCovered || [],
+    tags: sourceRoadmap.tags || [],
+    prerequisites: sourceRoadmap.prerequisites || [],
     modules: sourceRoadmap.modules.map(module => ({
       title: module.title,
       description: module.description,
       estimatedTime: module.estimatedTime,
+      difficulty: module.difficulty,
+      objectives: module.objectives,
+      keyConcepts: module.keyConcepts,
       resources: module.resources.map(resource => ({
         title: resource.title,
         type: resource.type,
         url: resource.url,
         description: resource.description,
       })),
+      practiceProblems: (module.practiceProblems || []).map(pp => ({
+        title: pp.title,
+        url: pp.url,
+        difficulty: pp.difficulty,
+        source: pp.source,
+      })),
+      learningResources: (module.learningResources || []).map(lr => ({
+        title: lr.title,
+        url: lr.url,
+        type: lr.type,
+        source: lr.source,
+      })),
+      quizConfig: module.quizConfig,
+      effortEstimate: module.effortEstimate,
+      interviewImportance: module.interviewImportance,
+      conceptWeight: module.conceptWeight,
+      unlockCriteria: { masteryThreshold: 0, quizScore: 0, problemsSolved: 0 },
       isCompleted: false,
     })),
     progress: 0,

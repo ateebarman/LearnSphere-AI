@@ -3,77 +3,105 @@ import { generateJson } from './ai/index.js';
 /**
  * Generates a high-quality coding question using AI with LeetCode-style structure.
  */
+const generateStarterCode = (signature) => {
+  const { methodName, parameters, returnType } = signature;
+  
+  const typeMap = {
+    cpp: {
+      'integer': 'int',
+      'int': 'int',
+      'string': 'string',
+      'array': 'vector<int>&',
+      'boolean': 'bool',
+      'ListNode*': 'ListNode*',
+      'TreeNode*': 'TreeNode*',
+      'vector<int>': 'vector<int>',
+      'vector<int>&': 'vector<int>&',
+      'vector<vector<int>>': 'vector<vector<int>>'
+    }
+  };
+
+  const getCppType = (t) => {
+    if (!t) return 'void';
+    const lowT = t.toLowerCase();
+    return typeMap.cpp[lowT] || typeMap.cpp[t] || t;
+  };
+
+  // Format parameters
+  const cppParams = parameters.map(p => `${getCppType(p.type)} ${p.name}`).join(', ');
+  const jsParams = parameters.map(p => p.name).join(', ');
+  const pyParams = parameters.map(p => p.name).join(', ');
+
+  return {
+    cpp: `class Solution {\npublic:\n    ${getCppType(returnType)} ${methodName}(${cppParams}) {\n        \n    }\n};`,
+    javascript: `class Solution {\n    ${methodName}(${jsParams}) {\n        \n    }\n}`,
+    python: `class Solution:\n    def ${methodName}(self, ${pyParams}):\n        \n`
+  };
+};
+
 export const generateCodingQuestionFromAI = async (topic) => {
   const prompt = `
-    You are an expert Competitive Programming architect (FAANG Tier).
-    Generate a HIGH-QUALITY, professional coding challenge for the topic: "${topic}".
+    You are a Senior Competitive Programming Platform Architect. 
+    Execute a deterministic 5-stage pipeline for: "${topic}".
 
-    CRITICAL QUALITY REQUIREMENTS:
-    1. PROBLEM STATEMENT: 
-       - Must be detailed and professional. 
-       - Explain the logic clearly, include edge cases, and use proper Markdown formatting.
-       - Use LaTeX-style notation for math (e.g., $O(n \log n)$).
+    LANGUAGES: C++ (GCC id 54), JavaScript (NodeJS id 63), Python 3 (id 71).
     
-    2. STARTER CODE (MANDATORY STRUCTURE):
-       - DO NOT use one-liners. Use multiple lines and proper indentation (4 spaces).
-       - Each language MUST follow this EXACT structure:
+    PIPELINE:
+    1. SPEC: Define title, Markdown problemStatement (professional), constraints, inputSchema, outputSchema.
+    2. REF SOLUTIONS: Optimal logic-only referenceSolution for each language.
+    3. TESTS: 3 visible, 7 hidden test cases (logically verified).
+    4. METADATA: 
+       - generate functionSignature: { methodName, parameters: [{name, type}], returnType }.
+       - generate robust judgeDriver for each language (STDIN -> Solution -> STDOUT).
+    5. VALIDATION: Ensure 100% deterministic cross-language execution.
 
-       C++:
-       class Solution {
-       public:
-           [RETURN_TYPE] [METHOD_NAME]([PARAMETERS]) {
-               
-           }
-       };
-
-       JavaScript:
-       class Solution {
-           [METHOD_NAME]([PARAMETERS]) {
-               
-           }
-       }
-
-       Python:
-       class Solution:
-           def [METHOD_NAME](self, [PARAMETERS]):
-               
-
-    3. TEST DRIVER:
-       - Must be robust and correctly parse inputs for the specific Solution class.
-    
-    4. ACCURACY:
-       - You MUST manually verify all 10 test cases (3 visible, 7 hidden).
-       - Expected outputs must be 100% correct.
-
-    JSON STRUCTURE:
+    STRUCTURE:
     {
       "title": (string),
-      "slug": (url-friendly-slug),
+      "slug": (string),
       "difficulty": "Easy" | "Medium" | "Hard",
-      "problemStatement": (detailed professional markdown),
+      "problemStatement": (markdown - description only, NO examples),
       "constraints": [(strings)],
       "examples": [
-        { "input": (string), "output": (string), "explanation": (string) }
+        {
+          "input": (string),
+          "output": (string),
+          "explanation": (string)
+        }
       ],
-      "starterCode": { "javascript": (string), "python": (string), "cpp": (string) },
-      "testDriver": { "javascript": (string), "python": (string), "cpp": (string) },
+      "inputSchema": (object),
+      "outputSchema": (object),
+      "functionSignature": {
+         "methodName": (string),
+         "parameters": [{ "name": (string), "type": (string) }],
+         "returnType": (string)
+      },
+      "judgeDriver": { "javascript": (string), "python": (string), "cpp": (string) },
+      "referenceSolution": { "javascript": (string), "python": (string), "cpp": (string) },
       "visibleTestCases": [ { "input": (string), "expectedOutput": (string) } ],
-      "hiddenTestCases": [ { "input": (string), "expectedOutput": (string) } ]
+      "hiddenTestCases": [ { "input": (string), "expectedOutput": (string) } ],
+      "validated": true
     }
-
-    Respond ONLY with raw JSON.
   `;
 
   try {
     const questionData = await generateJson(prompt);
     
-    if (!questionData.starterCode?.cpp || !questionData.testDriver?.cpp) {
-       throw new Error('AI produced incomplete language support');
+    // Stage 4 Fallback: Generate Platform-Controlled Starter Code
+    if (questionData.functionSignature) {
+      questionData.starterCode = generateStarterCode(questionData.functionSignature);
+    }
+
+    const requiredFields = ['title', 'problemStatement', 'judgeDriver', 'referenceSolution', 'visibleTestCases', 'hiddenTestCases', 'starterCode'];
+    for (const field of requiredFields) {
+      if (!questionData[field]) {
+        throw new Error(`AI produced incomplete data: missing ${field}`);
+      }
     }
     
     return questionData;
   } catch (error) {
-    console.error('AI Selection Error:', error.message);
-    throw new Error('Failed to generate accurate coding question');
+    console.error('AI Problem Generation Error:', error.message);
+    throw new Error('Failed to generate high-quality coding question');
   }
 };

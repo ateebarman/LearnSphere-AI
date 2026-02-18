@@ -29,6 +29,23 @@ const codingQuestionSchema = mongoose.Schema(
       required: true,
     },
     constraints: [String],
+    inputSchema: {
+        type: mongoose.Schema.Types.Mixed,
+        required: true
+    },
+    outputSchema: {
+        type: mongoose.Schema.Types.Mixed,
+        required: true
+    },
+    functionSignature: {
+        methodName: String,
+        parameters: [{
+            name: { type: String, required: true },
+            type: { type: String, required: true },
+            _id: false
+        }],
+        returnType: String
+    },
     examples: [
       {
         input: String,
@@ -41,7 +58,17 @@ const codingQuestionSchema = mongoose.Schema(
       python: String,
       cpp: String,
     },
-    testDriver: {
+    judgeDriver: {
+      javascript: String,
+      python: String,
+      cpp: String,
+    },
+    judgePreDriver: {
+      javascript: String,
+      python: String,
+      cpp: String,
+    },
+    referenceSolution: {
       javascript: String,
       python: String,
       cpp: String,
@@ -58,6 +85,10 @@ const codingQuestionSchema = mongoose.Schema(
         expectedOutput: String,
       },
     ],
+    validated: {
+        type: Boolean,
+        default: false
+    },
     acceptanceRate: {
       type: Number,
       default: 0,

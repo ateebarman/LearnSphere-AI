@@ -5,7 +5,8 @@ import {
     FaBook, FaCode, FaLightbulb, FaExclamationTriangle,
     FaClock, FaDatabase, FaListUl, FaSearch,
     FaChevronRight, FaArrowLeft, FaExternalLinkAlt, FaSpinner,
-    FaClipboardList, FaFileAlt, FaTrophy
+    FaClipboardList, FaFileAlt, FaTrophy, FaTag, FaLink,
+    FaGraduationCap, FaBrain
 } from 'react-icons/fa';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -70,9 +71,24 @@ const KnowledgeLibrary = () => {
         }
     };
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 9;
+
     const filteredNodes = nodes.filter(node =>
         node.topic.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    // Reset page when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, selectedCategory]);
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredNodes.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredNodes.length / itemsPerPage);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     const getComplexityColor = (time) => {
         if (!time) return 'bg-gray-100 text-gray-600';
@@ -88,7 +104,7 @@ const KnowledgeLibrary = () => {
     return (
         <div className="min-h-screen pb-20 mt-20">
             {selectedTopic ? (
-                /* Detailed View */
+                /* ... Detailed View logic ... */
                 <div className="max-w-5xl mx-auto space-y-12 animate-in slide-in-from-right duration-500">
                     <button
                         onClick={() => setSelectedTopic(null)}
@@ -103,10 +119,23 @@ const KnowledgeLibrary = () => {
                         <div className="space-y-12">
                             {/* Header */}
                             <div className="space-y-4">
-                                <div className="flex items-center gap-3">
+                                <div className="flex flex-wrap items-center gap-3">
                                     <span className="px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-black uppercase tracking-widest">
                                         {detailedNode.category}
                                     </span>
+                                    {detailedNode.topicType && (
+                                        <span className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-black uppercase tracking-widest flex items-center gap-1">
+                                            <FaBrain size={10} /> {detailedNode.topicType}
+                                        </span>
+                                    )}
+                                    {detailedNode.difficulty && (
+                                        <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1 ${detailedNode.difficulty === 'Beginner' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                                : detailedNode.difficulty === 'Advanced' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                            }`}>
+                                            <FaGraduationCap size={10} /> {detailedNode.difficulty}
+                                        </span>
+                                    )}
                                     {detailedNode.complexity && (
                                         <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1 ${getComplexityColor(detailedNode.complexity.time)}`}>
                                             <FaClock size={10} /> {detailedNode.complexity.time}
@@ -126,11 +155,35 @@ const KnowledgeLibrary = () => {
                                 <p className="text-xl text-gray-600 dark:text-gray-400 font-medium border-l-4 border-indigo-600 pl-6 py-2">
                                     {detailedNode.summary}
                                 </p>
+                                {/* Tags */}
+                                {detailedNode.tags?.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 pt-2">
+                                        {detailedNode.tags.map((tag, idx) => (
+                                            <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg text-xs font-bold">
+                                                <FaTag size={8} /> {tag}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Main Content */}
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
                                 <div className="lg:col-span-2 space-y-12">
+                                    {/* Intuition - ELI5 */}
+                                    {detailedNode.intuition && (
+                                        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/30 dark:to-yellow-950/20 border border-amber-200/50 dark:border-amber-800/30 p-10">
+                                            <div className="absolute top-4 right-4 text-6xl opacity-10">💡</div>
+                                            <h2 className="text-2xl font-black mb-4 text-amber-800 dark:text-amber-300 flex items-center gap-3">
+                                                <FaLightbulb className="text-amber-500" /> The Intuition
+                                            </h2>
+                                            <p className="text-lg text-amber-900/80 dark:text-amber-200/80 font-medium leading-relaxed italic">
+                                                "{detailedNode.intuition}"
+                                            </p>
+                                        </section>
+                                    )}
+
+                                    {/* Technical Deep Dive */}
                                     <section className="card-premium p-10">
                                         <h2 className="text-2xl font-black mb-6 dark:text-white flex items-center gap-3">
                                             <FaBook className="text-indigo-600" /> Technical Deep Dive
@@ -163,12 +216,12 @@ const KnowledgeLibrary = () => {
                                     </section>
 
                                     {/* Code Snippets */}
-                                    {detailedNode.codeSnippets?.length > 0 && (
+                                    {(detailedNode.implementations?.length > 0 || detailedNode.codeSnippets?.length > 0) && (
                                         <div className="space-y-6">
                                             <h2 className="text-3xl font-black dark:text-white flex items-center gap-3">
                                                 <FaCode className="text-green-500" /> Implementation Examples
                                             </h2>
-                                            {detailedNode.codeSnippets.map((snippet, idx) => (
+                                            {(detailedNode.implementations || detailedNode.codeSnippets).map((snippet, idx) => (
                                                 <div key={idx} className="card-premium p-0 overflow-hidden bg-gray-950">
                                                     <div className="flex items-center justify-between px-6 py-3 bg-gray-900 border-b border-gray-800">
                                                         <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{snippet.language}</span>
@@ -221,23 +274,45 @@ const KnowledgeLibrary = () => {
                                         </ul>
                                     </section>
 
-                                    {/* Resources */}
+                                    {/* Further Reading */}
                                     <section className="card-premium">
                                         <h3 className="text-lg font-black dark:text-white mb-6 flex items-center gap-2">
                                             <FaExternalLinkAlt size={16} className="text-indigo-600" /> Further Reading
                                         </h3>
                                         <div className="space-y-3">
-                                            {detailedNode.verifiedResources.map((res, idx) => (
-                                                <a
-                                                    key={idx}
-                                                    href={res.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-xl transition-all group"
-                                                >
-                                                    <span className="text-sm font-bold dark:text-white line-clamp-1">{res.title}</span>
-                                                    <FaChevronRight size={12} className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
-                                                </a>
+                                            {(detailedNode.furtherReading?.length > 0 ? detailedNode.furtherReading : detailedNode.verifiedResources || []).map((res, idx) => (
+                                                res.source === 'internal' && res.knowledgeRef ? (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => handleTopicClick(res.title)}
+                                                        className="w-full flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 rounded-xl transition-all group border border-purple-200/50 dark:border-purple-800/30"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="w-6 h-6 rounded-md bg-purple-200 dark:bg-purple-800 flex items-center justify-center">
+                                                                <FaBook size={10} className="text-purple-600 dark:text-purple-400" />
+                                                            </span>
+                                                            <span className="text-sm font-bold dark:text-white text-left">{res.title}</span>
+                                                            <span className="text-[9px] font-black uppercase tracking-widest text-purple-500 bg-purple-100 dark:bg-purple-900/40 px-2 py-0.5 rounded">Internal</span>
+                                                        </div>
+                                                        <FaChevronRight size={12} className="text-purple-300 group-hover:text-purple-600 transition-colors" />
+                                                    </button>
+                                                ) : (
+                                                    <a
+                                                        key={idx}
+                                                        href={res.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-900 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 rounded-xl transition-all group"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                                                <FaLink size={10} className="text-blue-500" />
+                                                            </span>
+                                                            <span className="text-sm font-bold dark:text-white line-clamp-1">{res.title}</span>
+                                                        </div>
+                                                        <FaChevronRight size={12} className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
+                                                    </a>
+                                                )
                                             ))}
                                         </div>
                                     </section>
@@ -289,37 +364,62 @@ const KnowledgeLibrary = () => {
                     {loading ? (
                         <div className="py-20 text-center"><LoadingSpinner /></div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {filteredNodes.map((node) => (
-                                <div
-                                    key={node._id}
-                                    onClick={() => handleTopicClick(node.topic)}
-                                    className="card-hover group cursor-pointer border-none shadow-xl bg-white dark:bg-gray-900 p-8 flex flex-col justify-between"
-                                >
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-start">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded">
-                                                {node.category}
-                                            </span>
-                                            {node.complexity && (
-                                                <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
-                                                    <FaClock size={10} /> {node.complexity.time}
-                                                </div>
-                                            )}
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {currentItems.map((node) => (
+                                    <div
+                                        key={node._id}
+                                        onClick={() => handleTopicClick(node.topic)}
+                                        className="card-hover group cursor-pointer border-none shadow-xl bg-white dark:bg-gray-900 p-8 flex flex-col justify-between hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 transform-gpu will-change-transform"
+                                    >
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 rounded">
+                                                    {node.category}
+                                                </span>
+                                                {node.complexity && (
+                                                    <div className="flex items-center gap-1 text-[10px] font-bold text-gray-400">
+                                                        <FaClock size={10} /> {node.complexity.time}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <h3 className="text-2xl font-black dark:text-white group-hover:text-indigo-600 transition-colors line-clamp-2">
+                                                {node.topic}
+                                            </h3>
+                                            <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-3 font-medium leading-relaxed">
+                                                {node.summary}
+                                            </p>
                                         </div>
-                                        <h3 className="text-2xl font-black dark:text-white group-hover:text-indigo-600 transition-colors line-clamp-2">
-                                            {node.topic}
-                                        </h3>
-                                        <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-3 font-medium leading-relaxed">
-                                            {node.summary}
-                                        </p>
+                                        <div className="mt-8 flex items-center justify-between font-black text-xs text-indigo-600 group-hover:gap-2 transition-all">
+                                            READ DOCUMENTATION <FaChevronRight size={10} />
+                                        </div>
                                     </div>
-                                    <div className="mt-8 flex items-center justify-between font-black text-xs text-indigo-600 group-hover:gap-2 transition-all">
-                                        READ DOCUMENTATION <FaChevronRight size={10} />
-                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Pagination Controls */}
+                            {totalPages > 1 && (
+                                <div className="flex justify-center items-center gap-4 pt-8">
+                                    <button
+                                        onClick={() => paginate(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="btn-secondary disabled:opacity-50"
+                                    >
+                                        Previous
+                                    </button>
+                                    <span className="font-bold text-slate-500 dark:text-slate-400">
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <button
+                                        onClick={() => paginate(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className="btn-secondary disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                        </>
                     )}
 
                     {!loading && filteredNodes.length === 0 && (

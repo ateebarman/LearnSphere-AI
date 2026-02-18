@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Search, GraduationCap,
   BookOpen, Beaker, BarChart3, User,
-  LogOut, Sun, Moon, Sparkles, Code2
+  LogOut, Sun, Moon, Sparkles, Code2, Shield
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -70,6 +70,17 @@ const Navbar = () => {
                     {userInfo.name.split(' ')[0]}
                   </span>
                 </Link>
+
+                {userInfo.role === 'admin' && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 text-rose-400 transition-colors"
+                    title="Admin Panel"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="font-semibold text-xs hidden md:block uppercase tracking-wider">Admin</span>
+                  </Link>
+                )}
 
                 <button
                   onClick={handleLogout}

@@ -8,6 +8,23 @@ const userSchema = mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     topicsOfInterest: [String],
+    solvedProblems: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CodingQuestion'
+    }],
+    streak: {
+      type: Number,
+      default: 0
+    },
+    lastSolvedAt: {
+      type: Date
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin'],
+      default: 'user',
+      required: true
+    }
   },
   { timestamps: true }
 );
