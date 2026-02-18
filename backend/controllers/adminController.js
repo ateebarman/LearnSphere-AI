@@ -80,13 +80,13 @@ export const deleteProblem = asyncHandler(async (req, res) => {
 // @route   POST /api/admin/problems/ai-generate
 // @access  Admin
 export const aiGenerateProblem = asyncHandler(async (req, res) => {
-  const { topic } = req.body;
+  const { topic, description = '' } = req.body;
   if (!topic) {
     res.status(400);
     throw new Error('Topic is required');
   }
 
-  const questionData = await generateCodingQuestionFromAI(topic);
+  const questionData = await generateCodingQuestionFromAI(topic, description);
   // Return to admin for review — NOT saved to DB
   res.json({ preview: questionData });
 });
@@ -475,6 +475,117 @@ export const aiGenerateRoadmap = asyncHandler(async (req, res) => {
   }));
 
   res.json({ preview: { ...data, modules: enrichedModules } });
+});
+
+// @desc    Update an official roadmap
+// @route   PUT /api/admin/roadmaps/:id
+// @access  Admin
+export const updateAdminRoadmap = asyncHandler(async (req, res) => {
+  const roadmap = await Roadmap.findById(req.params.id);
+  if (!roadmap) {
+    res.status(404);
+    throw new Error('Roadmap not found');
+  }
+
+  const {
+    title, topic, description, difficulty, totalDuration, modules,
+    learningGoals, targetRoles, expectedOutcomes, skillsCovered, tags, prerequisites
+  } = req.body;
+
+  roadmap.title = title || roadmap.title;
+  roadmap.topic = topic || roadmap.topic;
+  roadmap.description = description || roadmap.description;
+  roadmap.difficulty = difficulty || roadmap.difficulty;
+  roadmap.totalDuration = totalDuration || roadmap.totalDuration;
+  roadmap.learningGoals = learningGoals || roadmap.learningGoals;
+  roadmap.targetRoles = targetRoles || roadmap.targetRoles;
+  roadmap.expectedOutcomes = expectedOutcomes || roadmap.expectedOutcomes;
+  roadmap.skillsCovered = skillsCovered || roadmap.skillsCovered;
+  roadmap.tags = tags || roadmap.tags;
+  roadmap.prerequisites = prerequisites || roadmap.prerequisites;
+
+  if (modules) {
+    roadmap.modules = modules.map((m, i) => ({
+      ...m,
+      order: m.order ?? i,
+      difficulty: m.difficulty || 'Intermediate',
+      knowledgeRefs: m.knowledgeRefs || [],
+      practiceProblems: m.practiceProblems || [],
+      learningResources: m.learningResources || [],
+      quizConfig: m.quizConfig || { autoGenerate: true, topic: m.title, questionCount: 5 },
+      effortEstimate: m.effortEstimate || { readingMinutes: 30, practiceMinutes: 45, assessmentMinutes: 15 },
+      interviewImportance: m.interviewImportance || 'Medium',
+      conceptWeight: m.conceptWeight || 5,
+      unlockCriteria: m.unlockCriteria || { masteryThreshold: 0, quizScore: 0, problemsSolved: 0 },
+    }));
+  }
+
+  const updatedRoadmap = await roadmap.save();
+  res.json(updatedRoadmap);
+});
+
+// @desc    AI Generate a single module (preview)
+// @route   POST /api/admin/roadmaps/ai-generate-module
+// @access  Admin
+export const aiGenerateModule = asyncHandler(async (req, res) => {
+  const { topic, difficulty, currentModuleCount = 0 } = req.body;
+  if (!topic) {
+    res.status(400);
+    throw new Error('Topic is required');
+  }
+
+  const prompt = `
+    Generate a highly detailed learning module for the topic: "${topic}".
+    The roadmap already has ${currentModuleCount} modules. This module should fit as the next progressive step.
+    Difficulty: ${difficulty || 'Intermediate'}
+
+    Return a JSON object:
+    {
+      "title": "Clear Module Title",
+      "description": "3-4 sentences on importance and scope",
+      "estimatedTime": "X hours",
+      "difficulty": "${difficulty || 'Intermediate'}",
+      "objectives": ["Obj 1", "Obj 2", ...],
+      "keyConcepts": ["Concept 1", "Concept 2", ...],
+      "practiceProblems": [
+        { "title": "Problem Title", "url": "https://leetcode.com/...", "difficulty": "Medium", "source": "external" }
+      ],
+      "learningResources": [
+        { "title": "Reference link", "url": "https://...", "type": "doc", "source": "external" }
+      ],
+      "quizConfig": { "autoGenerate": true, "topic": "${topic}", "questionCount": 5 },
+      "effortEstimate": { "readingMinutes": 30, "practiceMinutes": 45, "assessmentMinutes": 15 },
+      "interviewImportance": "High",
+      "conceptWeight": 7,
+      "unlockCriteria": { "masteryThreshold": 60, "quizScore": 70, "problemsSolved": 1 }
+    }
+  `;
+
+  const data = await generateJson(prompt);
+  
+  // Enrich with real content (YouTube + Internal)
+  const youtubeVideos = await searchYouTubeVideos(`${topic} ${data.title} tutorial`, 1);
+  const internalKnowledge = await KnowledgeNode.find({ topic: { $regex: new RegExp(topic, 'i') } }).limit(1).select('topic slug');
+  const internalProblems = await CodingQuestion.find({ topic: topic.toLowerCase() }).limit(1).select('title slug difficulty');
+
+  const finalResources = [
+    ...youtubeVideos,
+    ...internalKnowledge.map(k => ({ title: `Internal: ${k.topic}`, url: `/knowledge/${k.slug}`, type: 'doc', source: 'internal' })),
+    ...(data.learningResources || [])
+  ];
+
+  const finalProblems = [
+    ...internalProblems.map(p => ({ title: `Internal: ${p.title}`, url: `/problems/${p.slug}`, difficulty: p.difficulty, source: 'internal' })),
+    ...(data.practiceProblems || [])
+  ];
+
+  res.json({ 
+    preview: { 
+      ...data, 
+      learningResources: finalResources.slice(0, 4), 
+      practiceProblems: finalProblems.slice(0, 3) 
+    } 
+  });
 });
 
 // @desc    Delete a community roadmap

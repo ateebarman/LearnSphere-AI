@@ -39,48 +39,48 @@ const generateStarterCode = (signature) => {
   };
 };
 
-export const generateCodingQuestionFromAI = async (topic) => {
-  const prompt = `
-    You are a Senior Competitive Programming Platform Architect. 
-    Execute a deterministic 5-stage pipeline for: "${topic}".
+export const generateCodingQuestionFromAI = async (topic, description = '') => {
+  const contextPrompt = description ? `\n    CONTEXT/DESCRIPTION: "${description}"\n    INTEGRATE this context into the problem logic.` : '';
 
-    LANGUAGES: C++ (GCC id 54), JavaScript (NodeJS id 63), Python 3 (id 71).
-    
-    PIPELINE:
-    1. SPEC: Define title, Markdown problemStatement (professional), constraints, inputSchema, outputSchema.
-    2. REF SOLUTIONS: Optimal logic-only referenceSolution for each language.
-    3. TESTS: 3 visible, 7 hidden test cases (logically verified).
-    4. METADATA: 
-       - generate functionSignature: { methodName, parameters: [{name, type}], returnType }.
-       - generate robust judgeDriver for each language (STDIN -> Solution -> STDOUT).
-    5. VALIDATION: Ensure 100% deterministic cross-language execution.
+    const prompt = `
+    You are a Senior Technical Content Engineer at LeetCode. 
+    Generate a coding problem for: "${topic}".${contextPrompt}
 
-    STRUCTURE:
+    ### LANGUAGE RULES:
+    - **C++**: Use "int", "long long", "string", "vector<T>". Include <bits/stdc++.h>.
+    - **Python**: Use standard type hints (e.g., List[int], str).
+    - **JavaScript**: Use standard ES6. No TypeScript types in JS.
+    - **FORBIDDEN**: Never use "number" or "number[]" in C++. Never use "require" or "import".
+
+    ### STRUCTURE RULE:
+    - Standard Function: class Solution { public: [method] } (CPP), class Solution: def [method] (Python), class Solution { [method] } (JS).
+
+    ### EXAMPLE CODE (FOLLOW THIS PATTERN):
+    Topic: "Two Sum"
+    {
+      "starterCode": {
+        "cpp": "class Solution {\\npublic:\\n    vector<int> twoSum(vector<int>& nums, int target) {\\n        \\n    }\\n};"
+      },
+      "judgeDriver": {
+        "cpp": "#include <bits/stdc++.h>\\nusing namespace std;\\n\\nint main() {\\n    int n, target;\\n    cin >> n;\\n    vector<int> nums(n);\\n    for(int i=0; i<n; i++) cin >> nums[i];\\n    cin >> target;\\n    Solution sol;\\n    vector<int> res = sol.twoSum(nums, target);\\n    cout << \\"[\\" << res[0] << \\",\\" << res[1] << \\"]\\" << endl;\\n    return 0;\\n}",
+        "python": "import sys, json\\nfrom solution import Solution\\nif __name__ == '__main__':\\n    nums = json.loads(sys.stdin.readline())\\n    target = int(sys.stdin.readline())\\n    print(json.dumps(Solution().twoSum(nums, target)))"
+      }
+    }
+
+    ### FINAL JSON STRUCTURE:
     {
       "title": (string),
       "slug": (string),
       "difficulty": "Easy" | "Medium" | "Hard",
-      "problemStatement": (markdown - description only, NO examples),
+      "problemStatement": (markdown),
       "constraints": [(strings)],
-      "examples": [
-        {
-          "input": (string),
-          "output": (string),
-          "explanation": (string)
-        }
-      ],
-      "inputSchema": (object),
-      "outputSchema": (object),
-      "functionSignature": {
-         "methodName": (string),
-         "parameters": [{ "name": (string), "type": (string) }],
-         "returnType": (string)
-      },
+      "examples": [{ "input": (string), "output": (string), "explanation": (string) }],
+      "functionSignature": { "methodName": (string), "parameters": [{"name": (string), "type": (string)}], "returnType": (string) },
       "judgeDriver": { "javascript": (string), "python": (string), "cpp": (string) },
       "referenceSolution": { "javascript": (string), "python": (string), "cpp": (string) },
+      "starterCode": { "javascript": (string), "python": (string), "cpp": (string) },
       "visibleTestCases": [ { "input": (string), "expectedOutput": (string) } ],
-      "hiddenTestCases": [ { "input": (string), "expectedOutput": (string) } ],
-      "validated": true
+      "hiddenTestCases": [ { "input": (string), "expectedOutput": (string) } ]
     }
   `;
 

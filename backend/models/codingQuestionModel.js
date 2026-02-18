@@ -31,17 +31,19 @@ const codingQuestionSchema = mongoose.Schema(
     constraints: [String],
     inputSchema: {
         type: mongoose.Schema.Types.Mixed,
-        required: true
+        required: false,
+        default: {}
     },
     outputSchema: {
         type: mongoose.Schema.Types.Mixed,
-        required: true
+        required: false,
+        default: {}
     },
     functionSignature: {
         methodName: String,
         parameters: [{
-            name: { type: String, required: true },
-            type: { type: String, required: true },
+            name: { type: String, required: false },
+            type: { type: String, required: false },
             _id: false
         }],
         returnType: String

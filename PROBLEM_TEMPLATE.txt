@@ -1,0 +1,118 @@
+# LearnSphere AI - Coding Problem Template
+# Use this as a reference for manual problem creation in the Admin Dashboard.
+
+################################################################################
+# 1. GENERAL INFO
+################################################################################
+Title: [Problem Title]
+Difficulty: [Easy | Medium | Hard]
+Topic: [arrays + strings | hashmap / hashing | linked list | stack + queue | trees + heap | graph | dynamic programming]
+Statement: [Markdown Description]
+Constraints: [Constraint 1, Constraint 2, etc.]
+
+################################################################################
+# 2. TEST CASES
+################################################################################
+# VISIBLE
+TC1: Input: "5 10"  Expected: "15"
+TC2: Input: "1 1"   Expected: "2"
+
+# HIDDEN
+TC3: Input: "-5 5"  Expected: "0"
+
+################################################################################
+# 3. CODE BLOCKS (JAVASCRIPT)
+################################################################################
+
+# --- STARTER CODE ---
+class Solution {
+    methodName(arg1, arg2) {
+        // Your code here
+    }
+}
+
+# --- JUDGE DRIVER (CRITICAL: MUST USE CASE_RESULT_DELIMITER) ---
+const fs = require('fs');
+const input = fs.readFileSync(0, 'utf8').split('\n');
+let lineIdx = 0;
+
+const testCount = parseInt(input[lineIdx++]);
+const sol = new Solution();
+
+for (let i = 0; i < testCount; i++) {
+    const line = input[lineIdx++];
+    if (!line || !line.trim()) continue;
+    
+    // ADJUST THIS PARSING BASED ON YOUR INPUT FORMAT
+    const [arg1, arg2] = line.trim().split(' ').map(Number); 
+    
+    const result = sol.methodName(arg1, arg2);
+    
+    // PRINT RESULT + DELIMITER
+    process.stdout.write(result.toString() + "\n");
+    process.stdout.write("CASE_RESULT_DELIMITER\n");
+}
+
+################################################################################
+# 4. CODE BLOCKS (PYTHON)
+################################################################################
+
+# --- STARTER CODE ---
+class Solution:
+    def methodName(self, arg1: int, arg2: int) -> int:
+        pass
+
+# --- JUDGE DRIVER (CRITICAL: MUST USE CASE_RESULT_DELIMITER) ---
+import sys, json
+
+input_data = sys.stdin.read().splitlines()
+if input_data:
+    test_count = int(input_data[0])
+    sol = Solution()
+    
+    for i in range(1, test_count + 1):
+        if i < len(input_data):
+            line = input_data[i].strip()
+            if not line: continue
+            
+            # ADJUST THIS PARSING BASED ON YOUR INPUT FORMAT
+            arg1, arg2 = map(int, line.split()) 
+            
+            print(sol.methodName(arg1, arg2))
+            print("CASE_RESULT_DELIMITER")
+
+################################################################################
+# 5. CODE BLOCKS (C++)
+################################################################################
+
+# --- STARTER CODE ---
+class Solution {
+public:
+    int methodName(int arg1, int arg2) {
+        
+    }
+};
+
+# --- JUDGE DRIVER (CRITICAL: MUST USE CASE_RESULT_DELIMITER) ---
+#include <iostream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+int main() {
+    int testCount;
+    if (!(cin >> testCount)) return 0;
+    
+    Solution sol;
+    for (int i = 0; i < testCount; ++i) {
+        int arg1, arg2;
+        
+        // ADJUST THIS PARSING BASED ON YOUR INPUT FORMAT
+        if (cin >> arg1 >> arg2) {
+            cout << sol.methodName(arg1, arg2) << endl;
+            cout << "CASE_RESULT_DELIMITER" << endl;
+        }
+    }
+    return 0;
+}

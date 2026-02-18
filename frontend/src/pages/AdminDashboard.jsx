@@ -4,15 +4,15 @@ import {
     Shield, LayoutDashboard, Code2, BookOpen, Map, Trash2, Plus,
     Sparkles, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight,
     Search, AlertTriangle, Play, Eye, Save, ArrowLeft, Users, FileText,
-    Zap, Database, BarChart3, X, Link2, BookMarked
+    Zap, Database, BarChart3, X, Link2, BookMarked, Edit3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
     getAdminStats, getAdminProblems, createProblem, deleteProblem,
     aiGenerateProblem, validateProblem, getAdminKnowledge, createKnowledge,
-    aiGenerateKnowledge, deleteKnowledge, getAdminRoadmaps, createAdminRoadmap,
-    deleteRoadmap, aiGenerateRoadmap
+    aiGenerateKnowledge, deleteKnowledge, getAdminRoadmaps, createAdminRoadmap, updateAdminRoadmap,
+    deleteRoadmap, aiGenerateRoadmap, aiGenerateModule
 } from '../services/adminService';
 
 const AdminDashboard = () => {
@@ -36,6 +36,7 @@ const AdminDashboard = () => {
         functionSignature: { methodName: '', parameters: [{ name: '', type: '' }], returnType: '' }
     });
     const [aiTopic, setAiTopic] = useState('');
+    const [aiDescription, setAiDescription] = useState('');
     const [aiGenerating, setAiGenerating] = useState(false);
     const [aiPreview, setAiPreview] = useState(null);
     const [validating, setValidating] = useState(false);
@@ -64,6 +65,10 @@ const AdminDashboard = () => {
     const [aiRoadmapDifficulty, setAiRoadmapDifficulty] = useState('Intermediate');
     const [aiRoadmapRole, setAiRoadmapRole] = useState('');
     const [aiRoadmapGenerating, setAiRoadmapGenerating] = useState(false);
+    const [isEditingRoadmap, setIsEditingRoadmap] = useState(false);
+    const [editingRoadmapId, setEditingRoadmapId] = useState(null);
+    const [isModuleGenerating, setIsModuleGenerating] = useState(false);
+
     const defaultModule = {
         title: '', description: '', estimatedTime: '', difficulty: 'Intermediate',
         objectives: [''], keyConcepts: [''], resources: [],
@@ -130,6 +135,16 @@ const AdminDashboard = () => {
             cleaned.examples = cleaned.examples.filter(e => e.input.trim() || e.output.trim());
             cleaned.visibleTestCases = cleaned.visibleTestCases.filter(tc => tc.input.trim());
             cleaned.hiddenTestCases = cleaned.hiddenTestCases.filter(tc => tc.input.trim());
+
+            // Clean function signature if empty
+            if (cleaned.functionSignature) {
+                cleaned.functionSignature.parameters = cleaned.functionSignature.parameters.filter(p => p.name.trim() || p.type.trim());
+            }
+
+            // Default schemas if missing
+            if (!cleaned.inputSchema || Object.keys(cleaned.inputSchema).length === 0) cleaned.inputSchema = {};
+            if (!cleaned.outputSchema || Object.keys(cleaned.outputSchema).length === 0) cleaned.outputSchema = {};
+
             await createProblem(cleaned);
             toast.success('Problem created!', { id: tid });
             setShowAddProblem(false);
@@ -151,13 +166,37 @@ const AdminDashboard = () => {
 
     const handleAIGenerate = async () => {
         if (!aiTopic.trim()) return toast.error('Enter a topic');
-        setAiGenerating(true); setAiPreview(null); setValidationResult(null);
+        setAiGenerating(true); setValidationResult(null);
         try {
-            const res = await aiGenerateProblem(aiTopic);
-            setAiPreview(res.preview);
-            toast.success('AI problem generated! Review below.');
-        } catch { toast.error('AI generation failed'); }
-        finally { setAiGenerating(false); }
+            const res = await aiGenerateProblem(aiTopic, aiDescription);
+            const d = res.preview;
+
+            setProblemForm({
+                title: d.title || aiTopic,
+                problemStatement: d.problemStatement || '',
+                difficulty: d.difficulty || 'Medium',
+                topic: aiTopic.toLowerCase().includes('hash') ? 'hashmap / hashing' :
+                    aiTopic.toLowerCase().includes('tree') ? 'trees + heap' : 'arrays + strings',
+                constraints: d.constraints?.length ? d.constraints : [''],
+                examples: d.examples?.length ? d.examples : [{ input: '', output: '', explanation: '' }],
+                visibleTestCases: d.visibleTestCases?.length ? d.visibleTestCases : [{ input: '', expectedOutput: '' }],
+                hiddenTestCases: d.hiddenTestCases?.length ? d.hiddenTestCases : [{ input: '', expectedOutput: '' }],
+                starterCode: d.starterCode || { javascript: '', python: '', cpp: '' },
+                referenceSolution: d.referenceSolution || { javascript: '', python: '', cpp: '' },
+                judgeDriver: d.judgeDriver || { javascript: '', python: '', cpp: '' },
+                judgePreDriver: d.judgePreDriver || { javascript: '', python: '', cpp: '' },
+                inputSchema: d.inputSchema || {},
+                outputSchema: d.outputSchema || {},
+                functionSignature: d.functionSignature || { methodName: '', parameters: [], returnType: '' }
+            });
+
+            setAiPreview(d); // Keep for validation
+            setShowAddProblem(true);
+            toast.success('Generated! Review and edit in the form below.');
+        } catch (err) {
+            toast.error('AI generation failed');
+            console.error(err);
+        } finally { setAiGenerating(false); }
     };
 
     const handleValidateAI = async () => {
@@ -278,7 +317,7 @@ const AdminDashboard = () => {
     };
 
     const handleCreateRoadmap = async () => {
-        const tid = toast.loading('Creating roadmap...');
+        const tid = toast.loading(isEditingRoadmap ? 'Updating roadmap...' : 'Creating roadmap...');
         try {
             const cleaned = { ...roadmapForm };
             cleaned.tags = typeof cleaned.tags === 'string' ? cleaned.tags.split(',').map(t => t.trim()).filter(Boolean) : cleaned.tags;
@@ -294,9 +333,16 @@ const AdminDashboard = () => {
                 practiceProblems: (m.practiceProblems || []).filter(p => p.title?.trim() || p.url?.trim()),
                 learningResources: (m.learningResources || []).filter(r => r.title?.trim() || r.url?.trim()),
             }));
-            await createAdminRoadmap(cleaned);
-            toast.success('Roadmap created!', { id: tid });
+            if (isEditingRoadmap) {
+                await updateAdminRoadmap(editingRoadmapId, cleaned);
+                toast.success('Roadmap updated!', { id: tid });
+            } else {
+                await createAdminRoadmap(cleaned);
+                toast.success('Roadmap created!', { id: tid });
+            }
             setShowAddRoadmap(false);
+            setIsEditingRoadmap(false);
+            setEditingRoadmapId(null);
             setRoadmapForm({
                 title: '', topic: '', description: '', difficulty: 'Intermediate', totalDuration: '',
                 learningGoals: [''], targetRoles: [''], expectedOutcomes: [''],
@@ -304,7 +350,54 @@ const AdminDashboard = () => {
                 modules: [{ ...defaultModule }]
             });
             fetchRoadmaps();
-        } catch (err) { toast.error(err.response?.data?.message || 'Creation failed', { id: tid }); }
+        } catch (err) { toast.error(err.response?.data?.message || 'Action failed', { id: tid }); }
+    };
+
+    const handleEditRoadmap = (r) => {
+        setIsEditingRoadmap(true);
+        setEditingRoadmapId(r._id);
+        setRoadmapForm({
+            title: r.title,
+            topic: r.topic,
+            description: r.description,
+            difficulty: r.difficulty,
+            totalDuration: r.totalDuration,
+            learningGoals: r.learningGoals?.length ? r.learningGoals : [''],
+            targetRoles: r.targetRoles?.length ? r.targetRoles : [''],
+            expectedOutcomes: r.expectedOutcomes?.length ? r.expectedOutcomes : [''],
+            skillsCovered: r.skillsCovered?.length ? r.skillsCovered : [''],
+            tags: Array.isArray(r.tags) ? r.tags.join(', ') : (r.tags || ''),
+            prerequisites: r.prerequisites?.length ? r.prerequisites : [''],
+            modules: r.modules.map(m => ({
+                ...m,
+                objectives: m.objectives?.length ? m.objectives : [''],
+                keyConcepts: m.keyConcepts?.length ? m.keyConcepts : [''],
+                practiceProblems: m.practiceProblems?.length ? m.practiceProblems : [{ title: '', url: '', difficulty: 'Medium', source: 'external' }],
+                learningResources: m.learningResources?.length ? m.learningResources : [{ title: '', url: '', type: 'doc', source: 'external' }],
+            }))
+        });
+        setShowAddRoadmap(true);
+        // Scroll to form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleAddAIModule = async (topicSuggestion = '') => {
+        const topic = prompt("Enter topic for new module:", topicSuggestion || aiRoadmapTopic);
+        if (!topic) return;
+
+        setIsModuleGenerating(true);
+        try {
+            const res = await aiGenerateModule(topic, roadmapForm.difficulty, roadmapForm.modules.length);
+            setRoadmapForm({
+                ...roadmapForm,
+                modules: [...roadmapForm.modules, res.preview]
+            });
+            toast.success('AI Module added!');
+        } catch (err) {
+            toast.error('Failed to generate module');
+        } finally {
+            setIsModuleGenerating(false);
+        }
     };
 
     const handleAIRoadmap = async () => {
@@ -313,6 +406,8 @@ const AdminDashboard = () => {
         try {
             const res = await aiGenerateRoadmap(aiRoadmapTopic, aiRoadmapDifficulty, aiRoadmapRole);
             const d = res.preview;
+            setIsEditingRoadmap(false);
+            setEditingRoadmapId(null);
             setRoadmapForm({
                 title: d.title || `Mastering ${aiRoadmapTopic}`,
                 topic: d.topic || aiRoadmapTopic,
@@ -473,14 +568,22 @@ const AdminDashboard = () => {
                                 {/* AI Generation Section */}
                                 <div className="bg-slate-900/50 border border-white/5 rounded-2xl p-6 space-y-4">
                                     <h3 className="text-sm font-black text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> AI Problem Generator</h3>
-                                    <div className="flex gap-3">
-                                        <input value={aiTopic} onChange={e => setAiTopic(e.target.value)} placeholder="e.g., Binary Search, Graph Traversal..."
-                                            className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary-500/50" />
-                                        <button onClick={handleAIGenerate} disabled={aiGenerating}
-                                            className="px-6 py-2.5 bg-amber-600 text-white rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-amber-500 disabled:opacity-50 transition-all">
-                                            {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                            {aiGenerating ? 'Generating...' : 'Generate'}
-                                        </button>
+                                    <div className="space-y-3">
+                                        <div className="flex gap-3">
+                                            <input value={aiTopic} onChange={e => setAiTopic(e.target.value)} placeholder="Topic (e.g., LFU Cache, Binary Search...)"
+                                                className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary-500/50" />
+                                            <button onClick={handleAIGenerate} disabled={aiGenerating}
+                                                className="px-6 py-2.5 bg-amber-600 text-white rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-amber-500 disabled:opacity-50 transition-all">
+                                                {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                                {aiGenerating ? 'Generating...' : 'Generate'}
+                                            </button>
+                                        </div>
+                                        <textarea
+                                            value={aiDescription}
+                                            onChange={e => setAiDescription(e.target.value)}
+                                            placeholder="Specific Constraints or Description (Optional)... e.g., Must use O(1) time complexity, include tie-breaker logic."
+                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-500/50 min-h-[80px]"
+                                        />
                                     </div>
 
                                     {/* AI Preview */}
@@ -944,8 +1047,16 @@ const AdminDashboard = () => {
                                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                                             className="bg-slate-900/50 border border-white/5 rounded-2xl p-6 space-y-5 overflow-hidden">
                                             <div className="flex items-center justify-between">
-                                                <h3 className="text-sm font-black text-white">Create Official Roadmap</h3>
-                                                <button onClick={() => setShowAddRoadmap(false)} className="text-slate-500 hover:text-white"><X className="w-4 h-4" /></button>
+                                                <h3 className="text-sm font-black text-white">
+                                                    {isEditingRoadmap ? 'Edit Official Roadmap' : 'Create Official Roadmap'}
+                                                </h3>
+                                                <div className="flex items-center gap-2">
+                                                    {isEditingRoadmap && (
+                                                        <button onClick={() => { setShowAddRoadmap(false); setIsEditingRoadmap(false); }}
+                                                            className="text-[10px] font-black uppercase text-slate-500 hover:text-white transition-colors">Cancel Edit</button>
+                                                    )}
+                                                    <button onClick={() => setShowAddRoadmap(false)} className="text-slate-500 hover:text-white"><X className="w-4 h-4" /></button>
+                                                </div>
                                             </div>
 
                                             {/* Basic Info */}
@@ -1169,13 +1280,24 @@ const AdminDashboard = () => {
                                                         </div>
                                                     );
                                                 })}
-                                                <button onClick={() => setRoadmapForm({ ...roadmapForm, modules: [...roadmapForm.modules, { ...defaultModule }] })}
-                                                    className="text-[10px] text-primary-400 font-bold uppercase tracking-widest hover:text-white transition-colors">+ Add Module</button>
+                                                <div className="flex gap-4">
+                                                    <button onClick={() => setRoadmapForm({ ...roadmapForm, modules: [...roadmapForm.modules, { ...defaultModule }] })}
+                                                        className="flex-1 py-3 bg-slate-800 border border-white/5 text-slate-400 font-bold uppercase tracking-widest text-[10px] rounded-xl hover:bg-slate-700 hover:text-white transition-all">
+                                                        + Add Manual Module
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleAddAIModule()}
+                                                        disabled={isModuleGenerating}
+                                                        className="flex-1 py-3 bg-primary-600/10 border border-primary-500/20 text-primary-400 font-bold uppercase tracking-widest text-[10px] rounded-xl hover:bg-primary-600/20 hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2">
+                                                        {isModuleGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                                                        + AI Add Module
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <button onClick={handleCreateRoadmap}
-                                                className="w-full py-3 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-500 transition-all shadow-lg shadow-emerald-500/20">
-                                                <Save className="w-4 h-4" /> Publish Roadmap
+                                                className={`w-full py-4 ${isEditingRoadmap ? 'bg-amber-600 shadow-amber-500/20' : 'bg-emerald-600 shadow-emerald-500/20'} text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg`}>
+                                                <Save className="w-4 h-4" /> {isEditingRoadmap ? 'Update Roadmap' : 'Publish Roadmap'}
                                             </button>
                                         </motion.div>
                                     )}
@@ -1190,8 +1312,12 @@ const AdminDashboard = () => {
                                                     <h4 className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors">{r.title}</h4>
                                                     <p className="text-[10px] text-slate-500 mt-0.5">{r.topic} • by {r.user?.name || 'Admin'}</p>
                                                 </div>
-                                                <button onClick={() => handleDeleteRoadmap(r._id, r.title)}
-                                                    className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-4 h-4" /></button>
+                                                <div className="flex gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
+                                                    <button onClick={() => handleEditRoadmap(r)}
+                                                        className="p-2 text-primary-400 hover:bg-primary-500/10 rounded-lg"><Edit3 className="w-4 h-4" /></button>
+                                                    <button onClick={() => handleDeleteRoadmap(r._id, r.title)}
+                                                        className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                                                </div>
                                             </div>
                                             <p className="text-xs text-slate-400 mb-3 line-clamp-2">{r.description || 'No description'}</p>
                                             <div className="flex items-center gap-3 text-[10px] text-slate-500">
