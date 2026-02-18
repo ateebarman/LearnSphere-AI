@@ -7,6 +7,7 @@ import { getRelevantContext } from '../services/ragService.js';
 import { generateJson } from '../services/ai/index.js';
 import { searchYouTubeVideos } from '../services/youtubeService.js';
 import { getResourcesForTopic } from '../services/resourceDatabase.js';
+import { getFromCache, setInCache } from '../utils/cache.js';
 
 
 // @desc    Get an AI roadmap preview (not saved)
@@ -207,7 +208,9 @@ const generateRAGRoadmap = asyncHandler(async (req, res) => {
 // @route   GET /api/roadmaps
 // @access  Private
 const getUserRoadmaps = asyncHandler(async (req, res) => {
-  const roadmaps = await Roadmap.find({ user: req.user._id });
+  const roadmaps = await Roadmap.find({ user: req.user._id })
+    .sort({ createdAt: -1 }) // Ensure consistent sorting
+    .lean();
   res.json(roadmaps);
 });
 
@@ -215,59 +218,66 @@ const getUserRoadmaps = asyncHandler(async (req, res) => {
 // @route   GET /api/roadmaps/:id
 // @access  Private
 const getRoadmapById = asyncHandler(async (req, res) => {
-  const roadmap = await Roadmap.findById(req.params.id).populate('user', 'name email avatar');
+  const roadmapId = req.params.id;
+  const cacheKey = `roadmap:detail:${roadmapId}`;
+
+  // Check cache (only cache if we don't need to check specific user progress here, 
+  // or cache the base roadmap and handle progress separately)
+  const cached = await getFromCache(cacheKey);
+  if (cached) {
+    // Basic verification: if owner is viewing, we might want live data, 
+    // but for community/common viewing, cache is perfect.
+    return res.json(cached);
+  }
+
+  const roadmap = await Roadmap.findById(roadmapId)
+    .populate('user', 'name email avatar')
+    .lean();
 
   if (roadmap) {
-    // Check if user is owner
-    const isOwner = roadmap.user._id ? roadmap.user._id.toString() === req.user._id.toString() : roadmap.user.toString() === req.user._id.toString();
+    // Access Control check
+    const isOwner = req.user && (roadmap.user._id ? roadmap.user._id.toString() === req.user._id.toString() : roadmap.user.toString() === req.user._id.toString());
     
     // Allow if owner or if roadmap is public
     if (isOwner || roadmap.isPublic) {
-      // HYPER-LINK INTEGRATION: Deep link modules to Knowledge Base
+      // Perform heavy hyper-link integration
       const modulesWithDocs = await Promise.all(roadmap.modules.map(async (module) => {
-        const existingInternalUrls = module.resources
-          .filter(r => r.type === 'doc' && r.url.includes('/library'))
-          .map(r => r.url);
-
-        // Build a search query based on title and key concepts
-        const searchTerms = [
-          module.title,
-          ...(module.keyConcepts || [])
-        ].filter(t => t && t.length > 3);
-
+        // ... (existing enrichment logic)
+        const searchTerms = [module.title, ...(module.keyConcepts || [])].filter(t => t && t.length > 3);
         if (searchTerms.length === 0) return module;
 
-        // Find relevant internal documents using a single combined regex
         const searchRegex = new RegExp(searchTerms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i');
-        
         const internalDocs = await KnowledgeNode.find({
-          $or: [
-            { topic: searchRegex },
-            { category: searchRegex },
-            ...searchTerms.map(term => ({
-              topic: { $regex: term.split(' ')[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
-            }))
-          ]
-        }).select('topic category').limit(3);
+          $or: [{ topic: searchRegex }, { category: searchRegex }]
+        }).select('topic category').limit(3).lean();
+
+        const resources = module.resources || [];
+        const existingUrls = new Set(resources.map(r => r.url));
 
         internalDocs.forEach(doc => {
           const docUrl = `/library?topic=${encodeURIComponent(doc.topic)}`;
-          if (!existingInternalUrls.includes(docUrl)) {
-            module.resources.push({
+          if (!existingUrls.has(docUrl)) {
+            resources.push({
               title: `Internal Doc: ${doc.topic}`,
               type: 'doc',
               url: docUrl,
               description: `Deep dive into ${doc.topic} from our official knowledge base.`,
             });
-            existingInternalUrls.push(docUrl);
+            existingUrls.add(docUrl);
           }
         });
 
-        return module;
+        return { ...module, resources };
       }));
 
-      roadmap.modules = modulesWithDocs;
-      res.json(roadmap);
+      const finalRoadmap = { ...roadmap, modules: modulesWithDocs };
+      
+      // Cache for 1 hour if it's public (don't cache private ones to avoid cache pollution/security complexity)
+      if (roadmap.isPublic) {
+        await setInCache(cacheKey, finalRoadmap, 3600);
+      }
+
+      res.json(finalRoadmap);
     } else {
       res.status(403);
       throw new Error('Not authorized to view this roadmap');
@@ -282,12 +292,25 @@ const getRoadmapById = asyncHandler(async (req, res) => {
 // @route   GET /api/roadmaps/public/list
 // @access  Public
 const getPublicRoadmaps = asyncHandler(async (req, res) => {
+  const cacheKey = 'roadmaps:public:list';
+  
+  // Check cache
+  const cached = await getFromCache(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   const roadmaps = await Roadmap.find({ isPublic: true })
     .select('-modules -progress')
     .populate('user', 'name email avatar')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
   
-  res.json({ roadmaps });
+  const result = { roadmaps };
+  
+  // Cache for 30 minutes
+  await setInCache(cacheKey, result, 1800);
+  res.json(result);
 });
 
 // @desc    Toggle roadmap visibility (Public/Private)

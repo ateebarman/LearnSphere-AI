@@ -3,25 +3,34 @@ import QuizAttempt from '../models/quizAttemptModel.js';
 import Roadmap from '../models/roadmapModel.js';
 import KnowledgeNode from '../models/knowledgeModel.js';
 import CategoryMapping from '../models/categoryMappingModel.js';
+import { getFromCache, setInCache } from '../utils/cache.js';
 
 // @desc    Get user analytics (progress, weak/strong areas)
 // @route   GET /api/analytics
 // @access  Private
 const getAnalytics = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  console.log('Fetching analytics for userId:', userId.toString());
-  
-  const quizAttempts = await QuizAttempt.find({ user: userId });
-  const roadmaps = await Roadmap.find({ user: userId });
+  const cacheKey = `analytics:overview:${userId}`;
+
+  // Check cache first
+  const cached = await getFromCache(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
+  // Optimize queries with .lean() and projection
+  const [quizAttempts, roadmaps, totalRoadmapsCount, roadmapsWithoutUser] = await Promise.all([
+    QuizAttempt.find({ user: userId }).lean(),
+    Roadmap.find({ user: userId }).select('title topic modules progress').lean(),
+    // Keep debug counts if needed, or remove for prod performance
+    Roadmap.countDocuments(),
+    Roadmap.countDocuments({ user: null })
+  ]);
   
   console.log('Found roadmaps:', roadmaps.length);
   console.log('Found quizAttempts:', quizAttempts.length);
   
-  // Debug: Check if there are roadmaps in total
-  const totalRoadmapsCount = await Roadmap.countDocuments();
-  const roadmapsWithoutUser = await Roadmap.countDocuments({ user: null });
-  console.log('Total roadmaps in DB:', totalRoadmapsCount);
-  console.log('Roadmaps without user field:', roadmapsWithoutUser);
+
   
   if (roadmaps.length === 0 && totalRoadmapsCount > 0) {
     console.log('No roadmaps found for this user. Sample roadmaps:');
@@ -175,7 +184,9 @@ const getAnalytics = asyncHandler(async (req, res) => {
     progress: Math.min(100, Math.round(((data.completedModules % 3) / 3) * 100))
   })).filter(c => c.completionCount > 0 || ['DSA', 'System Design', 'OS', 'Database'].includes(c.category));
 
-  res.json({
+
+
+  const result = {
     // Old format (for backward compatibility)
     totalCompletedRoadmaps: roadmaps.filter((r) => r.progress === 100).length,
     totalInProgressRoadmaps: roadmaps.filter((r) => r.progress > 0 && r.progress < 100).length,
@@ -195,7 +206,11 @@ const getAnalytics = asyncHandler(async (req, res) => {
     topicBreakdown: (typeof topicScores !== 'undefined' && topicScores) ? Object.fromEntries(
       Object.entries(topicScores).map(([k, v]) => [k, v.count])
     ) : {},
-  });
+  };
+
+  // Cache for 10 minutes
+  await setInCache(cacheKey, result, 600);
+  res.json(result);
 });
 
 // @desc    Get detailed roadmap statistics
@@ -205,7 +220,7 @@ const getRoadmapStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const roadmaps = await Roadmap.find({ user: userId }).select(
     'title topic progress createdAt modules'
-  );
+  ).lean();
 
   const stats = roadmaps.map((roadmap) => {
     const totalModules = roadmap.modules.length;
@@ -234,7 +249,8 @@ const getQuizStats = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const quizAttempts = await QuizAttempt.find({ user: userId })
     .populate('roadmap', 'title')
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: -1 })
+    .lean();
 
   const stats = quizAttempts.map((attempt) => ({
     _id: attempt._id,

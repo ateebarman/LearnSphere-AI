@@ -5,6 +5,7 @@ import User from '../models/userModel.js';
 import Submission from '../models/submissionModel.js';
 import { executeCode } from '../services/compilerService.js';
 import { generateCodingQuestionFromAI } from '../services/codingGenerator.js';
+import { getFromCache, setInCache } from '../utils/cache.js';
 
 /**
  * Wraps user code with a test driver if no entry point is detected.
@@ -303,6 +304,30 @@ export const getProblems = asyncHandler(async (req, res) => {
     query._id = { $nin: solvedQuestionIds };
   }
 
+  // Check cache for non-user-specific queries
+  // Only cache if NO status filter is applied (status is user-specific)
+  const canCache = !status;
+  const cacheKey = canCache 
+    ? `problems:list:${topic || 'all'}:${difficulty || 'all'}:${search || 'none'}:${page}:${limit}`
+    : null;
+
+  if (canCache) {
+    const cached = await getFromCache(cacheKey);
+    if (cached) {
+      // Still need to calculate isSolved for the cached results
+      const solvedSet = new Set(solvedQuestionIds);
+      const problemsWithStatus = cached.problems.map(p => ({
+        ...p,
+        isSolved: solvedSet.has(p._id.toString())
+      }));
+
+      return res.json({
+        ...cached,
+        problems: problemsWithStatus
+      });
+    }
+  }
+
   const skip = (page - 1) * limit;
 
   const [problems, total] = await Promise.all([
@@ -310,22 +335,32 @@ export const getProblems = asyncHandler(async (req, res) => {
       .select('title difficulty topic slug')
       .skip(skip)
       .limit(Number(limit))
-      .sort({ createdAt: 1 }), // curriculum order
+      .sort({ createdAt: 1 }) // curriculum order
+      .lean(), // Optimization: use lean()
     CodingQuestion.countDocuments(query),
   ]);
+
+  const resultData = {
+    problems,
+    page: Number(page),
+    pages: Math.ceil(total / limit),
+    total
+  };
+
+  if (canCache) {
+    await setInCache(cacheKey, resultData, 600); // Cache for 10 minutes
+  }
 
   const solvedSet = new Set(solvedQuestionIds);
 
   const problemsWithStatus = problems.map(p => ({
-    ...p.toObject(),
+    ...p, // p is already a POJO due to .lean()
     isSolved: solvedSet.has(p._id.toString())
   }));
 
   res.json({
-    problems: problemsWithStatus,
-    page: Number(page),
-    pages: Math.ceil(total / limit),
-    total
+    ...resultData,
+    problems: problemsWithStatus
   });
 });
 

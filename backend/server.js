@@ -15,6 +15,7 @@ import cors from 'cors';
 import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import { initializeAI } from './services/ai/index.js';
+import { connectRedis } from './config/redis.js';
 
 import authRoutes from './routes/authRoutes.js';
 import roadmapRoutes from './routes/roadmapRoutes.js';
@@ -53,13 +54,17 @@ app.use('/api/coding', codingRoutes);
 app.use('/api/admin', adminRoutes);
 
 
+// Health check for monitoring and keeping service awake (Render)
+app.get('/api/ping', (req, res) => res.sendStatus(200));
+
 // Error Handling Middleware
 app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+// Render/Heroku/Railway provide a PORT, Vercel provides process.env.VERCEL
+if (process.env.PORT || !process.env.VERCEL) {
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
