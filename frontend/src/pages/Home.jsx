@@ -25,9 +25,9 @@ const itemVariants = {
 
 const Home = () => {
   return (
-    <div className="relative space-y-32 pb-24">
+    <div className="relative space-y-16 md:space-y-32 pb-12 md:pb-24">
       {/* Hero Section */}
-      <section className="relative pt-20 pb-16 text-center overflow-hidden">
+      <section className="relative pt-10 md:pt-20 pb-8 md:pb-16 text-center overflow-hidden">
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -41,7 +41,7 @@ const Home = () => {
 
           <motion.h1
             variants={itemVariants}
-            className="text-6xl md:text-8xl font-black leading-[1.1] tracking-tight"
+            className="text-4xl md:text-8xl font-black leading-[1.1] tracking-tight"
           >
             Master Any Skill with{' '}
             <span className="text-gradient">LearnSphere AI</span>
@@ -49,7 +49,7 @@ const Home = () => {
 
           <motion.p
             variants={itemVariants}
-            className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg md:text-2xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed px-4"
           >
             Your personalized, AI-powered learning companion. Break through complexity with adaptive roadmaps, real-time tutoring, and interactive coding labs.
           </motion.p>
@@ -168,11 +168,11 @@ const Home = () => {
         <div className="bg-gradient-to-br from-primary-600 to-indigo-900 rounded-[3rem] p-12 md:p-24 text-center text-white space-y-8 overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[100px] -rotate-45 translate-x-1/2 -translate-y-1/2" />
 
-          <h2 className="text-4xl md:text-6xl font-black max-w-3xl mx-auto leading-tight">
+          <h2 className="text-3xl md:text-6xl font-black max-w-3xl mx-auto leading-tight">
             Don't Just Learn. <br /><span className="text-indigo-200">Engineer Your Career.</span>
           </h2>
 
-          <p className="text-xl text-primary-100 max-w-xl mx-auto">
+          <p className="text-lg md:text-xl text-primary-100 max-w-xl mx-auto">
             Join 10,000+ developers and students using LearnSphere AI to master complex topics 3x faster.
           </p>
 

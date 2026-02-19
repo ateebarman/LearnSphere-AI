@@ -145,7 +145,7 @@ const Explore = () => {
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-7xl md:text-8xl font-black tracking-tighter text-white font-display leading-[0.85] uppercase"
+              className="text-5xl md:text-8xl font-black tracking-tighter text-white font-display leading-[0.95] md:leading-[0.85] uppercase"
             >
               Proven <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-indigo-400 to-purple-400 px-1">
@@ -157,7 +157,7 @@ const Explore = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-slate-400 text-xl font-medium leading-relaxed max-w-2xl"
+              className="text-slate-400 text-lg md:text-xl font-medium leading-relaxed max-w-2xl"
             >
               Choose your next mastery. Explore community-curated roadmaps optimized for depth and efficiency.
             </motion.p>
@@ -184,17 +184,17 @@ const Explore = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="relative max-w-4xl"
+          className="relative max-w-4xl px-4 md:px-0"
         >
-          <div className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-600 transition-colors pointer-events-none">
-            <Search className="w-6 h-6" />
+          <div className="absolute left-8 md:left-8 top-1/2 -translate-y-1/2 text-slate-600 transition-colors pointer-events-none">
+            <Search className="w-5 h-5 md:w-6 md:h-6" />
           </div>
           <input
             type="text"
             placeholder="What would you like to master today?"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900/60 border border-white/5 rounded-[2.5rem] py-8 pl-20 pr-10 text-xl focus:outline-none focus:border-primary-500/40 transition-all placeholder:text-slate-700 focus:ring-[12px] focus:ring-primary-500/5 backdrop-blur-md shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] text-white font-medium"
+            className="w-full bg-slate-900/60 border border-white/5 rounded-2xl md:rounded-[2.5rem] py-5 md:py-8 pl-16 md:pl-20 pr-10 text-base md:text-xl focus:outline-none focus:border-primary-500/40 transition-all placeholder:text-slate-700 focus:ring-[8px] md:focus:ring-[12px] focus:ring-primary-500/5 backdrop-blur-md shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] text-white font-medium"
           />
           <AnimatePresence>
             {searchTerm && (
@@ -203,7 +203,7 @@ const Explore = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 onClick={() => setSearchTerm('')}
-                className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors text-xs font-black uppercase tracking-tighter"
+                className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-tighter"
               >
                 Clear
               </motion.button>
@@ -232,7 +232,7 @@ const Explore = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ delay: i * 0.05 }}
-                  className="group relative flex flex-col h-full bg-slate-900/40 border border-white/5 rounded-[3rem] p-10 hover:bg-slate-900/60 hover:border-primary-500/30 transition-all duration-700 backdrop-blur-md overflow-hidden"
+                  className="group relative flex flex-col h-full bg-slate-900/40 border border-white/5 rounded-3xl md:rounded-[3rem] p-6 md:p-10 hover:bg-slate-900/60 hover:border-primary-500/30 transition-all duration-700 backdrop-blur-md overflow-hidden"
                 >
                   {/* Visual Accents */}
                   <div className="absolute top-0 right-0 w-48 h-48 bg-primary-500/5 blur-[70px] rounded-full -mr-24 -mt-24 group-hover:bg-primary-500/10 transition-all duration-700" />

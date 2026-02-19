@@ -66,12 +66,12 @@ const TutorChat = () => {
     <div className="max-w-5xl mx-auto h-[calc(100vh-12rem)] flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-extrabold text-gradient flex items-center gap-3">
-            <FaGraduationCap className="text-indigo-600" />
+        <div className="px-4 md:px-0">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gradient flex items-center gap-2 md:gap-3">
+            <FaGraduationCap className="text-indigo-600 flex-shrink-0" />
             AI Tutor
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">Your personal 24/7 coding mentor</p>
+          <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 font-medium">Your personal 24/7 coding mentor</p>
         </div>
 
         {messages.length > 0 && (
@@ -90,22 +90,22 @@ const TutorChat = () => {
         {/* Messages List */}
         <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 space-y-8 scroll-smooth custom-scrollbar">
           {messages.length === 0 && !loading && (
-            <div className="flex flex-col items-center justify-center h-full text-center space-y-6 opacity-80 animate-in fade-in zoom-in duration-700">
-              <div className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-3xl flex items-center justify-center text-5xl text-indigo-600/80">
+            <div className="flex flex-col items-center justify-center min-h-[400px] h-full text-center space-y-4 md:space-y-6 opacity-80 animate-in fade-in zoom-in duration-700 px-4">
+              <div className="w-16 h-16 md:w-24 md:h-24 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl md:rounded-3xl flex items-center justify-center text-4xl md:text-5xl text-indigo-600/80">
                 <FaRobot />
               </div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black dark:text-white">Hello, {userInfo?.name.split(' ')[0]}!</h2>
-                <p className="text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
+              <div className="space-y-1 md:space-y-2">
+                <h2 className="text-xl md:text-2xl font-black dark:text-white">Hello, {userInfo?.name.split(' ')[0]}!</h2>
+                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
                   I'm your AI Tutor. Ask me about React, Node.js, System Design, or anything you're curious about!
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-3 w-full max-w-md pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 w-full max-w-md pt-2 md:pt-4">
                 {['Explain Closures in JS', 'What is Redux?', 'Explain OOP', 'How to use Tailwind?'].map(q => (
                   <button
                     key={q}
                     onClick={() => setInput(q)}
-                    className="p-3 text-xs font-bold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-gray-50 dark:bg-gray-800/50 border dark:border-gray-700 rounded-xl hover:border-indigo-500 transition-all text-left"
+                    className="p-3 text-[10px] md:text-xs font-bold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 bg-gray-50 dark:bg-gray-800/50 border dark:border-gray-700 rounded-xl hover:border-indigo-500 transition-all text-left"
                   >
                     "{q}"
                   </button>
@@ -175,18 +175,18 @@ const TutorChat = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={loading}
-              placeholder="Type your question here..."
-              className="flex-1 bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-600 dark:focus:border-indigo-500 py-4 px-6 rounded-2xl focus:outline-none transition-all disabled:opacity-50 font-medium dark:text-white"
+              placeholder="Ask away..."
+              className="flex-1 bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-indigo-600 dark:focus:border-indigo-500 py-3 md:py-4 px-4 md:px-6 rounded-2xl focus:outline-none transition-all disabled:opacity-50 font-medium dark:text-white text-sm md:text-base"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 dark:disabled:bg-gray-800 text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 transition-all shrink-0"
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 dark:disabled:bg-gray-800 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 transition-all shrink-0"
             >
               {loading ? (
                 <FaSpinner className="animate-spin" />
               ) : (
-                <FaPaperPlane className="text-xl" />
+                <FaPaperPlane className="text-lg md:text-xl" />
               )}
             </button>
           </form>
