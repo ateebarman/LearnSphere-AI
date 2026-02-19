@@ -267,6 +267,7 @@ export const submitCode = asyncHandler(async (req, res) => {
     passed: passedCount,
     total: allTestCases.length,
     failedCases: isAccepted ? [] : failedResults.slice(0, 1),
+    visibleResults: results.slice(0, question.visibleTestCases.length),
     progress,
   });
 });
