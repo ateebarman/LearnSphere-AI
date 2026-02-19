@@ -65,6 +65,15 @@ const CodingArena = () => {
     const isResizingConsole = useRef(false);
     const isResizingLeft = useRef(false);
     const editorRef = useRef(null);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 1024);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const languages = [
         { id: 'javascript', name: 'JavaScript' },
@@ -208,6 +217,9 @@ const CodingArena = () => {
         if (!question) return;
         setRunning(true);
         setBottomTab('testresult');
+        if (isMobile) {
+            setMobileTab('output');
+        }
         try {
             const res = await runCode(question._id, code, language);
             setResults(res);
@@ -228,6 +240,9 @@ const CodingArena = () => {
         if (!question) return;
         setRunning(true);
         setBottomTab('testresult');
+        if (isMobile) {
+            setMobileTab('output');
+        }
         try {
             const res = await submitCode(question._id, code, language, question.topic);
             setResults(res.failedCases?.length > 0 ? res.failedCases : { status: 'Accepted', ...res });
@@ -272,22 +287,22 @@ const CodingArena = () => {
         <div className="h-screen bg-slate-950 text-[#eff1f6] flex flex-col font-sans overflow-hidden font-display">
             {/* Nav Header */}
             <header className="h-14 border-b border-white/5 bg-slate-950 flex items-center justify-between px-4 z-50">
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 md:gap-6">
                     <Link to="/coding" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                        <span className="text-[11px] font-black uppercase tracking-widest hidden sm:block">Back to List</span>
+                        <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden min-[400px]:block">Exit</span>
                     </Link>
 
-                    <div className="h-4 w-[1px] bg-slate-800 hidden sm:block" />
+                    <div className="h-4 w-[1px] bg-slate-800 hidden md:block" />
 
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center border border-primary-500/20">
-                            <Code2 className="w-4 h-4 text-primary-500" />
+                    <div className="flex items-center gap-2 md:gap-3">
+                        <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-primary-500/10 flex items-center justify-center border border-primary-500/20">
+                            <Code2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary-500" />
                         </div>
                         <div>
-                            <h1 className="text-sm font-bold text-white max-w-[200px] truncate leading-tight">{question?.title}</h1>
+                            <h1 className="text-xs md:text-sm font-bold text-white max-w-[100px] min-[400px]:max-w-[200px] truncate leading-tight">{question?.title}</h1>
                             <div className="flex items-center gap-2">
-                                <span className={`text-[10px] font-bold uppercase tracking-wider ${question.difficulty === 'Easy' ? 'text-emerald-400' :
+                                <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${question.difficulty === 'Easy' ? 'text-emerald-400' :
                                     question.difficulty === 'Medium' ? 'text-amber-400' :
                                         'text-rose-400'
                                     }`}>
@@ -586,8 +601,27 @@ const CodingArena = () => {
                             </button>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            {/* Hint/Settings placeholders could go here */}
+                        <div className="flex items-center gap-2">
+                            {isMobile && (
+                                <>
+                                    <button
+                                        onClick={handleRun}
+                                        disabled={running || !question}
+                                        className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-all disabled:opacity-50"
+                                        title="Run Code"
+                                    >
+                                        {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+                                    </button>
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={running || !question}
+                                        className="p-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg border border-emerald-500 transition-all disabled:opacity-50"
+                                        title="Submit Code"
+                                    >
+                                        {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                    </button>
+                                </>
+                            )}
                             <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                                 <Settings className="w-4 h-4" />
                             </button>
@@ -607,23 +641,22 @@ const CodingArena = () => {
                             onChange={setCode}
                             onMount={(editor) => editorRef.current = editor}
                             options={{
-                                fontSize: 14,
+                                fontSize: isMobile ? 13 : 14,
                                 minimap: { enabled: false },
                                 fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                                 fontLigatures: true,
-                                padding: { top: 24, bottom: 24 },
+                                padding: { top: 16, bottom: 16 },
                                 scrollBeyondLastLine: false,
-                                smoothScrolling: false,
+                                smoothScrolling: true,
                                 cursorBlinking: 'smooth',
-                                cursorSmoothCaretAnimation: 'off',
-                                lineNumbersMinChars: 3,
-                                renderLineHighlight: 'line',
-                                renderWhitespace: 'selection',
-                                bracketPairColorization: { enabled: true },
-                                guides: { indentation: true },
+                                lineNumbersMinChars: isMobile ? 2 : 3,
+                                renderLineHighlight: 'all',
+                                wordWrap: 'on',
+                                folding: !isMobile,
+                                lineNumbers: isMobile ? 'on' : 'on', // Keeping it for now but could turn off if too crowded
                                 scrollbar: {
-                                    verticalScrollbarSize: 10,
-                                    horizontalScrollbarSize: 10,
+                                    verticalScrollbarSize: 8,
+                                    horizontalScrollbarSize: 8,
                                     useShadows: false
                                 },
                             }}
