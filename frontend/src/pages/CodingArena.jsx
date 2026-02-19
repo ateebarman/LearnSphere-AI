@@ -245,7 +245,7 @@ const CodingArena = () => {
         }
         try {
             const res = await submitCode(question._id, code, language, question.topic);
-            setResults(res.failedCases?.length > 0 ? res.failedCases : { status: 'Accepted', ...res });
+            setResults(res.status === 'Accepted' ? { status: 'Accepted', ...res } : (res.visibleResults || res.failedCases || res));
             if (res.status === 'Accepted') {
                 toast.success('Accepted! All test cases passed.');
                 setIsTimerActive(false);
@@ -357,8 +357,8 @@ const CodingArena = () => {
             <main className="flex-1 flex overflow-hidden lg:flex-row flex-col relative">
                 {/* Left Panel */}
                 <div
-                    style={{ width: window.innerWidth > 1024 ? leftPanelWidth : '100%' }}
-                    className={`lg:flex flex-col border-r border-white/5 bg-slate-950 flex-shrink-0 ${mobileTab === 'problem' ? 'flex' : 'hidden'}`}
+                    style={{ width: !isMobile ? leftPanelWidth : '100%' }}
+                    className={`lg:flex flex-col border-r border-white/5 bg-slate-950 flex-shrink-0 ${isMobile ? 'flex-1' : ''} ${mobileTab === 'problem' ? 'flex' : 'hidden'}`}
                 >
                     <div className="flex items-center bg-slate-900/50 px-2 h-10 border-b border-white/5 gap-1">
                         {['description', 'editorial', 'submissions'].map((tab) => (
@@ -399,10 +399,7 @@ const CodingArena = () => {
 
                                     <div className="prose prose-invert prose-sm max-w-none text-slate-300/90 leading-relaxed font-sans prose-pre:bg-slate-900/50 prose-pre:border prose-pre:border-white/5 prose-code:text-primary-300">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                            {(question.examples?.length > 0 || question.visibleTestCases?.length > 0)
-                                                ? question.problemStatement.split(/##?\s*Example/i)[0].trim()
-                                                : question.problemStatement
-                                            }
+                                            {question.problemStatement}
                                         </ReactMarkdown>
                                     </div>
                                 </div>
@@ -673,8 +670,8 @@ const CodingArena = () => {
 
                     {/* Bottom Console Panel */}
                     <div
-                        style={{ height: window.innerWidth > 1024 ? consoleHeight : '100%' }}
-                        className={`lg:flex flex-col bg-slate-950 border-t border-white/5 shadow-2xl z-10 ${mobileTab === 'output' ? 'flex fixed inset-0 top-[104px] z-40' : 'hidden'}`}
+                        style={{ height: !isMobile ? consoleHeight : 'auto' }}
+                        className={`lg:flex flex-col bg-slate-950 border-t border-white/5 shadow-2xl z-10 ${mobileTab === 'output' ? 'flex-1 flex' : 'hidden'}`}
                     >
                         <div className="flex items-center justify-between px-4 h-11 border-b border-white/5 bg-slate-900/40">
                             <div className="flex items-center gap-1 h-full">
@@ -880,6 +877,23 @@ const CodingArena = () => {
                                                 <button onClick={() => navigate('/coding')} className="px-8 py-3 bg-white text-emerald-950 hover:bg-emerald-50 rounded-lg font-black uppercase text-[11px] tracking-widest transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1">
                                                     Continue Journey
                                                 </button>
+
+                                                {results.visibleResults && (
+                                                    <div className="mt-8 pt-8 border-t border-white/5 text-left">
+                                                        <h4 className="text-[10px] font-black uppercase text-slate-500 mb-4 tracking-widest">Visible Test Cases Details</h4>
+                                                        <div className="space-y-3">
+                                                            {results.visibleResults.map((r, i) => (
+                                                                <div key={i} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-white/5">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                                                        <span className="text-[11px] font-bold text-slate-300">Case {i + 1}</span>
+                                                                    </div>
+                                                                    <span className="text-[10px] font-black uppercase text-emerald-400">PASSED</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </motion.div>
                                         ) : (
                                             <div className="p-8 bg-gradient-to-br from-rose-500/10 to-transparent border border-rose-500/10 rounded-xl">
