@@ -179,12 +179,12 @@ const Profile = () => {
     <div className="space-y-12 pb-20">
       <div className="max-w-7xl mx-auto space-y-10">
         {/* Header */}
-        <div className="space-y-3">
-          <h1 className="text-5xl font-extrabold text-gradient flex items-center gap-4">
-            <FaUserCircle className="text-indigo-600" />
+        <div className="space-y-4 md:space-y-3 px-4 md:px-0">
+          <h1 className="text-3xl md:text-5xl font-extrabold text-gradient flex items-center gap-3 md:gap-4">
+            <FaUserCircle className="text-indigo-600 flex-shrink-0" />
             My Profile
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 font-medium">
+          <p className="text-lg md:text-xl text-gray-600 dark:text-gray-400 font-medium leading-relaxed">
             Personalize your experience and track your evolution.
           </p>
         </div>
@@ -242,7 +242,7 @@ const Profile = () => {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
             {/* Navigation Tabs */}
-            <div className="flex p-1 bg-gray-100 dark:bg-gray-900 rounded-2xl w-fit border border-gray-200 dark:border-gray-800">
+            <div className="flex flex-wrap p-1 bg-gray-100 dark:bg-gray-900 rounded-2xl w-full md:w-fit border border-gray-200 dark:border-gray-800 gap-1">
               {[
                 { id: 'profile', label: 'Identity', icon: FaEdit },
                 { id: 'security', label: 'Security', icon: FaShieldAlt },
@@ -251,12 +251,12 @@ const Profile = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-8 py-3 rounded-xl font-bold transition-all duration-300 ${activeTab === tab.id
+                  className={`flex-1 md:flex-none flex items-center justify-center space-x-2 px-4 md:px-8 py-2.5 md:py-3 rounded-xl font-bold transition-all duration-300 text-sm md:text-base ${activeTab === tab.id
                     ? 'bg-white dark:bg-gray-800 text-indigo-600 dark:text-indigo-400 shadow-lg'
                     : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
                     }`}
                 >
-                  <tab.icon className="text-lg" />
+                  <tab.icon className="text-base md:text-lg" />
                   <span>{tab.label}</span>
                 </button>
               ))}
@@ -265,12 +265,12 @@ const Profile = () => {
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <div className="card-premium space-y-8 animate-in fade-in duration-500">
-                <div className="flex justify-between items-center">
-                  <h2 className="text-3xl font-black dark:text-white">Profile Information</h2>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <h2 className="text-2xl md:text-3xl font-black dark:text-white">Profile Information</h2>
                   {!editMode && (
                     <button
                       onClick={() => setEditMode(true)}
-                      className="btn-secondary flex items-center gap-2"
+                      className="w-full sm:w-auto btn-secondary flex items-center justify-center gap-2"
                     >
                       <FaEdit /> Edit Account
                     </button>
@@ -323,11 +323,11 @@ const Profile = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-4 pt-6 border-t dark:border-gray-800">
+                    <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t dark:border-gray-800">
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="btn-primary flex items-center gap-2 px-10"
+                        className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2 px-10"
                       >
                         {submitting ? <FaSpinner className="animate-spin" /> : <FaSave />}
                         Update Identity
@@ -342,7 +342,7 @@ const Profile = () => {
                             topicsOfInterest: (profile.topicsOfInterest || []).join(', ')
                           });
                         }}
-                        className="btn-secondary"
+                        className="btn-secondary w-full sm:w-auto"
                       >
                         Discard Changes
                       </button>
@@ -353,17 +353,17 @@ const Profile = () => {
                     <div className="space-y-6">
                       <div className="group">
                         <p className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Display Name</p>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white transition-all group-hover:translate-x-1">{profile.name}</p>
+                        <p className="text-xl md:text-2xl font-black text-gray-900 dark:text-white transition-all group-hover:translate-x-1">{profile.name}</p>
                       </div>
                       <div className="group">
                         <p className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2">Account Email</p>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white transition-all group-hover:translate-x-1">{profile.email}</p>
+                        <p className="text-xl md:text-2xl font-black text-gray-900 dark:text-white transition-all group-hover:translate-x-1">{profile.email}</p>
                       </div>
                       <div className="group">
                         <p className="text-xs font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-2 font-black flex items-center gap-2">
                           <FaCalendarAlt /> Member Since
                         </p>
-                        <p className="text-lg font-bold text-gray-500 dark:text-gray-400">{new Date(profile.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                        <p className="text-base md:text-lg font-bold text-gray-500 dark:text-gray-400">{new Date(profile.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                       </div>
                     </div>
                     <div className="space-y-4">
@@ -392,8 +392,8 @@ const Profile = () => {
             {activeTab === 'security' && (
               <div className="space-y-8 animate-in slide-in-from-right duration-500">
                 <div className="card-premium space-y-8">
-                  <h2 className="text-3xl font-black dark:text-white flex items-center gap-4">
-                    <FaLock className="text-indigo-600" />
+                  <h2 className="text-2xl md:text-3xl font-black dark:text-white flex items-center gap-3 md:gap-4">
+                    <FaLock className="text-indigo-600 flex-shrink-0" />
                     Authentication Keys
                   </h2>
 

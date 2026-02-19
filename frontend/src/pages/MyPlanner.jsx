@@ -147,14 +147,14 @@ const MyPlanner = () => {
         <div className="min-h-screen bg-slate-950 pb-20">
             {/* Header */}
             <header className="bg-slate-900/50 border-b border-white/5 pt-20 pb-10">
-                <div className="max-w-7xl mx-auto px-6 space-y-6">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 space-y-6 md:space-y-6">
                     {/* Title Row — matches reference: title + count on left, Create button on right */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-4xl font-black text-white mb-1 flex items-center gap-3">
+                            <h1 className="text-3xl md:text-4xl font-black text-white mb-1 flex items-center gap-2 md:gap-3">
                                 My Learning <span className="text-primary-500">Planner</span>
                             </h1>
-                            <p className="text-slate-500 text-sm">{roadmaps.length} roadmap{roadmaps.length !== 1 ? 's' : ''}</p>
+                            <p className="text-slate-500 text-xs md:text-sm">{roadmaps.length} roadmap{roadmaps.length !== 1 ? 's' : ''}</p>
                         </div>
                         <button
                             onClick={() => setEditingRoadmap({
@@ -163,57 +163,61 @@ const MyPlanner = () => {
                                 modules: [{ ...defaultModule, title: 'Foundations' }],
                                 isPublic: false
                             })}
-                            className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest text-[10px] px-6 py-3.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-primary-600/20"
+                            className="w-full sm:w-auto bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest text-[9px] md:text-[10px] px-5 md:px-6 py-3 md:py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary-600/20"
                         >
                             <Plus className="w-4 h-4" /> Create Roadmap
                         </button>
                     </div>
 
                     {/* AI Roadmap Generator Bar */}
-                    <div className="flex flex-wrap items-center gap-4 bg-slate-900/50 p-4 rounded-2xl border border-white/5 shadow-xl backdrop-blur-xl">
-                        <span className="text-[10px] font-black text-primary-400 uppercase tracking-widest flex items-center gap-1.5 mr-2">
-                            <Sparkles className="w-3.5 h-3.5" /> AI Roadmap Generator
-                        </span>
-                        <div className="flex-1 min-w-[200px]">
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 md:gap-4 bg-slate-900/50 p-4 md:p-4 rounded-2xl border border-white/5 shadow-xl backdrop-blur-xl">
+                        <div className="flex items-center gap-2 mr-2">
+                            <Sparkles className="w-3.5 h-3.5 text-primary-400" />
+                            <span className="text-[10px] font-black text-primary-400 uppercase tracking-widest">AI Generator</span>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
                             <input
                                 value={topic}
                                 onChange={e => setTopic(e.target.value)}
                                 placeholder="e.g. React, System Design..."
-                                className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500/50 transition-all"
+                                className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500/50 transition-all placeholder:text-slate-600"
                             />
                         </div>
 
-                        <select
-                            value={difficulty}
-                            onChange={e => setDifficulty(e.target.value)}
-                            className="bg-slate-950 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none cursor-pointer"
-                        >
-                            <option value="Beginner">Beginner</option>
-                            <option value="Intermediate">Intermediate</option>
-                            <option value="Advanced">Advanced</option>
-                        </select>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <select
+                                value={difficulty}
+                                onChange={e => setDifficulty(e.target.value)}
+                                className="bg-slate-950 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none cursor-pointer min-w-[120px]"
+                            >
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
 
-                        <input
-                            value={targetRole}
-                            onChange={e => setTargetRole(e.target.value)}
-                            placeholder="Target Role (e.g. SDE-1)"
-                            className="bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none w-48"
-                        />
+                            <input
+                                value={targetRole}
+                                onChange={e => setTargetRole(e.target.value)}
+                                placeholder="Target Role (e.g. SDE-1)"
+                                className="bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex-grow sm:w-48 placeholder:text-slate-600"
+                            />
 
-                        <button
-                            onClick={handleGenerate}
-                            disabled={generating}
-                            className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest text-[10px] px-6 py-3 rounded-xl flex items-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-primary-600/20"
-                        >
-                            {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                            {generating ? 'Generating...' : 'Generate'}
-                        </button>
+                            <button
+                                onClick={handleGenerate}
+                                disabled={generating}
+                                className="bg-primary-600 hover:bg-primary-500 text-white font-black uppercase tracking-widest text-[10px] px-8 py-3 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-lg shadow-primary-600/20 min-w-[140px]"
+                            >
+                                {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                {generating ? 'Generating...' : 'Generate'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
 
-            <main className="max-w-7xl mx-auto px-6 mt-8 pb-20 space-y-8">
+            <main className="max-w-7xl mx-auto px-4 md:px-6 mt-8 pb-20 space-y-8">
 
                 {/* Inline Editor Form (Admin-Style) */}
                 <AnimatePresence>
@@ -237,16 +241,16 @@ const MyPlanner = () => {
                             </div>
 
                             {/* Basic Info */}
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <InputField label="Title" value={editingRoadmap.title} onChange={v => setEditingRoadmap({ ...editingRoadmap, title: v })} placeholder="React Mastery Roadmap" />
                                 <InputField label="Topic" value={editingRoadmap.topic} onChange={v => setEditingRoadmap({ ...editingRoadmap, topic: v })} placeholder="Web Development" />
                             </div>
                             <TextArea label="Description" value={editingRoadmap.description} onChange={v => setEditingRoadmap({ ...editingRoadmap, description: v })} rows={3} placeholder="A comprehensive roadmap to master..." />
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Difficulty</label>
                                     <select value={editingRoadmap.difficulty} onChange={e => setEditingRoadmap({ ...editingRoadmap, difficulty: e.target.value })}
-                                        className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                                        className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-3 text-sm text-white focus:outline-none">
                                         <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
                                     </select>
                                 </div>
@@ -257,11 +261,11 @@ const MyPlanner = () => {
                             {/* Enhanced Metadata */}
                             <div className="border-t border-white/5 pt-4 space-y-4">
                                 <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Learning Intelligence</span>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <ArrayField label="Learning Goals" items={editingRoadmap.learningGoals || ['']} onChange={v => setEditingRoadmap({ ...editingRoadmap, learningGoals: v })} />
                                     <ArrayField label="Target Roles" items={editingRoadmap.targetRoles || ['']} onChange={v => setEditingRoadmap({ ...editingRoadmap, targetRoles: v })} />
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <ArrayField label="Expected Outcomes" items={editingRoadmap.expectedOutcomes || ['']} onChange={v => setEditingRoadmap({ ...editingRoadmap, expectedOutcomes: v })} />
                                     <ArrayField label="Skills Covered" items={editingRoadmap.skillsCovered || ['']} onChange={v => setEditingRoadmap({ ...editingRoadmap, skillsCovered: v })} />
                                 </div>
@@ -320,7 +324,7 @@ const MyPlanner = () => {
                 </AnimatePresence>
 
                 {/* Roadmap Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {roadmaps.length === 0 && !editingRoadmap && (
                         <div className="col-span-full text-center py-20">
                             <div className="w-16 h-16 rounded-2xl bg-slate-900/50 flex items-center justify-center mx-auto mb-4 border border-white/5">

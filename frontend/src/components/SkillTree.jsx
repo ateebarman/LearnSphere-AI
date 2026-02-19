@@ -123,7 +123,7 @@ const SkillTree = ({ masteryData }) => {
                 </div>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-x-16 gap-y-12 py-6">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 md:gap-x-16 gap-y-12 py-6">
                 {masteryData.map((mastery, idx) => (
                     <SkillNode
                         key={idx}

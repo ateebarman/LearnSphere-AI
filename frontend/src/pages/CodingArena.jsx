@@ -56,6 +56,7 @@ const CodingArena = () => {
     // UI Tabs
     const [leftTab, setLeftTab] = useState('description');
     const [bottomTab, setBottomTab] = useState('testcase');
+    const [mobileTab, setMobileTab] = useState('problem'); // 'problem', 'code', 'output'
     const [openMenu, setOpenMenu] = useState(null);
 
     // Resizable UI States
@@ -297,29 +298,53 @@ const CodingArena = () => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                <div className="flex items-center gap-2 md:gap-4">
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
                         <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                         <span className="text-[11px] font-bold text-slate-300">{userInfo?.streak || 0} Day Streak</span>
                     </div>
 
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
-                        <Clock className={`w-3.5 h-3.5 ${isTimerActive ? 'text-emerald-500 animate-pulse' : 'text-slate-500'}`} />
-                        <span className="text-[11px] font-mono font-bold text-slate-300">{formatTime(timer)}</span>
+                    <div className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                        <Clock className={`w-3 h-3 md:w-3.5 md:h-3.5 ${isTimerActive ? 'text-emerald-500 animate-pulse' : 'text-slate-500'}`} />
+                        <span className="text-[10px] md:text-[11px] font-mono font-bold text-slate-300">{formatTime(timer)}</span>
                     </div>
 
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 p-[1px] shadow-lg shadow-primary-500/20">
-                        <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-[10px] font-black text-white uppercase">
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 p-[1px] shadow-lg shadow-primary-500/20">
+                        <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-[9px] md:text-[10px] font-black text-white uppercase">
                             {userInfo?.name?.charAt(0) || 'U'}
                         </div>
                     </div>
                 </div>
             </header>
 
+            {/* Mobile Tab Switcher */}
+            <div className="lg:hidden flex border-b border-white/5 bg-slate-900/50">
+                {[
+                    { id: 'problem', label: 'Problem', icon: FileText },
+                    { id: 'code', label: 'Code', icon: Code2 },
+                    { id: 'output', label: 'Output', icon: Terminal }
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setMobileTab(tab.id)}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 text-[11px] font-black uppercase tracking-widest relative ${mobileTab === tab.id ? 'text-primary-400' : 'text-slate-500'}`}
+                    >
+                        <tab.icon className="w-3.5 h-3.5" />
+                        {tab.label}
+                        {mobileTab === tab.id && (
+                            <motion.div layoutId="mobileTab" className="absolute bottom-0 left-0 w-full h-0.5 bg-primary-500" />
+                        )}
+                    </button>
+                ))}
+            </div>
+
             {/* Main Area */}
-            <main className="flex-1 flex overflow-hidden">
+            <main className="flex-1 flex overflow-hidden lg:flex-row flex-col relative">
                 {/* Left Panel */}
-                <div style={{ width: leftPanelWidth }} className="flex flex-col border-r border-white/5 bg-slate-950 flex-shrink-0">
+                <div
+                    style={{ width: window.innerWidth > 1024 ? leftPanelWidth : '100%' }}
+                    className={`lg:flex flex-col border-r border-white/5 bg-slate-950 flex-shrink-0 ${mobileTab === 'problem' ? 'flex' : 'hidden'}`}
+                >
                     <div className="flex items-center bg-slate-900/50 px-2 h-10 border-b border-white/5 gap-1">
                         {['description', 'editorial', 'submissions'].map((tab) => (
                             <button
@@ -514,13 +539,13 @@ const CodingArena = () => {
 
                 {/* Resizer Handle */}
                 <div
-                    className="w-1 cursor-col-resize hover:bg-primary-500 transition-colors bg-black/50 border-r border-white/5 border-l border-white/5 z-20 flex flex-col justify-center items-center group"
+                    className="hidden lg:flex w-1 cursor-col-resize hover:bg-primary-500 transition-colors bg-black/50 border-r border-white/5 border-l border-white/5 z-20 flex-col justify-center items-center group"
                     onMouseDown={() => isResizingLeft.current = true}
                 >
                     <div className="h-8 w-0.5 bg-slate-700 rounded-full group-hover:bg-white transition-colors" />
                 </div>
 
-                <div className="flex-1 flex flex-col min-w-0 bg-[#0d1117]"> {/* VS Code dark bg */}
+                <div className={`flex-1 flex flex-col min-w-0 bg-[#0d1117] ${mobileTab === 'code' ? 'flex' : 'hidden lg:flex'}`}>
                     {/* Editor Header */}
                     <div className="flex items-center justify-between px-4 h-12 border-b border-white/5 bg-slate-900/30">
                         <div className="flex items-center gap-4 h-full">
@@ -607,14 +632,17 @@ const CodingArena = () => {
 
                     {/* Console Resizer */}
                     <div
-                        className="h-1 cursor-row-resize bg-black/50 hover:bg-primary-500 transition-colors flex items-center justify-center relative z-20 border-t border-b border-white/5 group"
+                        className="hidden lg:flex h-1 cursor-row-resize bg-black/50 hover:bg-primary-500 transition-colors flex items-center justify-center relative z-20 border-t border-b border-white/5 group"
                         onMouseDown={() => isResizingConsole.current = true}
                     >
                         <div className="w-12 h-1 bg-slate-700 rounded-full group-hover:bg-white transition-colors opacity-0 group-hover:opacity-100" />
                     </div>
 
                     {/* Bottom Console Panel */}
-                    <div style={{ height: consoleHeight }} className="flex flex-col bg-slate-950 border-t border-white/5 shadow-2xl z-10">
+                    <div
+                        style={{ height: window.innerWidth > 1024 ? consoleHeight : '100%' }}
+                        className={`lg:flex flex-col bg-slate-950 border-t border-white/5 shadow-2xl z-10 ${mobileTab === 'output' ? 'flex fixed inset-0 top-[104px] z-40' : 'hidden'}`}
+                    >
                         <div className="flex items-center justify-between px-4 h-11 border-b border-white/5 bg-slate-900/40">
                             <div className="flex items-center gap-1 h-full">
                                 <button

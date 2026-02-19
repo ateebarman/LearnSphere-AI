@@ -51,10 +51,10 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = t
             )}
           </div>
           <div className="space-y-1">
-            <h2 className={`text-2xl font-black transition-colors ${isOpen ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'}`}>
+            <h2 className={`text-xl md:text-2xl font-black transition-colors ${isOpen ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-900 dark:text-white'}`}>
               {module.title}
             </h2>
-            <div className="flex items-center gap-3 text-xs font-bold text-gray-400 uppercase tracking-widest">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs font-bold text-gray-400 uppercase tracking-widest">
               <span>Node {index + 1}</span>
               <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
               <span>{module.estimatedTime}</span>
@@ -325,7 +325,7 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = t
             <div className="pt-4">
               <Link
                 to={`/quiz/${roadmapId}/${encodeURIComponent(module.title)}`}
-                className={`btn-primary w-full flex items-center justify-center gap-2 py-4 text-lg ${module.isCompleted
+                className={`btn-primary w-full flex items-center justify-center gap-2 py-3.5 md:py-4 text-base md:text-lg ${module.isCompleted
                   ? 'bg-green-600 shadow-green-600/20'
                   : 'shadow-indigo-600/20'
                   }`}

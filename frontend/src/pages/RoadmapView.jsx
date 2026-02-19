@@ -115,7 +115,7 @@ const RoadmapView = () => {
 
       <div className="max-w-6xl mx-auto px-8 relative z-10 pt-12 space-y-12">
         {/* Navigation & Actions */}
-        <div className="flex flex-wrap justify-between items-center gap-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-4 md:px-0">
           <Link to="/explore" className="group flex items-center gap-3 text-slate-500 hover:text-primary-400 font-black text-[10px] uppercase tracking-[0.2em] transition-all">
             <div className="p-2 bg-white/5 rounded-lg border border-white/10 group-hover:border-primary-500/30">
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
@@ -123,12 +123,12 @@ const RoadmapView = () => {
             Back to Discovery
           </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
             {isOwner && (
               <button
                 onClick={handleToggleVisibility}
                 disabled={toggleLoading}
-                className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95 disabled:opacity-50 border ${roadmap.isPublic
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 md:py-3 rounded-2xl font-black text-[9px] md:text-[10px] uppercase tracking-widest transition-all shadow-xl active:scale-95 disabled:opacity-50 border ${roadmap.isPublic
                   ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
                   : 'bg-primary-500/10 text-primary-400 border-primary-500/20 hover:bg-primary-500/20'
                   }`}
@@ -142,8 +142,8 @@ const RoadmapView = () => {
                 )}
               </button>
             )}
-            <button className="p-3 bg-slate-900/50 text-slate-500 hover:text-white rounded-2xl transition-all border border-white/5 hover:border-white/10 backdrop-blur-md shadow-xl group">
-              <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <button className="p-2.5 md:p-3 bg-slate-900/50 text-slate-500 hover:text-white rounded-2xl transition-all border border-white/5 hover:border-white/10 backdrop-blur-md shadow-xl group">
+              <Share2 className="w-4 h-4 md:w-5 md:h-5 group-hover:scale-110 transition-transform" />
             </button>
           </div>
         </div>
@@ -159,10 +159,10 @@ const RoadmapView = () => {
               <Layers className="w-3 h-3" />
               Knowledge Fragment {roadmap.topic}
             </div>
-            <h1 className="text-6xl md:text-7xl font-black text-white tracking-tighter leading-[0.85] font-display uppercase">
+            <h1 className="text-4xl md:text-7xl font-black text-white tracking-tighter leading-[1.1] md:leading-[0.85] font-display uppercase">
               {roadmap.title}
             </h1>
-            <p className="text-xl text-slate-400 font-medium leading-relaxed max-w-4xl">
+            <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-4xl">
               {roadmap.description}
             </p>
 
@@ -237,10 +237,10 @@ const RoadmapView = () => {
                     <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-400 flex items-center gap-2">
                       <Zap className="w-3 h-3 fill-current" /> Mastery Level
                     </span>
-                    <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Current Sync</h3>
+                    <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter">Current Sync</h3>
                   </div>
                   <div className="text-right">
-                    <span className="text-4xl font-black text-white font-display">{Math.round(roadmap.progress || 0)}%</span>
+                    <span className="text-3xl md:text-4xl font-black text-white font-display">{Math.round(roadmap.progress || 0)}%</span>
                   </div>
                 </div>
 
@@ -293,17 +293,17 @@ const RoadmapView = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="group relative p-8 bg-gradient-to-br from-primary-600 to-indigo-700 rounded-[2.5rem] text-white shadow-2xl shadow-primary-900/30 flex flex-col sm:flex-row items-center justify-between gap-8 overflow-hidden"
+            className="group relative p-6 md:p-8 bg-gradient-to-br from-primary-600 to-indigo-700 rounded-[2rem] md:rounded-[2.5rem] text-white shadow-2xl shadow-primary-900/30 flex flex-col sm:flex-row items-center justify-between gap-6 md:gap-8 overflow-hidden"
           >
             <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-10 pointer-events-none" />
             <div className="relative z-10 space-y-2 text-center sm:text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/10">
                 <Globe className="w-3 h-3" /> External Access Mode
               </div>
-              <h4 className="text-2xl font-black uppercase tracking-tighter leading-none">Clone this Fragment</h4>
-              <p className="text-slate-100 font-medium opacity-80 text-sm">Save this path to your personal database to track progress and unlock full telemetry.</p>
+              <h4 className="text-xl md:text-2xl font-black uppercase tracking-tighter leading-none">Clone this Fragment</h4>
+              <p className="text-slate-100 font-medium opacity-80 text-xs md:text-sm">Save this path to your personal database to track progress and unlock full telemetry.</p>
             </div>
-            <Link to="/signup" className="relative z-10 px-10 py-4 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:scale-105 transition-all active:scale-95 shadow-xl">
+            <Link to="/signup" className="w-full sm:w-auto relative z-10 px-8 md:px-10 py-3.5 md:py-4 bg-white text-slate-900 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest hover:bg-slate-50 hover:scale-105 transition-all active:scale-95 shadow-xl text-center">
               Initiate Sync
             </Link>
           </motion.div>
