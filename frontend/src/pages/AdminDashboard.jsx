@@ -4,7 +4,7 @@ import {
     Shield, LayoutDashboard, Code2, BookOpen, Map, Trash2, Plus,
     Sparkles, Loader2, CheckCircle2, XCircle, ChevronDown, ChevronRight, ChevronLeft,
     Search, AlertTriangle, Play, Eye, Save, ArrowLeft, Users, FileText,
-    Zap, Database, BarChart3, X, Link2, BookMarked, Edit3
+    Zap, Database, BarChart3, X, Link2, BookMarked, Edit3, Menu
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -19,6 +19,18 @@ const AdminDashboard = () => {
     const [activeSection, setActiveSection] = useState('dashboard');
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+    const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+
+    useEffect(() => {
+        const handleResize = () => {
+            const mobile = window.innerWidth < 1024;
+            setIsMobile(mobile);
+            if (!mobile) setSidebarOpen(true);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Problems state
     const [problems, setProblems] = useState([]);
@@ -564,8 +576,43 @@ const AdminDashboard = () => {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 font-sans flex">
+            {/* Mobile Header */}
+            {isMobile && (
+                <div className="fixed top-0 left-0 right-0 h-16 bg-slate-950 border-b border-white/5 z-[60] flex items-center justify-between px-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-orange-600 flex items-center justify-center shadow-lg shadow-rose-500/20">
+                            <Shield className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="text-xs font-black text-white uppercase tracking-widest">Admin</span>
+                    </div>
+                    <button
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-white/10 rounded-lg"
+                    >
+                        {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
+                </div>
+            )}
+
+            {/* Sidebar Overflow Overlay */}
+            <AnimatePresence>
+                {isMobile && sidebarOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSidebarOpen(false)}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] lg:hidden"
+                    />
+                )}
+            </AnimatePresence>
+
             {/* Sidebar */}
-            <aside className="w-64 border-r border-white/5 bg-slate-950 flex flex-col flex-shrink-0 sticky top-0 h-screen">
+            <aside className={`
+                ${isMobile ? 'fixed inset-y-0 left-0 z-[80] w-[280px] shadow-2xl' : 'w-64 sticky top-0'} 
+                border-r border-white/5 bg-slate-950 flex flex-col flex-shrink-0 h-screen transition-transform duration-300
+                ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}
+            `}>
                 <div className="p-6 border-b border-white/5">
                     <Link to="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-4">
                         <ArrowLeft className="w-3 h-3" /> Back to App
@@ -583,7 +630,11 @@ const AdminDashboard = () => {
 
                 <nav className="flex-1 p-4 space-y-1">
                     {sidebarItems.map(item => (
-                        <button key={item.id} onClick={() => setActiveSection(item.id)}
+                        <button key={item.id}
+                            onClick={() => {
+                                setActiveSection(item.id);
+                                if (isMobile) setSidebarOpen(false);
+                            }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeSection === item.id
                                 ? 'bg-primary-600/10 text-primary-400 border border-primary-500/20 shadow-lg shadow-primary-500/5'
                                 : 'text-slate-500 hover:text-white hover:bg-white/5'}`}>
@@ -595,8 +646,8 @@ const AdminDashboard = () => {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto">
-                <div className="max-w-6xl mx-auto px-8 py-10 space-y-8">
+            <main className={`flex-1 overflow-y-auto ${isMobile ? 'pt-16' : ''}`}>
+                <div className={`max-w-6xl mx-auto ${isMobile ? 'px-4 py-6' : 'px-8 py-10'} space-y-8`}>
                     <AnimatePresence mode="wait">
                         {/* ======= DASHBOARD ======= */}
                         {activeSection === 'dashboard' && (
@@ -713,7 +764,7 @@ const AdminDashboard = () => {
                                                 <button onClick={() => setShowAddProblem(false)} className="text-slate-500 hover:text-white"><X className="w-4 h-4" /></button>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                                                 <InputField label="Title" value={problemForm.title} onChange={v => setProblemForm({ ...problemForm, title: v })} placeholder="Two Sum" />
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div>
@@ -742,7 +793,7 @@ const AdminDashboard = () => {
                                                 onChange={v => setProblemForm({ ...problemForm, constraints: v })} />
 
                                             {/* Test Cases */}
-                                            <div className="grid grid-cols-2 gap-6">
+                                            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-6`}>
                                                 <div>
                                                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Visible Test Cases</label>
                                                     {problemForm.visibleTestCases.map((tc, i) => (
@@ -775,7 +826,7 @@ const AdminDashboard = () => {
                                             {['starterCode', 'referenceSolution', 'judgeDriver', 'judgePreDriver'].map(field => (
                                                 <div key={field}>
                                                     <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">{field.replace(/([A-Z])/g, ' $1')}</h4>
-                                                    <div className="grid grid-cols-3 gap-3">
+                                                    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-3`}>
                                                         {['javascript', 'python', 'cpp'].map(lang => (
                                                             <TextArea key={lang} label={lang} value={problemForm[field][lang]}
                                                                 onChange={v => setProblemForm({ ...problemForm, [field]: { ...problemForm[field], [lang]: v } })}
@@ -795,31 +846,33 @@ const AdminDashboard = () => {
 
                                 {/* Problem List */}
                                 <div className="bg-slate-900/30 border border-white/5 rounded-2xl overflow-hidden">
-                                    <table className="w-full text-left">
-                                        <thead><tr className="border-b border-white/5">
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Title</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Difficulty</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Topic</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Acceptance</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest w-20"></th>
-                                        </tr></thead>
-                                        <tbody className="divide-y divide-white/5">
-                                            {problems.map(p => (
-                                                <tr key={p._id} className="hover:bg-white/[0.02] transition-colors">
-                                                    <td className="px-6 py-3 text-sm font-bold text-white">{p.title}</td>
-                                                    <td className="px-6 py-3">
-                                                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${p.difficulty === 'Easy' ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' : p.difficulty === 'Medium' ? 'text-amber-400 bg-amber-400/10 border-amber-400/20' : 'text-rose-400 bg-rose-400/10 border-rose-400/20'}`}>{p.difficulty}</span>
-                                                    </td>
-                                                    <td className="px-6 py-3 text-xs text-slate-400 capitalize">{p.topic}</td>
-                                                    <td className="px-6 py-3 text-xs text-slate-400">{p.acceptanceRate || 0}%</td>
-                                                    <td className="px-6 py-3">
-                                                        <button onClick={() => handleDeleteProblem(p._id, p.title)}
-                                                            className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left min-w-[600px]">
+                                            <thead><tr className="border-b border-white/5">
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Title</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Difficulty</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Topic</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Acceptance</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest w-20"></th>
+                                            </tr></thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {problems.map(p => (
+                                                    <tr key={p._id} className="hover:bg-white/[0.02] transition-colors">
+                                                        <td className="px-6 py-3 text-sm font-bold text-white">{p.title}</td>
+                                                        <td className="px-6 py-3">
+                                                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${p.difficulty === 'Easy' ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' : p.difficulty === 'Medium' ? 'text-amber-400 bg-amber-400/10 border-amber-400/20' : 'text-rose-400 bg-rose-400/10 border-rose-400/20'}`}>{p.difficulty}</span>
+                                                        </td>
+                                                        <td className="px-6 py-3 text-xs text-slate-400 capitalize">{p.topic}</td>
+                                                        <td className="px-6 py-3 text-xs text-slate-400">{p.acceptanceRate || 0}%</td>
+                                                        <td className="px-6 py-3">
+                                                            <button onClick={() => handleDeleteProblem(p._id, p.title)}
+                                                                className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                     {problemsTotalPages > 1 && (
                                         <Pagination
                                             current={problemsPage}
@@ -1057,24 +1110,26 @@ const AdminDashboard = () => {
 
                                 {/* Knowledge List */}
                                 <div className="bg-slate-900/30 border border-white/5 rounded-2xl overflow-hidden">
-                                    <table className="w-full text-left">
-                                        <thead><tr className="border-b border-white/5">
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Topic</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Category</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Summary</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest w-20"></th>
-                                        </tr></thead>
-                                        <tbody className="divide-y divide-white/5">
-                                            {knowledge.map(k => (
-                                                <tr key={k._id} className="hover:bg-white/[0.02] transition-colors">
-                                                    <td className="px-6 py-3 text-sm font-bold text-white">{k.topic}</td>
-                                                    <td className="px-6 py-3"><span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">{k.category}</span></td>
-                                                    <td className="px-6 py-3 text-xs text-slate-400 max-w-xs truncate">{k.summary}</td>
-                                                    <td className="px-6 py-3"><button onClick={() => handleDeleteKnowledge(k._id, k.topic)} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 className="w-4 h-4" /></button></td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <div className="overflow-x-auto custom-scrollbar">
+                                        <table className="w-full text-left min-w-[600px]">
+                                            <thead><tr className="border-b border-white/5">
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Topic</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Category</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Summary</th>
+                                                <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest w-20"></th>
+                                            </tr></thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {knowledge.map(k => (
+                                                    <tr key={k._id} className="hover:bg-white/[0.02] transition-colors">
+                                                        <td className="px-6 py-3 text-sm font-bold text-white">{k.topic}</td>
+                                                        <td className="px-6 py-3"><span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">{k.category}</span></td>
+                                                        <td className="px-6 py-3 text-xs text-slate-400 max-w-xs truncate">{k.summary}</td>
+                                                        <td className="px-6 py-3"><button onClick={() => handleDeleteKnowledge(k._id, k.topic)} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 className="w-4 h-4" /></button></td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                     {knowledgeTotalPages > 1 && (
                                         <Pagination
                                             current={knowledgePage}
@@ -1142,12 +1197,12 @@ const AdminDashboard = () => {
                                             </div>
 
                                             {/* Basic Info */}
-                                            <div className="grid grid-cols-2 gap-4">
+                                            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                                                 <InputField label="Title" value={roadmapForm.title} onChange={v => setRoadmapForm({ ...roadmapForm, title: v })} placeholder="React Mastery Roadmap" />
                                                 <InputField label="Topic" value={roadmapForm.topic} onChange={v => setRoadmapForm({ ...roadmapForm, topic: v })} placeholder="Web Development" />
                                             </div>
                                             <TextArea label="Description" value={roadmapForm.description} onChange={v => setRoadmapForm({ ...roadmapForm, description: v })} rows={3} placeholder="A comprehensive roadmap to master..." />
-                                            <div className="grid grid-cols-3 gap-4">
+                                            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4`}>
                                                 <div>
                                                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Difficulty</label>
                                                     <select value={roadmapForm.difficulty} onChange={e => setRoadmapForm({ ...roadmapForm, difficulty: e.target.value })}
@@ -1162,11 +1217,11 @@ const AdminDashboard = () => {
                                             {/* Enhanced Metadata */}
                                             <div className="border-t border-white/5 pt-4 space-y-4">
                                                 <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Learning Intelligence</span>
-                                                <div className="grid grid-cols-2 gap-4">
+                                                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                                                     <ArrayField label="Learning Goals" values={roadmapForm.learningGoals} onChange={v => setRoadmapForm({ ...roadmapForm, learningGoals: v })} />
                                                     <ArrayField label="Target Roles" values={roadmapForm.targetRoles} onChange={v => setRoadmapForm({ ...roadmapForm, targetRoles: v })} />
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4">
+                                                <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
                                                     <ArrayField label="Expected Outcomes" values={roadmapForm.expectedOutcomes} onChange={v => setRoadmapForm({ ...roadmapForm, expectedOutcomes: v })} />
                                                     <ArrayField label="Skills Covered" values={roadmapForm.skillsCovered} onChange={v => setRoadmapForm({ ...roadmapForm, skillsCovered: v })} />
                                                 </div>

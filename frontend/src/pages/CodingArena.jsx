@@ -557,7 +557,7 @@ const CodingArena = () => {
                     <div className="h-8 w-0.5 bg-slate-700 rounded-full group-hover:bg-white transition-colors" />
                 </div>
 
-                <div className={`flex-1 flex flex-col min-w-0 bg-[#0d1117] ${mobileTab === 'code' ? 'flex' : 'hidden lg:flex'}`}>
+                <div className={`flex-1 flex flex-col min-w-0 bg-[#0d1117] overflow-hidden ${(mobileTab === 'code' || (isMobile && mobileTab === 'output')) ? 'flex' : 'hidden lg:flex'}`}>
                     {/* Editor Header */}
                     <div className="flex items-center justify-between px-4 h-12 border-b border-white/5 bg-slate-900/30">
                         <div className="flex items-center gap-4 h-full">
@@ -625,7 +625,7 @@ const CodingArena = () => {
                         </div>
                     </div>
 
-                    <div className="flex-1 relative min-h-0 bg-[#0d1117]">
+                    <div className={`flex-1 relative min-h-0 bg-[#0d1117] ${isMobile && mobileTab === 'output' ? 'hidden' : 'block'}`}>
                         {/* Subtle Background Mesh for Editor Area */}
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-20" />
 
@@ -670,8 +670,8 @@ const CodingArena = () => {
 
                     {/* Bottom Console Panel */}
                     <div
-                        style={{ height: !isMobile ? consoleHeight : 'auto' }}
-                        className={`lg:flex flex-col bg-slate-950 border-t border-white/5 shadow-2xl z-10 ${mobileTab === 'output' ? 'flex-1 flex' : 'hidden'}`}
+                        style={{ height: !isMobile ? consoleHeight : '100%' }}
+                        className={`lg:flex flex-col bg-slate-950 border-t border-white/5 shadow-2xl z-10 ${mobileTab === 'output' ? 'flex flex-1' : 'hidden'}`}
                     >
                         <div className="flex items-center justify-between px-4 h-11 border-b border-white/5 bg-slate-900/40">
                             <div className="flex items-center gap-1 h-full">
