@@ -42,3 +42,16 @@ export const cacheResponse = async (res, key, data, ttlSeconds = 3600) => {
     setInCache(key, data, ttlSeconds);
     return res.json(data);
 };
+/**
+ * Remove data from cache
+ * @param {string} key 
+ */
+export const removeFromCache = async (key) => {
+  if (!redisClient) return;
+
+  try {
+    await redisClient.del(key);
+  } catch (error) {
+    console.error(`Cache DEL error for key ${key}:`, error.message);
+  }
+};

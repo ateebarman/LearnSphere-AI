@@ -9,6 +9,7 @@ import { generateCodingQuestionFromAI } from '../services/codingGenerator.js';
 import { generateJson } from '../services/ai/index.js';
 import { searchYouTubeVideos } from '../services/youtubeService.js';
 import { getResourcesForTopic } from '../services/resourceDatabase.js';
+import { removeFromCache } from '../utils/cache.js';
 
 // =============================================
 // PROBLEM MANAGEMENT
@@ -253,6 +254,11 @@ export const createKnowledge = asyncHandler(async (req, res) => {
     intuition: intuition || ''
   });
   res.status(201).json(node);
+
+  // Invalidate knowledge caches
+  await removeFromCache(`knowledge:cat:${category}`);
+  await removeFromCache('knowledge:all');
+  await removeFromCache('knowledge:categories');
 });
 
 // @desc    AI Generate knowledge entry (preview)
@@ -316,6 +322,13 @@ export const deleteKnowledge = asyncHandler(async (req, res) => {
     throw new Error('Knowledge entry not found');
   }
   await KnowledgeNode.findByIdAndDelete(req.params.id);
+  
+  // Invalidate knowledge caches
+  await removeFromCache(`knowledge:cat:${node.category}`);
+  await removeFromCache('knowledge:all');
+  await removeFromCache('knowledge:categories');
+  await removeFromCache(`knowledge:detail:${node.topic}`);
+
   res.json({ message: 'Knowledge entry deleted' });
 });
 
@@ -394,6 +407,9 @@ export const createAdminRoadmap = asyncHandler(async (req, res) => {
   });
 
   res.status(201).json(roadmap);
+  
+  // Invalidate public roadmap list
+  await removeFromCache('roadmaps:public:list');
 });
 
 // @desc    AI Generate a roadmap preview
@@ -566,6 +582,11 @@ export const updateAdminRoadmap = asyncHandler(async (req, res) => {
   }
 
   const updatedRoadmap = await roadmap.save();
+  
+  // Invalidate caches
+  await removeFromCache(`roadmap:detail:${roadmap._id}`);
+  await removeFromCache('roadmaps:public:list');
+
   res.json(updatedRoadmap);
 });
 
@@ -643,6 +664,11 @@ export const deleteRoadmap = asyncHandler(async (req, res) => {
     throw new Error('Roadmap not found');
   }
   await Roadmap.findByIdAndDelete(req.params.id);
+  
+  // Invalidate caches
+  await removeFromCache(`roadmap:detail:${roadmap._id}`);
+  await removeFromCache('roadmaps:public:list');
+
   res.json({ message: 'Roadmap deleted' });
 });
 

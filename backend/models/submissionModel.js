@@ -23,7 +23,22 @@ const submissionSchema = mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ['Accepted', 'Wrong Answer', 'Runtime Error', 'Compilation Error', 'Time Limit Exceeded', 'Memory Limit Exceeded'],
+      enum: [
+        'Accepted', 
+        'Wrong Answer', 
+        'Runtime Error', 
+        'Compilation Error', 
+        'Time Limit Exceeded', 
+        'Memory Limit Exceeded',
+        'Internal Error',
+        'Exec Format Error',
+        'Runtime Error (SIGSEGV)',
+        'Runtime Error (SIGABRT)',
+        'Runtime Error (SIGFPE)',
+        'Runtime Error (SIGXFSZ)',
+        'Runtime Error (NZEC)',
+        'Runtime Error (Other)'
+      ],
     },
     passedCount: {
       type: Number,

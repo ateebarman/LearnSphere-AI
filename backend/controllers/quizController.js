@@ -6,6 +6,7 @@ import {
 import QuizAttempt from '../models/quizAttemptModel.js';
 import Roadmap from '../models/roadmapModel.js';
 import KnowledgeNode from '../models/knowledgeModel.js';
+import { removeFromCache } from '../utils/cache.js';
 
 // @desc    Generate a quiz for a module
 // @route   POST /api/quizzes/generate
@@ -96,6 +97,9 @@ const submitQuiz = asyncHandler(async (req, res) => {
     feedback: feedback,
     detailedAnswers: detailedAnswers,
   });
+
+  // Invalidate analytics cache
+  await removeFromCache(`analytics:overview:${req.user._id}`);
 });
 
 export { generateQuiz, submitQuiz };

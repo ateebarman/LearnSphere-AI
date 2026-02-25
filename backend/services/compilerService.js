@@ -70,10 +70,12 @@ export const executeCode = async (code, language, input, expectedOutput = null, 
       }
 
       if (attempt <= retries) {
+        console.warn(`Code execution attempt ${attempt} failed:`, error.message);
         await new Promise(resolve => setTimeout(resolve, 1000));
         continue;
       }
 
+      console.error('Code execution service error:', error.response?.data || error.message);
       throw new Error(status === 429 ? 'Service busy, please try again.' : 'Code execution service unavailable.');
     }
   }

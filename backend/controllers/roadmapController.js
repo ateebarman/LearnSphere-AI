@@ -7,7 +7,7 @@ import { getRelevantContext } from '../services/ragService.js';
 import { generateJson } from '../services/ai/index.js';
 import { searchYouTubeVideos } from '../services/youtubeService.js';
 import { getResourcesForTopic } from '../services/resourceDatabase.js';
-import { getFromCache, setInCache } from '../utils/cache.js';
+import { getFromCache, setInCache, removeFromCache } from '../utils/cache.js';
 
 
 // @desc    Get an AI roadmap preview (not saved)
@@ -132,7 +132,16 @@ const createRoadmap = asyncHandler(async (req, res) => {
   });
 
   const createdRoadmap = await roadmap.save();
+
+  // Invalidate public list cache if new roadmap is public
+  if (createdRoadmap.isPublic) {
+    await removeFromCache('roadmaps:public:list');
+  }
+
   res.status(201).json(createdRoadmap);
+
+  // Invalidate analytics cache
+  await removeFromCache(`analytics:overview:${req.user._id}`);
 });
 
 // @desc    Generate a new roadmap (Legacy/Direct)
@@ -158,7 +167,16 @@ const generateRoadmap = asyncHandler(async (req, res) => {
   });
 
   const createdRoadmap = await roadmap.save();
+
+  // Invalidate public list if applicable
+  if (createdRoadmap.isPublic) {
+    await removeFromCache('roadmaps:public:list');
+  }
+
   res.status(201).json(createdRoadmap);
+
+  // Invalidate analytics cache
+  await removeFromCache(`analytics:overview:${req.user._id}`);
 });
 
 // @desc    Generate a RAG-based roadmap
@@ -200,7 +218,16 @@ const generateRAGRoadmap = asyncHandler(async (req, res) => {
   });
 
   const createdRoadmap = await roadmap.save();
+
+  // Invalidate public list if applicable
+  if (createdRoadmap.isPublic) {
+    await removeFromCache('roadmaps:public:list');
+  }
+
   res.status(201).json(createdRoadmap);
+
+  // Invalidate analytics cache
+  await removeFromCache(`analytics:overview:${req.user._id}`);
 });
 
 
@@ -334,7 +361,14 @@ const toggleRoadmapVisibility = asyncHandler(async (req, res) => {
   roadmap.isPublic = !roadmap.isPublic;
   const updatedRoadmap = await roadmap.save();
 
+  // Invalidate caches
+  await removeFromCache(`roadmap:detail:${roadmap._id}`);
+  await removeFromCache('roadmaps:public:list');
+
   res.json({ isPublic: updatedRoadmap.isPublic });
+
+  // Invalidate analytics cache
+  await removeFromCache(`analytics:overview:${req.user._id}`);
 });
 
 // @desc    Clone a public roadmap
@@ -449,7 +483,18 @@ const updateRoadmap = asyncHandler(async (req, res) => {
   if (isPublic !== undefined) roadmap.isPublic = isPublic;
 
   const updatedRoadmap = await roadmap.save();
+
+  // Invalidate caches
+  await removeFromCache(`roadmap:detail:${roadmap._id}`);
+  
+  // Only invalidate public list if it was public OR is now public
+  // (Simplest is just to always invalidate it to be safe, or check status)
+  await removeFromCache('roadmaps:public:list');
+
   res.json(updatedRoadmap);
+
+  // Invalidate analytics cache
+  await removeFromCache(`analytics:overview:${req.user._id}`);
 });
 
 // @desc    Delete a roadmap
@@ -470,7 +515,15 @@ const deleteRoadmap = asyncHandler(async (req, res) => {
   }
 
   await roadmap.deleteOne();
+  
+  // Invalidate caches
+  await removeFromCache(`roadmap:detail:${roadmap._id}`);
+  await removeFromCache('roadmaps:public:list');
+
   res.json({ message: 'Roadmap deleted successfully' });
+
+  // Invalidate analytics cache
+  await removeFromCache(`analytics:overview:${req.user._id}`);
 });
 
 export { 

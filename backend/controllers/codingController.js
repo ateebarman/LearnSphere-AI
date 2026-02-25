@@ -5,7 +5,7 @@ import User from '../models/userModel.js';
 import Submission from '../models/submissionModel.js';
 import { executeCode } from '../services/compilerService.js';
 import { generateCodingQuestionFromAI } from '../services/codingGenerator.js';
-import { getFromCache, setInCache } from '../utils/cache.js';
+import { getFromCache, setInCache, removeFromCache } from '../utils/cache.js';
 
 /**
  * Wraps user code with a test driver if no entry point is detected.
@@ -117,12 +117,12 @@ export const runCode = asyncHandler(async (req, res) => {
 
   const outputs = execution.stdout.split('CASE_RESULT_DELIMITER').map(s => s.trim()).filter(Boolean);
   
-  const results = question.visibleTestCases.map((testCase, idx) => {
+  const results = (question.visibleTestCases || []).map((testCase, idx) => {
     const actual = (outputs[idx] || '').replace(/\s/g, '');
-    const expected = testCase.expectedOutput.replace(/\s/g, '');
+    const expected = (testCase.expectedOutput || '').replace(/\s/g, '');
     return {
       input: testCase.input,
-      expected: testCase.expectedOutput,
+      expected: testCase.expectedOutput || '',
       actual: outputs[idx] || '',
       status: execution.status,
       stderr: execution.stderr,
@@ -149,7 +149,7 @@ export const submitCode = asyncHandler(async (req, res) => {
     throw new Error('Question not found');
   }
 
-  const allTestCases = [...question.visibleTestCases, ...question.hiddenTestCases];
+  const allTestCases = [...(question.visibleTestCases || []), ...(question.hiddenTestCases || [])];
   const driver = question.judgeDriver?.[language];
   const preDriver = question.judgePreDriver?.[language];
   const finalCode = wrapUserCode(code, language, driver, preDriver);
@@ -171,10 +171,10 @@ export const submitCode = asyncHandler(async (req, res) => {
   let passedCount = 0;
   const results = allTestCases.map((testCase, idx) => {
     const actual = (outputs[idx] || '').replace(/\s/g, '');
-    const expected = testCase.expectedOutput.replace(/\s/g, '');
+    const expected = (testCase.expectedOutput || '').replace(/\s/g, '');
     const passed = actual === expected;
     if (passed) passedCount++;
-    return { passed, input: testCase.input, expected: testCase.expectedOutput, actual: outputs[idx] };
+    return { passed, input: testCase.input, expected: testCase.expectedOutput || '', actual: outputs[idx] || '' };
   });
 
   const isAccepted = passedCount === allTestCases.length;
@@ -203,9 +203,10 @@ export const submitCode = asyncHandler(async (req, res) => {
     submissionStats: { totalSubmissions, acceptedSubmissions }
   });
 
+  const escapedTopic = topic ? topic.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
   let progress = await UserCodingProgress.findOne({ 
     user: userId, 
-    topic: { $regex: new RegExp(`^${topic}$`, 'i') } 
+    topic: { $regex: new RegExp(`^${escapedTopic}$`, 'i') } 
   });
   if (!progress) {
     progress = new UserCodingProgress({ 
@@ -231,7 +232,7 @@ export const submitCode = asyncHandler(async (req, res) => {
   // Update Global User Stats
   const user = await User.findById(userId);
   if (user) {
-    if (isAccepted && !user.solvedProblems.includes(questionId)) {
+    if (isAccepted && !user.solvedProblems.some(id => id.toString() === questionId.toString())) {
         user.solvedProblems.push(questionId);
         
         const now = new Date();
@@ -270,6 +271,9 @@ export const submitCode = asyncHandler(async (req, res) => {
     visibleResults: results.slice(0, question.visibleTestCases.length),
     progress,
   });
+
+  // Invalidate analytics cache
+  await removeFromCache(`analytics:overview:${userId}`);
 });
 
 // @desc    Get all coding problems with filtering and pagination
@@ -389,7 +393,10 @@ export const getProgress = asyncHandler(async (req, res) => {
   const { topic } = req.query;
 
   const query = { user: userId };
-  if (topic) query.topic = { $regex: new RegExp(`^${topic}$`, 'i') };
+  if (topic) {
+    const escapedTopic = topic.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    query.topic = { $regex: new RegExp(`^${escapedTopic}$`, 'i') };
+  }
 
   const progress = await UserCodingProgress.find(query);
   res.json(progress);
