@@ -483,13 +483,13 @@ const AdminDashboard = () => {
             {values.map((v, i) => (
                 <div key={i} className="flex gap-2 mb-2">
                     <input value={v} onChange={e => { const n = [...values]; n[i] = e.target.value; onChange(n); }}
-                        className="flex-1 bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary-500/50" />
+                        className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50" />
                     <button onClick={() => onChange(values.filter((_, j) => j !== i))}
                         className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><X className="w-3 h-3" /></button>
                 </div>
             ))}
             <button onClick={() => onChange([...values, ''])}
-                className="text-[10px] text-primary-400 font-bold uppercase tracking-widest hover:text-white transition-colors">+ Add</button>
+                className="text-[10px] text-primary-500 dark:text-primary-400 font-bold uppercase tracking-widest hover:text-primary-600 dark:hover:text-white transition-colors">+ Add</button>
         </div>
     );
 
@@ -497,7 +497,7 @@ const AdminDashboard = () => {
         <div>
             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{label}</label>
             <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} placeholder={placeholder}
-                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-primary-500/50 resize-none" />
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:border-primary-500/50 resize-none" />
         </div>
     );
 
@@ -505,20 +505,20 @@ const AdminDashboard = () => {
         <div>
             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{label}</label>
             <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary-500/50" />
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50" />
         </div>
     );
 
     const Pagination = ({ current, total, onPageChange }) => (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-white/5 bg-slate-900/10">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200/50 dark:border-white/5 bg-slate-50 dark:bg-slate-900/10">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">
-                Page <span className="text-white">{current}</span> of <span className="text-white">{total}</span>
+                Page <span className="text-slate-900 dark:text-white">{current}</span> of <span className="text-slate-900 dark:text-white">{total}</span>
             </p>
             <div className="flex items-center gap-2">
                 <button
                     disabled={current <= 1}
                     onClick={() => onPageChange(current - 1)}
-                    className="p-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    className="p-1.5 rounded-lg border border-slate-200/50 dark:border-white/10 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
                 >
                     <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -533,7 +533,7 @@ const AdminDashboard = () => {
                                     onClick={() => onPageChange(page)}
                                     className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all ${current === page
                                         ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20'
-                                        : 'text-slate-500 hover:text-white hover:bg-white/5'
+                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5'
                                         }`}
                                 >
                                     {page}
@@ -548,7 +548,7 @@ const AdminDashboard = () => {
                 <button
                     disabled={current >= total}
                     onClick={() => onPageChange(current + 1)}
-                    className="p-1.5 rounded-lg border border-white/10 text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    className="p-1.5 rounded-lg border border-slate-200/50 dark:border-white/10 text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
                 >
                     <ChevronRight className="w-4 h-4" />
                 </button>
@@ -565,29 +565,29 @@ const AdminDashboard = () => {
 
     const StatCard = ({ icon: Icon, label, value, color }) => (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className={`bg-slate-900/50 border border-white/5 rounded-2xl p-6 hover:border-${color}-500/30 transition-all group`}>
+            className={`bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-6 hover:border-${color}-500/30 transition-all shadow-sm dark:shadow-none group`}>
             <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 flex items-center justify-center mb-4 border border-${color}-500/20`}>
                 <Icon className={`w-5 h-5 text-${color}-500`} />
             </div>
-            <p className="text-3xl font-black text-white mb-1">{value ?? '—'}</p>
+            <p className="text-3xl font-black text-slate-900 dark:text-white mb-1">{value ?? '—'}</p>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{label}</p>
         </motion.div>
     );
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 font-sans flex">
-            {/* Mobile Header */}
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans flex">
+            {/* Mobile Header */ }
             {isMobile && (
-                <div className="fixed top-0 left-0 right-0 h-16 bg-slate-950 border-b border-white/5 z-[60] flex items-center justify-between px-6">
+                <div className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-950 border-b border-slate-200/50 dark:border-white/5 z-[60] flex items-center justify-between px-6 shadow-sm dark:shadow-none">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-rose-500 to-orange-600 flex items-center justify-center shadow-lg shadow-rose-500/20">
                             <Shield className="w-4 h-4 text-white" />
                         </div>
-                        <span className="text-xs font-black text-white uppercase tracking-widest">Admin</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Admin</span>
                     </div>
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-white/10 rounded-lg"
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg transition-colors"
                     >
                         {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
@@ -610,10 +610,10 @@ const AdminDashboard = () => {
             {/* Sidebar */}
             <aside className={`
                 ${isMobile ? 'fixed inset-y-0 left-0 z-[80] w-[280px] shadow-2xl' : 'w-64 sticky top-0'} 
-                border-r border-white/5 bg-slate-950 flex flex-col flex-shrink-0 h-screen transition-transform duration-300
+                border-r border-slate-200/50 dark:border-white/5 bg-white dark:bg-slate-950 flex flex-col flex-shrink-0 h-screen transition-transform duration-300
                 ${isMobile && !sidebarOpen ? '-translate-x-full' : 'translate-x-0'}
             `}>
-                <div className="p-6 border-b border-white/5">
+                <div className="p-6 border-b border-slate-200/50 dark:border-white/5">
                     <Link to="/dashboard" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold uppercase tracking-widest mb-4">
                         <ArrowLeft className="w-3 h-3" /> Back to App
                     </Link>
@@ -622,7 +622,7 @@ const AdminDashboard = () => {
                             <Shield className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-sm font-black text-white">Admin Panel</h2>
+                            <h2 className="text-sm font-black text-slate-900 dark:text-white">Admin Panel</h2>
                             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Content Control</p>
                         </div>
                     </div>
@@ -636,8 +636,8 @@ const AdminDashboard = () => {
                                 if (isMobile) setSidebarOpen(false);
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeSection === item.id
-                                ? 'bg-primary-600/10 text-primary-400 border border-primary-500/20 shadow-lg shadow-primary-500/5'
-                                : 'text-slate-500 hover:text-white hover:bg-white/5'}`}>
+                                ? 'bg-primary-50 dark:bg-primary-600/10 text-primary-600 dark:text-primary-400 border border-primary-500/20 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}>
                             <item.icon className="w-4 h-4" />
                             {item.label}
                         </button>
@@ -653,7 +653,7 @@ const AdminDashboard = () => {
                         {activeSection === 'dashboard' && (
                             <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8">
                                 <div>
-                                    <h1 className="text-4xl font-black text-white mb-2">Admin Dashboard</h1>
+                                    <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2">Admin Dashboard</h1>
                                     <p className="text-slate-500 text-sm">Platform overview and content management.</p>
                                 </div>
                                 {loading ? (
@@ -675,7 +675,7 @@ const AdminDashboard = () => {
                             <motion.div key="problems" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h1 className="text-3xl font-black text-white mb-1">Problem Management</h1>
+                                        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-1">Problem Management</h1>
                                         <p className="text-slate-500 text-sm">{problemsTotal} problems in curriculum</p>
                                     </div>
                                     <button onClick={() => setShowAddProblem(!showAddProblem)}
@@ -685,12 +685,12 @@ const AdminDashboard = () => {
                                 </div>
 
                                 {/* AI Generation Section */}
-                                <div className="bg-slate-900/50 border border-white/5 rounded-2xl p-6 space-y-4">
-                                    <h3 className="text-sm font-black text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> AI Problem Generator</h3>
+                                <div className="bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-6 space-y-4 shadow-sm dark:shadow-none">
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" /> AI Problem Generator</h3>
                                     <div className="space-y-3">
                                         <div className="flex gap-3">
                                             <input value={aiTopic} onChange={e => setAiTopic(e.target.value)} placeholder="Topic (e.g., LFU Cache, Binary Search...)"
-                                                className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary-500/50" />
+                                                className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50" />
                                             <button onClick={handleAIGenerate} disabled={aiGenerating}
                                                 className="px-6 py-2.5 bg-amber-600 text-white rounded-lg text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-amber-500 disabled:opacity-50 transition-all">
                                                 {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -701,7 +701,7 @@ const AdminDashboard = () => {
                                             value={aiDescription}
                                             onChange={e => setAiDescription(e.target.value)}
                                             placeholder="Specific Constraints or Description (Optional)... e.g., Must use O(1) time complexity, include tie-breaker logic."
-                                            className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-500/50 min-h-[80px]"
+                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-white/10 rounded-lg px-4 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50 min-h-[80px]"
                                         />
                                     </div>
 
@@ -709,8 +709,8 @@ const AdminDashboard = () => {
                                     {aiPreview && (
                                         <div className="mt-4 space-y-4 border-t border-white/5 pt-4">
                                             <div className="flex items-center justify-between">
-                                                <h4 className="text-white font-bold">{aiPreview.title}
-                                                    <span className={`ml-3 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${aiPreview.difficulty === 'Easy' ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' : aiPreview.difficulty === 'Medium' ? 'text-amber-400 bg-amber-400/10 border-amber-400/20' : 'text-rose-400 bg-rose-400/10 border-rose-400/20'}`}>{aiPreview.difficulty}</span>
+                                                <h4 className="text-slate-900 dark:text-white font-bold">{aiPreview.title}
+                                                    <span className={`ml-3 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded border ${aiPreview.difficulty === 'Easy' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-400/10 border-emerald-200 dark:border-emerald-400/20' : aiPreview.difficulty === 'Medium' ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-400/10 border-amber-200 dark:border-amber-400/20' : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-400/10 border-rose-200 dark:border-rose-400/20'}`}>{aiPreview.difficulty}</span>
                                                 </h4>
                                                 <div className="flex gap-2">
                                                     <button onClick={handleValidateAI} disabled={validating}
@@ -733,13 +733,13 @@ const AdminDashboard = () => {
 
                                             {/* Validation Results */}
                                             {validationResult && (
-                                                <div className={`p-4 rounded-xl border ${validationResult.validated ? 'bg-emerald-950/20 border-emerald-500/20' : 'bg-rose-950/20 border-rose-500/20'}`}>
-                                                    <h5 className={`text-sm font-black mb-3 ${validationResult.validated ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                                <div className={`p-4 rounded-xl border ${validationResult.validated ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-500/20' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/20'}`}>
+                                                    <h5 className={`text-sm font-black mb-3 ${validationResult.validated ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                                         {validationResult.validated ? '✅ All Validations Passed' : '❌ Validation Failed'}
                                                     </h5>
                                                     <div className="grid grid-cols-3 gap-3">
                                                         {Object.entries(validationResult.results).map(([lang, r]) => (
-                                                            <div key={lang} className="bg-black/30 rounded-lg p-3">
+                                                            <div key={lang} className="bg-white/50 dark:bg-black/30 rounded-lg p-3">
                                                                 <p className="text-[10px] font-black uppercase text-slate-400 mb-1">{lang}</p>
                                                                 <p className={`text-sm font-bold ${r.status === 'all_passed' ? 'text-emerald-400' : r.status === 'skipped' ? 'text-slate-500' : 'text-rose-400'}`}>
                                                                     {r.status === 'all_passed' ? `✓ ${r.passed}/${r.total}` : r.status === 'skipped' ? 'Skipped' : `✗ ${r.passed || 0}/${r.total || '?'}`}
@@ -758,10 +758,10 @@ const AdminDashboard = () => {
                                 <AnimatePresence>
                                     {showAddProblem && (
                                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                            className="bg-slate-900/50 border border-white/5 rounded-2xl p-6 space-y-6 overflow-hidden">
+                                            className="bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-6 space-y-6 overflow-hidden shadow-sm dark:shadow-none">
                                             <div className="flex items-center justify-between">
-                                                <h3 className="text-sm font-black text-white flex items-center gap-2"><Plus className="w-4 h-4 text-primary-500" /> Manual Problem Creation</h3>
-                                                <button onClick={() => setShowAddProblem(false)} className="text-slate-500 hover:text-white"><X className="w-4 h-4" /></button>
+                                                <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2"><Plus className="w-4 h-4 text-primary-500" /> Manual Problem Creation</h3>
+                                                <button onClick={() => setShowAddProblem(false)} className="text-slate-500 hover:text-slate-900 dark:hover:text-white"><X className="w-4 h-4" /></button>
                                             </div>
 
                                             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
@@ -845,20 +845,20 @@ const AdminDashboard = () => {
                                 </AnimatePresence>
 
                                 {/* Problem List */}
-                                <div className="bg-slate-900/30 border border-white/5 rounded-2xl overflow-hidden">
+                                <div className="bg-white dark:bg-slate-900/30 border border-slate-200/50 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
                                     <div className="overflow-x-auto custom-scrollbar">
                                         <table className="w-full text-left min-w-[600px]">
-                                            <thead><tr className="border-b border-white/5">
+                                            <thead><tr className="border-b border-slate-200/50 dark:border-white/5">
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Title</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Difficulty</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Topic</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Acceptance</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest w-20"></th>
                                             </tr></thead>
-                                            <tbody className="divide-y divide-white/5">
+                                            <tbody className="divide-y divide-slate-200/50 dark:divide-white/5">
                                                 {problems.map(p => (
-                                                    <tr key={p._id} className="hover:bg-white/[0.02] transition-colors">
-                                                        <td className="px-6 py-3 text-sm font-bold text-white">{p.title}</td>
+                                                    <tr key={p._id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                                                        <td className="px-6 py-3 text-sm font-bold text-slate-900 dark:text-white">{p.title}</td>
                                                         <td className="px-6 py-3">
                                                             <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded border ${p.difficulty === 'Easy' ? 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20' : p.difficulty === 'Medium' ? 'text-amber-400 bg-amber-400/10 border-amber-400/20' : 'text-rose-400 bg-rose-400/10 border-rose-400/20'}`}>{p.difficulty}</span>
                                                         </td>
@@ -889,7 +889,7 @@ const AdminDashboard = () => {
                             <motion.div key="knowledge" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h1 className="text-3xl font-black text-white mb-1">Knowledge Base</h1>
+                                        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-1">Knowledge Base</h1>
                                         <p className="text-slate-500 text-sm">{knowledgeTotal} entries</p>
                                     </div>
                                     <button onClick={() => setShowAddKnowledge(!showAddKnowledge)}
@@ -899,13 +899,13 @@ const AdminDashboard = () => {
                                 </div>
 
                                 {/* AI Knowledge Generator */}
-                                <div className="bg-slate-900/50 border border-white/5 rounded-2xl p-6 space-y-4">
-                                    <h3 className="text-sm font-black text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-400" /> AI Knowledge Generator</h3>
+                                <div className="bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-6 space-y-4 shadow-sm dark:shadow-none">
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2"><Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" /> AI Knowledge Generator</h3>
                                     <div className="flex gap-3">
                                         <input value={aiKnowledgeTopic} onChange={e => setAiKnowledgeTopic(e.target.value)} placeholder="e.g., Red-Black Trees, TCP/IP..."
-                                            className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-primary-500/50" />
+                                            className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50" />
                                         <select value={aiKnowledgeCategory} onChange={e => setAiKnowledgeCategory(e.target.value)}
-                                            className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none">
+                                            className="bg-slate-50 dark:bg-slate-950 border border-slate-200/50 dark:border-white/10 rounded-lg px-3 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none">
                                             {categories.map(c => <option key={c} value={c}>{c}</option>)}
                                         </select>
                                         <button onClick={handleAIKnowledge} disabled={aiKnowledgeGenerating}
@@ -920,10 +920,10 @@ const AdminDashboard = () => {
                                 <AnimatePresence>
                                     {showAddKnowledge && (
                                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                            className="bg-slate-900/50 border border-white/5 rounded-2xl p-6 space-y-5 overflow-hidden">
+                                            className="bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-6 space-y-5 overflow-hidden shadow-sm dark:shadow-none">
                                             <div className="flex items-center justify-between">
-                                                <h3 className="text-sm font-black text-white">Create Knowledge Entry</h3>
-                                                <button onClick={() => setShowAddKnowledge(false)} className="text-slate-500 hover:text-white"><X className="w-4 h-4" /></button>
+                                                <h3 className="text-sm font-black text-slate-900 dark:text-white">Create Knowledge Entry</h3>
+                                                <button onClick={() => setShowAddKnowledge(false)} className="text-slate-500 hover:text-slate-900 dark:hover:text-white"><X className="w-4 h-4" /></button>
                                             </div>
 
                                             {/* Row 1: Topic + Category */}
@@ -1109,20 +1109,20 @@ const AdminDashboard = () => {
                                 </AnimatePresence>
 
                                 {/* Knowledge List */}
-                                <div className="bg-slate-900/30 border border-white/5 rounded-2xl overflow-hidden">
+                                <div className="bg-white dark:bg-slate-900/30 border border-slate-200/50 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
                                     <div className="overflow-x-auto custom-scrollbar">
                                         <table className="w-full text-left min-w-[600px]">
-                                            <thead><tr className="border-b border-white/5">
+                                            <thead><tr className="border-b border-slate-200/50 dark:border-white/5">
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Topic</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Category</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Summary</th>
                                                 <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest w-20"></th>
                                             </tr></thead>
-                                            <tbody className="divide-y divide-white/5">
+                                            <tbody className="divide-y divide-slate-200/50 dark:divide-white/5">
                                                 {knowledge.map(k => (
-                                                    <tr key={k._id} className="hover:bg-white/[0.02] transition-colors">
-                                                        <td className="px-6 py-3 text-sm font-bold text-white">{k.topic}</td>
-                                                        <td className="px-6 py-3"><span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">{k.category}</span></td>
+                                                    <tr key={k._id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                                                        <td className="px-6 py-3 text-sm font-bold text-slate-900 dark:text-white">{k.topic}</td>
+                                                        <td className="px-6 py-3"><span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20">{k.category}</span></td>
                                                         <td className="px-6 py-3 text-xs text-slate-400 max-w-xs truncate">{k.summary}</td>
                                                         <td className="px-6 py-3"><button onClick={() => handleDeleteKnowledge(k._id, k.topic)} className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 className="w-4 h-4" /></button></td>
                                                     </tr>
@@ -1146,7 +1146,7 @@ const AdminDashboard = () => {
                             <motion.div key="roadmaps" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <h1 className="text-3xl font-black text-white mb-1">Community Roadmaps</h1>
+                                        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-1">Community Roadmaps</h1>
                                         <p className="text-slate-500 text-sm">{roadmapsTotal} public roadmaps</p>
                                     </div>
                                     <button onClick={() => setShowAddRoadmap(!showAddRoadmap)}
@@ -1163,13 +1163,13 @@ const AdminDashboard = () => {
                                     </div>
                                     <div className="grid grid-cols-4 gap-3">
                                         <input value={aiRoadmapTopic} onChange={e => setAiRoadmapTopic(e.target.value)} placeholder="e.g. React, System Design..."
-                                            className="col-span-1 bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50" />
+                                            className="col-span-1 bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-purple-500/50" />
                                         <select value={aiRoadmapDifficulty} onChange={e => setAiRoadmapDifficulty(e.target.value)}
-                                            className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                                            className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none">
                                             <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
                                         </select>
                                         <input value={aiRoadmapRole} onChange={e => setAiRoadmapRole(e.target.value)} placeholder="Target Role (e.g. SDE-1)"
-                                            className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500/50" />
+                                            className="bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-purple-500/50" />
                                         <button onClick={handleAIRoadmap} disabled={aiRoadmapGenerating}
                                             className="bg-purple-600 text-white rounded-lg px-4 py-2 text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-purple-500 transition-all disabled:opacity-50">
                                             {aiRoadmapGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
@@ -1182,9 +1182,9 @@ const AdminDashboard = () => {
                                 <AnimatePresence>
                                     {showAddRoadmap && (
                                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                            className="bg-slate-900/50 border border-white/5 rounded-2xl p-6 space-y-5 overflow-hidden">
+                                            className="bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-6 space-y-5 overflow-hidden shadow-sm dark:shadow-none">
                                             <div className="flex items-center justify-between">
-                                                <h3 className="text-sm font-black text-white">
+                                                <h3 className="text-sm font-black text-slate-900 dark:text-white">
                                                     {isEditingRoadmap ? 'Edit Official Roadmap' : 'Create Official Roadmap'}
                                                 </h3>
                                                 <div className="flex items-center gap-2">
@@ -1443,10 +1443,10 @@ const AdminDashboard = () => {
                                 {/* Roadmap List */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {roadmaps.map(r => (
-                                        <div key={r._id} className="bg-slate-900/50 border border-white/5 rounded-2xl p-5 hover:border-primary-500/20 transition-all group">
+                                        <div key={r._id} className="bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 hover:border-primary-500/30 dark:hover:border-primary-500/20 transition-all shadow-sm dark:shadow-none group">
                                             <div className="flex items-start justify-between mb-3">
                                                 <div>
-                                                    <h4 className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors">{r.title}</h4>
+                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{r.title}</h4>
                                                     <p className="text-[10px] text-slate-500 mt-0.5">{r.topic} • by {r.user?.name || 'Admin'}</p>
                                                 </div>
                                                 <div className="flex gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
@@ -1468,7 +1468,7 @@ const AdminDashboard = () => {
                                     ))}
                                 </div>
                                 {roadmapsTotalPages > 1 && (
-                                    <div className="mt-6 bg-slate-900/30 border border-white/5 rounded-2xl overflow-hidden">
+                                    <div className="mt-6 bg-white dark:bg-slate-900/30 border border-slate-200/50 dark:border-white/5 rounded-2xl overflow-hidden shadow-sm dark:shadow-none">
                                         <Pagination
                                             current={roadmapsPage}
                                             total={roadmapsTotalPages}

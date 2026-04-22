@@ -1,6 +1,6 @@
 import api from './api';
 
-export const sendTutorMessage = async (message, history = [], token) => {
+export const sendTutorMessage = async (message, history = [], token, context = null) => {
   try {
     const config = {
       headers: {
@@ -14,6 +14,7 @@ export const sendTutorMessage = async (message, history = [], token) => {
       {
         message,
         history,
+        context,
       },
       config
     );

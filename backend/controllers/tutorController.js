@@ -7,7 +7,7 @@ import { chatWithTutor } from '../services/grokTutorService.js';
 // @route   POST /api/tutor
 // @access  Private
 const handleTutorChat = asyncHandler(async (req, res) => {
-  const { message, history = [] } = req.body;
+  const { message, history = [], context = null } = req.body;
 
   if (!message) {
     res.status(400);
@@ -20,9 +20,9 @@ const handleTutorChat = asyncHandler(async (req, res) => {
     throw new Error('History must be an array');
   }
 
-  // GROUNDING: Find relevant internal knowledge (only for technical queries)
+  // GROUNDING: Find relevant internal knowledge (only for technical queries, and only if no direct context)
   let knowledgeContext = '';
-  if (message.length > 15) {
+  if (!context && message.length > 15) {
     const stopwords = ['building', 'project', 'coding', 'hello', 'please', 'help'];
     const keywords = message.split(/\s+/)
       .filter(word => word.length > 3 && !stopwords.includes(word.toLowerCase()))
@@ -44,7 +44,7 @@ const handleTutorChat = asyncHandler(async (req, res) => {
   }
 
   try {
-    const reply = await chatWithTutor(message, history, knowledgeContext);
+    const reply = await chatWithTutor(message, history, knowledgeContext, context);
 
     res.json({
       success: true,

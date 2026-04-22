@@ -3,7 +3,7 @@ import CodingQuestion from '../models/codingQuestionModel.js';
 import UserCodingProgress from '../models/userCodingProgressModel.js';
 import User from '../models/userModel.js';
 import Submission from '../models/submissionModel.js';
-import { executeCode } from '../services/compilerService.js';
+import { executeCode, submitToJudge, getJudgeResult } from '../services/compilerService.js';
 import { generateCodingQuestionFromAI } from '../services/codingGenerator.js';
 import { getFromCache, setInCache, removeFromCache } from '../utils/cache.js';
 
@@ -84,7 +84,7 @@ export const triggerAiGeneration = asyncHandler(async (req, res) => {
   res.json(results);
 });
 
-// @desc    Run code against visible test cases
+// @desc    Run code against visible test cases (Async)
 // @route   POST /api/coding/run
 // @access  Private
 export const runCode = asyncHandler(async (req, res) => {
@@ -100,43 +100,26 @@ export const runCode = asyncHandler(async (req, res) => {
   const preDriver = question.judgePreDriver?.[language];
   const finalCode = wrapUserCode(code, language, driver, preDriver);
 
-  // Unified batch input: [Count]\n[Input 1]\n[Input 2]...
+  // Unified batch input
   const batchInput = `${question.visibleTestCases.length}\n${question.visibleTestCases.map(tc => tc.input).join('\n')}`;
 
-  const execution = await executeCode(finalCode, language, batchInput);
+  const token = await submitToJudge(finalCode, language, batchInput);
   
-  // If execution failed (compilation error, TLE, etc.)
-  if (execution.status !== 'Accepted') {
-     return res.json([{ 
-        status: execution.status,
-        compile_output: execution.compile_output,
-        stderr: execution.stderr,
-        passed: false 
-     }]);
-  }
+  // Store run context (optional, but keeps type info)
+  await setInCache(`env:execution:${token}`, { 
+    type: 'run',
+    questionId: questionId
+  }, 300);
 
-  const outputs = execution.stdout.split('CASE_RESULT_DELIMITER').map(s => s.trim()).filter(Boolean);
-  
-  const results = (question.visibleTestCases || []).map((testCase, idx) => {
-    const actual = (outputs[idx] || '').replace(/\s/g, '');
-    const expected = (testCase.expectedOutput || '').replace(/\s/g, '');
-    return {
-      input: testCase.input,
-      expected: testCase.expectedOutput || '',
-      actual: outputs[idx] || '',
-      status: execution.status,
-      stderr: execution.stderr,
-      compile_output: execution.compile_output,
-      time: execution.time,
-      memory: execution.memory,
-      passed: actual === expected,
-    };
+  res.status(202).json({ 
+    token, 
+    status: 'Processing',
+    type: 'run',
+    questionId 
   });
-
-  res.json(results);
 });
 
-// @desc    Submit code against all test cases
+// @desc    Submit code against all test cases (Async)
 // @route   POST /api/coding/submit
 // @access  Private
 export const submitCode = asyncHandler(async (req, res) => {
@@ -155,125 +138,182 @@ export const submitCode = asyncHandler(async (req, res) => {
   const finalCode = wrapUserCode(code, language, driver, preDriver);
   
   const batchInput = `${allTestCases.length}\n${allTestCases.map(tc => tc.input).join('\n')}`;
-  const execution = await executeCode(finalCode, language, batchInput);
-
-  if (execution.status !== 'Accepted') {
-    return res.json({
-        success: false,
-        status: execution.status,
-        compile_output: execution.compile_output,
-        stderr: execution.stderr
-    });
-  }
-
-  const outputs = execution.stdout.split('CASE_RESULT_DELIMITER').map(s => s.trim()).filter(Boolean);
   
-  let passedCount = 0;
-  const results = allTestCases.map((testCase, idx) => {
-    const actual = (outputs[idx] || '').replace(/\s/g, '');
-    const expected = (testCase.expectedOutput || '').replace(/\s/g, '');
-    const passed = actual === expected;
-    if (passed) passedCount++;
-    return { passed, input: testCase.input, expected: testCase.expectedOutput || '', actual: outputs[idx] || '' };
-  });
+  const token = await submitToJudge(finalCode, language, batchInput);
 
-  const isAccepted = passedCount === allTestCases.length;
-  const failedResults = results.filter(r => !r.passed);
-
-  // Save submission
-  await Submission.create({
-    user: userId,
-    question: questionId,
-    language,
+  // Store FULL submission context in cache to avoid query param length issues
+  await setInCache(`env:execution:${token}`, { 
+    type: 'submit',
+    userId,
+    questionId,
     code,
-    status: isAccepted ? 'Accepted' : (execution.status === 'Accepted' ? 'Wrong Answer' : execution.status),
-    passedCount,
-    totalCount: allTestCases.length,
-    runtime: execution.time,
-    memory: execution.memory
-  });
+    language,
+    topic
+  }, 600); // 10 minutes cache
 
-  // Dynamic Acceptance Rate Update
-  const totalSubmissions = await Submission.countDocuments({ question: questionId });
-  const acceptedSubmissions = await Submission.countDocuments({ question: questionId, status: 'Accepted' });
-  const acceptanceRate = totalSubmissions > 0 ? Math.round((acceptedSubmissions / totalSubmissions) * 100) : 0;
-
-  await CodingQuestion.findByIdAndUpdate(questionId, {
-    acceptanceRate,
-    submissionStats: { totalSubmissions, acceptedSubmissions }
+  res.status(202).json({ 
+    token, 
+    status: 'Processing', 
+    type: 'submit',
+    questionId,
+    topic
   });
+});
 
-  const escapedTopic = topic ? topic.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
-  let progress = await UserCodingProgress.findOne({ 
-    user: userId, 
-    topic: { $regex: new RegExp(`^${escapedTopic}$`, 'i') } 
-  });
-  if (!progress) {
-    progress = new UserCodingProgress({ 
-        user: userId, 
-        topic: topic // Keep original case or decide on one
+/**
+ * @desc    Check result of a Judge0 token
+ * @route   GET /api/coding/status/:token
+ * @access  Private
+ */
+export const checkResult = asyncHandler(async (req, res) => {
+  const { token } = req.params;
+  
+  // Try to retrieve context from Redis
+  const context = await getFromCache(`env:execution:${token}`);
+  const userId = req.user._id;
+
+  const result = await getJudgeResult(token);
+
+  if (result.isProcessing) {
+    return res.json(result);
+  }
+
+  // Cleanup cache once processed
+  if (context) await removeFromCache(`env:execution:${token}`);
+
+  // Fallback to query params if cache missed (for non-submit runs or older clients)
+  const type = context?.type || req.query.type;
+  const questionId = context?.questionId || req.query.questionId;
+
+  // If it's a RUN request (testing visible cases)
+  if (type === 'run') {
+    const question = await CodingQuestion.findById(questionId);
+    if (!question) return res.status(404).json({ message: 'Question not found' });
+
+    if (result.status !== 'Accepted') {
+       return res.json([{ 
+          status: result.status,
+          compile_output: result.compile_output,
+          stderr: result.stderr,
+          passed: false 
+       }]);
+    }
+
+    const outputs = (result.stdout || '').split('CASE_RESULT_DELIMITER').map(s => s.trim()).filter(Boolean);
+    const details = (question.visibleTestCases || []).map((testCase, idx) => {
+      const actual = (outputs[idx] || '').replace(/\s/g, '');
+      const expected = (testCase.expectedOutput || '').replace(/\s/g, '');
+      return {
+        input: testCase.input,
+        expected: testCase.expectedOutput || '',
+        actual: outputs[idx] || '',
+        status: result.status,
+        time: result.time,
+        memory: result.memory,
+        passed: actual === expected,
+      };
+    });
+    return res.json(details);
+  }
+
+  // If it's a SUBMIT request (testing ALL cases + persisting results)
+  if (type === 'submit') {
+    const question = await CodingQuestion.findById(questionId);
+    if (!question) return res.status(404).json({ message: 'Question not found' });
+
+    const allTestCases = [...(question.visibleTestCases || []), ...(question.hiddenTestCases || [])];
+    
+    // Use data from Redis context for submission
+    const { code, language, topic } = context || {};
+
+    if (result.status !== 'Accepted') {
+      return res.json({
+          success: false,
+          status: result.status,
+          compile_output: result.compile_output,
+          stderr: result.stderr
+      });
+    }
+
+    const outputs = (result.stdout || '').split('CASE_RESULT_DELIMITER').map(s => s.trim()).filter(Boolean);
+    let passedCount = 0;
+    const testCaseResults = allTestCases.map((testCase, idx) => {
+      const actual = (outputs[idx] || '').replace(/\s/g, '');
+      const expected = (testCase.expectedOutput || '').replace(/\s/g, '');
+      const passed = actual === expected;
+      if (passed) passedCount++;
+      return { passed, input: testCase.input, expected: testCase.expectedOutput || '', actual: outputs[idx] || '' };
+    });
+
+    const isAccepted = passedCount === allTestCases.length;
+    
+    // Save submission to DB
+    await Submission.create({
+      user: userId,
+      question: questionId,
+      language: language || 'unknown',
+      code: code || '// Code not retrieved from cache',
+      status: isAccepted ? 'Accepted' : (result.status === 'Accepted' ? 'Wrong Answer' : result.status),
+      passedCount,
+      totalCount: allTestCases.length,
+      runtime: result.time,
+      memory: result.memory
+    });
+
+    // Dynamic Acceptance Rate Update
+    const totalSubmissions = await Submission.countDocuments({ question: questionId });
+    const acceptedSubmissions = await Submission.countDocuments({ question: questionId, status: 'Accepted' });
+    const acceptanceRate = totalSubmissions > 0 ? Math.round((acceptedSubmissions / totalSubmissions) * 100) : 0;
+
+    await CodingQuestion.findByIdAndUpdate(questionId, {
+      acceptanceRate,
+      submissionStats: { totalSubmissions, acceptedSubmissions }
+    });
+
+    const escapedTopic = topic ? topic.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '';
+    let progress = await UserCodingProgress.findOne({ 
+      user: userId, 
+      topic: { $regex: new RegExp(`^${escapedTopic}$`, 'i') } 
+    });
+    if (!progress) {
+      progress = new UserCodingProgress({ user: userId, topic: topic });
+    }
+
+    progress.attempts += 1;
+    if (isAccepted) {
+      progress.solvedQuestions += 1;
+      progress.lastSolvedAt = new Date();
+      progress.streak += 1;
+      if (!progress.solvedProblems.includes(questionId)) {
+          progress.solvedProblems.push(questionId);
+      }
+    }
+    progress.accuracy = Math.round((progress.solvedQuestions / progress.attempts) * 100);
+    await progress.save();
+
+    // Global Stats
+    const user = await User.findById(userId);
+    if (user) {
+      if (isAccepted && !user.solvedProblems.some(id => id.toString() === questionId.toString())) {
+          user.solvedProblems.push(questionId);
+          user.streak = (user.streak || 0) + 1;
+          user.lastSolvedAt = new Date();
+      }
+      await user.save();
+    }
+
+    return res.json({
+      status: isAccepted ? 'Accepted' : (result.status === 'Accepted' ? 'Wrong Answer' : result.status),
+      passed: passedCount,
+      total: allTestCases.length,
+      failedCases: isAccepted ? [] : testCaseResults.filter(r => !r.passed).slice(0, 1),
+      visibleResults: testCaseResults.slice(0, question.visibleTestCases.length),
+      progress,
     });
   }
 
-  progress.attempts += 1;
-  if (isAccepted) {
-    progress.solvedQuestions += 1;
-    progress.lastSolvedAt = new Date();
-    progress.streak += 1;
-    // Track specific solved question
-    if (!progress.solvedProblems.includes(questionId)) {
-        progress.solvedProblems.push(questionId);
-    }
-  }
-  
-  progress.accuracy = Math.round((progress.solvedQuestions / progress.attempts) * 100);
-  await progress.save();
-
-  // Update Global User Stats
-  const user = await User.findById(userId);
-  if (user) {
-    if (isAccepted && !user.solvedProblems.some(id => id.toString() === questionId.toString())) {
-        user.solvedProblems.push(questionId);
-        
-        const now = new Date();
-        const lastSolved = user.lastSolvedAt;
-        
-        if (!lastSolved) {
-            user.streak = 1;
-        } else {
-            const diffInHours = (now - lastSolved) / (1000 * 60 * 60);
-            if (diffInHours < 24) {
-               // Already solved today, don't increment streak again if already incremented
-               // Actually streak should be daily. If last solved was yesterday, streak++
-               const lastSolvedDay = new Date(lastSolved).setHours(0,0,0,0);
-               const today = new Date().setHours(0,0,0,0);
-               if (today > lastSolvedDay) {
-                   user.streak += 1;
-               }
-            } else if (diffInHours < 48) {
-                user.streak += 1;
-            } else {
-                user.streak = 1;
-            }
-        }
-        user.lastSolvedAt = now;
-    } else if (isAccepted) {
-        user.lastSolvedAt = new Date();
-    }
-    await user.save();
-  }
-
-  res.json({
-    status: isAccepted ? 'Accepted' : (execution.status === 'Accepted' ? 'Wrong Answer' : execution.status),
-    passed: passedCount,
-    total: allTestCases.length,
-    failedCases: isAccepted ? [] : failedResults.slice(0, 1),
-    visibleResults: results.slice(0, question.visibleTestCases.length),
-    progress,
-  });
-
-  // Invalidate analytics cache
-  await removeFromCache(`analytics:overview:${userId}`);
+  // Default fallback for any other result types
+  return res.json(result);
 });
 
 // @desc    Get all coding problems with filtering and pagination

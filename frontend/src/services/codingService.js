@@ -20,6 +20,11 @@ export const submitCode = async (questionId, code, language, topic) => {
   return data;
 };
 
+export const checkStatus = async (token, params = {}) => {
+  const { data } = await api.get(`/coding/status/${token}`, { params });
+  return data;
+};
+
 export const getProblems = async (params) => {
   const { data } = await api.get('/coding/problems', { params });
   return data;

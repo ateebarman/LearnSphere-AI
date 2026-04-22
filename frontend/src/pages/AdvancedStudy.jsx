@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { uploadMaterial, getMaterials, deleteMaterial, generateRAGRoadmap } from '../services/studyMaterialService';
 import { useNavigate } from 'react-router-dom';
-import { FaFileUpload, FaFilePdf, FaBrain, FaTrash, FaSpinner, FaPlus, FaBookReader } from 'react-icons/fa';
+import { FaFileUpload, FaFilePdf, FaBrain, FaTrash, FaSpinner, FaPlus, FaBookReader, FaComments } from 'react-icons/fa';
+import ContextChatModal from '../components/ContextChatModal';
 
 const AdvancedStudy = () => {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ const AdvancedStudy = () => {
     const [generating, setGenerating] = useState(false);
     const [topic, setTopic] = useState('');
     const [selectedMaterial, setSelectedMaterial] = useState(null);
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     useEffect(() => {
         fetchMaterials(true);
@@ -227,6 +229,15 @@ const AdvancedStudy = () => {
                                     <> <FaPlus /> Create RAG Roadmap </>
                                 )}
                             </button>
+
+                            {selectedMaterial && materials.find(m => m._id === selectedMaterial)?.status === 'ready' && (
+                                <button
+                                    onClick={() => setIsChatOpen(true)}
+                                    className="w-full py-4 text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-2xl transition-all border-2 border-dashed border-indigo-200 dark:border-indigo-900 focus:border-indigo-500"
+                                >
+                                    <FaComments /> Chat with this Document
+                                </button>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4 mt-10">
@@ -242,6 +253,18 @@ const AdvancedStudy = () => {
                     </div>
                 </div>
             </div>
+
+            {selectedMaterial && (
+                <ContextChatModal
+                    isOpen={isChatOpen}
+                    onClose={() => setIsChatOpen(false)}
+                    context={{
+                        type: 'rag',
+                        title: materials.find(m => m._id === selectedMaterial)?.fileName,
+                        content: `This is context from an uploaded technical document: ${materials.find(m => m._id === selectedMaterial)?.fileName}. Use the RAG engine to answer questions about it.`
+                    }}
+                />
+            )}
         </div>
     );
 };

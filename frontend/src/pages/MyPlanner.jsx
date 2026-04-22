@@ -138,20 +138,20 @@ const MyPlanner = () => {
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
             <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-slate-950 pb-20">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
             {/* Header */}
-            <header className="bg-slate-900/50 border-b border-white/5 pt-20 pb-10">
+            <header className="bg-white/60 dark:bg-slate-900/50 border-b border-slate-200/50 dark:border-white/5 pt-20 pb-10">
                 <div className="max-w-7xl mx-auto px-4 md:px-6 space-y-6 md:space-y-6">
                     {/* Title Row — matches reference: title + count on left, Create button on right */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                         <div>
-                            <h1 className="text-3xl md:text-4xl font-black text-white mb-1 flex items-center gap-2 md:gap-3">
+                            <h1 className="text-3xl md:text-4xl font-black text-slate-950 dark:text-white mb-1 flex items-center gap-2 md:gap-3">
                                 My Learning <span className="text-primary-500">Planner</span>
                             </h1>
                             <p className="text-slate-500 text-xs md:text-sm">{roadmaps.length} roadmap{roadmaps.length !== 1 ? 's' : ''}</p>
@@ -170,7 +170,7 @@ const MyPlanner = () => {
                     </div>
 
                     {/* AI Roadmap Generator Bar */}
-                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 md:gap-4 bg-slate-900/50 p-4 md:p-4 rounded-2xl border border-white/5 shadow-xl backdrop-blur-xl">
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 md:gap-4 bg-white/60 dark:bg-slate-900/50 p-4 md:p-4 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-xl shadow-slate-200/20 dark:shadow-none backdrop-blur-xl">
                         <div className="flex items-center gap-2 mr-2">
                             <Sparkles className="w-3.5 h-3.5 text-primary-400" />
                             <span className="text-[10px] font-black text-primary-400 uppercase tracking-widest">AI Generator</span>
@@ -181,7 +181,7 @@ const MyPlanner = () => {
                                 value={topic}
                                 onChange={e => setTopic(e.target.value)}
                                 placeholder="e.g. React, System Design..."
-                                className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500/50 transition-all placeholder:text-slate-600"
+                                className="w-full bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600"
                             />
                         </div>
 
@@ -189,7 +189,7 @@ const MyPlanner = () => {
                             <select
                                 value={difficulty}
                                 onChange={e => setDifficulty(e.target.value)}
-                                className="bg-slate-950 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none cursor-pointer min-w-[120px]"
+                                className="bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-white/10 rounded-xl px-3 py-3 text-sm text-slate-900 dark:text-white focus:outline-none cursor-pointer min-w-[120px]"
                             >
                                 <option value="Beginner">Beginner</option>
                                 <option value="Intermediate">Intermediate</option>
@@ -200,7 +200,7 @@ const MyPlanner = () => {
                                 value={targetRole}
                                 onChange={e => setTargetRole(e.target.value)}
                                 placeholder="Target Role (e.g. SDE-1)"
-                                className="bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none flex-grow sm:w-48 placeholder:text-slate-600"
+                                className="bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none flex-grow sm:w-48 placeholder:text-slate-400 dark:placeholder:text-slate-600"
                             />
 
                             <button
@@ -224,11 +224,11 @@ const MyPlanner = () => {
                     {editingRoadmap && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                            className="bg-slate-900/70 border border-white/5 rounded-2xl p-6 space-y-6 overflow-hidden"
+                            className="bg-white/80 dark:bg-slate-900/70 border border-slate-200/50 dark:border-white/5 rounded-2xl p-6 space-y-6 overflow-hidden shadow-2xl"
                         >
                             {/* Form Header */}
                             <div className="flex items-center justify-between">
-                                <h3 className="text-sm font-black text-white">
+                                <h3 className="text-sm font-black text-slate-900 dark:text-white">
                                     {editingRoadmap._id ? 'Edit Roadmap' : 'Create Roadmap'}
                                 </h3>
                                 <div className="flex items-center gap-2">
@@ -236,7 +236,7 @@ const MyPlanner = () => {
                                         <button onClick={() => setEditingRoadmap(null)}
                                             className="text-[10px] font-black uppercase text-slate-500 hover:text-white transition-colors">Cancel Edit</button>
                                     )}
-                                    <button onClick={() => setEditingRoadmap(null)} className="text-slate-500 hover:text-white"><X className="w-4 h-4" /></button>
+                                    <button onClick={() => setEditingRoadmap(null)} className="text-slate-500 hover:text-slate-900 dark:hover:text-white"><X className="w-4 h-4" /></button>
                                 </div>
                             </div>
 
@@ -250,7 +250,7 @@ const MyPlanner = () => {
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Difficulty</label>
                                     <select value={editingRoadmap.difficulty} onChange={e => setEditingRoadmap({ ...editingRoadmap, difficulty: e.target.value })}
-                                        className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-3 text-sm text-white focus:outline-none">
+                                        className="w-full bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg px-3 py-3 text-sm text-slate-900 dark:text-white focus:outline-none">
                                         <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
                                     </select>
                                 </div>
@@ -259,7 +259,7 @@ const MyPlanner = () => {
                             </div>
 
                             {/* Enhanced Metadata */}
-                            <div className="border-t border-white/5 pt-4 space-y-4">
+                            <div className="border-t border-slate-200/50 dark:border-white/5 pt-4 space-y-4">
                                 <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Learning Intelligence</span>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <ArrayField label="Learning Goals" items={editingRoadmap.learningGoals || ['']} onChange={v => setEditingRoadmap({ ...editingRoadmap, learningGoals: v })} />
@@ -273,7 +273,7 @@ const MyPlanner = () => {
                             </div>
 
                             {/* Modules */}
-                            <div className="border-t border-white/5 pt-4">
+                            <div className="border-t border-slate-200/50 dark:border-white/5 pt-4">
                                 <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Modules ({editingRoadmap.modules.length})</label>
                                 {editingRoadmap.modules.map((mod, i) => (
                                     <ModuleEditor
@@ -310,7 +310,7 @@ const MyPlanner = () => {
                                     ...editingRoadmap,
                                     modules: [...editingRoadmap.modules, { ...defaultModule }]
                                 })}
-                                    className="w-full mt-4 py-3 bg-slate-800 border border-white/5 text-slate-400 font-bold uppercase tracking-widest text-[10px] rounded-xl hover:bg-slate-700 hover:text-white transition-all">
+                                    className="w-full mt-4 py-3 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-white/5 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition-all">
                                     + Add Manual Module
                                 </button>
                             </div>
@@ -327,7 +327,7 @@ const MyPlanner = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     {roadmaps.length === 0 && !editingRoadmap && (
                         <div className="col-span-full text-center py-20">
-                            <div className="w-16 h-16 rounded-2xl bg-slate-900/50 flex items-center justify-center mx-auto mb-4 border border-white/5">
+                            <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900/50 flex items-center justify-center mx-auto mb-4 border border-slate-200/50 dark:border-white/5 shadow-sm">
                                 <BookOpen className="w-8 h-8 text-slate-600" />
                             </div>
                             <p className="text-slate-500 font-bold mb-2">No roadmaps yet</p>
@@ -335,15 +335,15 @@ const MyPlanner = () => {
                         </div>
                     )}
                     {roadmaps.map(r => (
-                        <div key={r._id} className="bg-slate-900/50 border border-white/5 rounded-2xl p-5 hover:border-primary-500/20 transition-all group">
+                        <div key={r._id} className="bg-white/60 dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 hover:border-primary-500/30 transition-all group shadow-md dark:shadow-none">
                             <div className="flex items-start justify-between mb-3">
                                 <div>
-                                    <h4 className="text-sm font-bold text-white group-hover:text-primary-400 transition-colors">{r.title}</h4>
+                                    <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{r.title}</h4>
                                     <p className="text-[10px] text-slate-500 mt-0.5">{r.topic} • {r.difficulty}</p>
                                 </div>
                                 <div className="flex gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
                                     <button onClick={() => handleEdit(r)}
-                                        className="p-2 text-primary-400 hover:bg-primary-500/10 rounded-lg"><Edit3 className="w-4 h-4" /></button>
+                                        className="p-2 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg"><Edit3 className="w-4 h-4" /></button>
                                     <button onClick={() => handleDelete(r._id)}
                                         className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                                 </div>
@@ -356,7 +356,7 @@ const MyPlanner = () => {
                                     <span>{new Date(r.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <Link to={`/roadmap/${r._id}`}
-                                    className="text-[10px] font-black text-primary-400 uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1">
+                                    className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1">
                                     Open <ChevronRight className="w-3 h-3" />
                                 </Link>
                             </div>
@@ -374,7 +374,7 @@ const InputField = ({ label, value, onChange, placeholder }) => (
     <div>
         <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">{label}</label>
         <input value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-            className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary-500/50 transition-all" />
+            className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50 transition-all" />
     </div>
 );
 
@@ -383,7 +383,7 @@ const EditorField = ({ label, value, onChange, placeholder }) => (
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
         <input
             value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-            className="bg-slate-950 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500/50 transition-all shadow-inner"
+            className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50 transition-all dark:shadow-inner"
         />
     </div>
 );
@@ -393,7 +393,7 @@ const TextArea = ({ label, value, onChange, placeholder, rows = 3 }) => (
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
         <textarea
             value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={rows}
-            className="bg-slate-950 border border-white/5 rounded-xl px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-primary-500/50 transition-all shadow-inner resize-none"
+            className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white font-mono focus:outline-none focus:border-primary-500/50 transition-all dark:shadow-inner resize-none"
         />
     </div>
 );
@@ -403,7 +403,7 @@ const EditorSelect = ({ label, value, options, onChange }) => (
         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
         <select
             value={value} onChange={e => onChange(e.target.value)}
-            className="bg-slate-950 border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-primary-500/50 transition-all shadow-inner appearance-none cursor-pointer"
+            className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/5 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50 transition-all dark:shadow-inner appearance-none cursor-pointer"
         >
             {options.map(o => <option key={o} value={o}>{o}</option>)}
         </select>
@@ -416,13 +416,13 @@ const ArrayField = ({ label, items, onChange }) => (
         {(items || ['']).map((v, i) => (
             <div key={i} className="flex gap-2 mb-2">
                 <input value={v} onChange={e => { const n = [...items]; n[i] = e.target.value; onChange(n); }}
-                    className="flex-1 bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary-500/50" />
+                    className="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-primary-500/50" />
                 <button onClick={() => onChange(items.filter((_, j) => j !== i))}
                     className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><X className="w-3 h-3" /></button>
             </div>
         ))}
         <button onClick={() => onChange([...(items || []), ''])}
-            className="text-[10px] text-primary-400 font-bold uppercase tracking-widest hover:text-white transition-colors">+ Add</button>
+            className="text-[10px] text-primary-500 dark:text-primary-400 font-bold uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-colors">+ Add</button>
     </div>
 );
 
@@ -432,16 +432,16 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
     const updateField = (key, val) => onChange({ ...module, [key]: val });
 
     return (
-        <div className="bg-black/20 rounded-xl p-5 space-y-4 border border-white/5">
+        <div className="bg-slate-50 dark:bg-black/20 rounded-xl p-5 space-y-4 border border-slate-200/50 dark:border-white/5 shadow-sm dark:shadow-none">
             {/* Module Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-lg bg-primary-600/20 border border-primary-500/20 flex items-center justify-center text-xs font-black text-primary-400">{index + 1}</span>
-                    <span className="text-xs font-black text-white">{module.title || `Module ${index + 1}`}</span>
+                    <span className="text-xs font-black text-slate-900 dark:text-white">{module.title || `Module ${index + 1}`}</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <button onClick={onMoveUp} className="p-1.5 text-slate-600 hover:text-white rounded-lg text-xs">↑</button>
-                    <button onClick={onMoveDown} className="p-1.5 text-slate-600 hover:text-white rounded-lg text-xs">↓</button>
+                    <button onClick={onMoveDown} className="p-1.5 text-slate-600 hover:text-slate-900 dark:hover:text-white rounded-lg text-xs">↓</button>
                     <button onClick={onRemove} className="text-rose-500 text-[10px] hover:bg-rose-500/10 px-2 py-1 rounded">Remove</button>
                 </div>
             </div>
@@ -449,17 +449,17 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
             {/* Basic module info */}
             <div className="grid grid-cols-3 gap-3">
                 <input value={module.title || ''} onChange={e => updateField('title', e.target.value)}
-                    placeholder="Module Title" className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
+                    placeholder="Module Title" className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none" />
                 <input value={module.estimatedTime || ''} onChange={e => updateField('estimatedTime', e.target.value)}
-                    placeholder="Est. Time (e.g., 4 hours)" className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none" />
+                    placeholder="Est. Time (e.g., 4 hours)" className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none" />
                 <select value={module.difficulty || 'Intermediate'} onChange={e => updateField('difficulty', e.target.value)}
-                    className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none">
+                    className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none">
                     <option>Beginner</option><option>Intermediate</option><option>Advanced</option>
                 </select>
             </div>
             <textarea value={module.description || ''} onChange={e => updateField('description', e.target.value)}
                 placeholder="Module Description — what the learner will cover and why" rows={2}
-                className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none resize-none" />
+                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white font-mono focus:outline-none resize-none" />
 
             {/* Objectives + Concepts */}
             <div className="grid grid-cols-2 gap-4">
@@ -468,12 +468,12 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
             </div>
 
             {/* Practice Problems */}
-            <div className="bg-slate-900/50 rounded-lg p-3 border border-blue-500/10">
+            <div className="bg-white dark:bg-slate-900/50 rounded-lg p-3 border border-blue-200 dark:border-blue-500/10 shadow-sm dark:shadow-none">
                 <label className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Practice Problems</label>
                 {(module.practiceProblems || []).map((pp, pi) => (
                     <div key={pi} className="flex gap-2 mb-2">
                         <input value={pp.title || ''} onChange={e => { const n = [...(module.practiceProblems || [])]; n[pi] = { ...n[pi], title: e.target.value }; updateField('practiceProblems', n); }}
-                            placeholder="Problem name" className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none" />
+                            placeholder="Problem name" className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                         {pp.source === 'internal' ? (
                             <select value={pp.url || ''} onChange={e => {
                                 const n = [...(module.practiceProblems || [])];
@@ -481,7 +481,7 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
                                 n[pi] = { ...n[pi], url: e.target.value, title: selectedProblem?.title || n[pi].title, difficulty: selectedProblem?.difficulty || n[pi].difficulty };
                                 updateField('practiceProblems', n);
                             }}
-                                className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
+                                className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none">
                                 <option value="">Select Internal Problem</option>
                                 {problems.map(p => (
                                     <option key={p._id} value={`/problems/${p.slug}`}>{p.title} ({p.difficulty})</option>
@@ -489,14 +489,14 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
                             </select>
                         ) : (
                             <input value={pp.url || ''} onChange={e => { const n = [...(module.practiceProblems || [])]; n[pi] = { ...n[pi], url: e.target.value }; updateField('practiceProblems', n); }}
-                                placeholder="https://leetcode.com/problems/..." className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none" />
+                                placeholder="https://leetcode.com/problems/..." className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                         )}
                         <select value={pp.difficulty || 'Medium'} onChange={e => { const n = [...(module.practiceProblems || [])]; n[pi] = { ...n[pi], difficulty: e.target.value }; updateField('practiceProblems', n); }}
-                            className="bg-slate-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none w-24">
+                            className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none w-24">
                             <option>Easy</option><option>Medium</option><option>Hard</option>
                         </select>
                         <select value={pp.source || 'external'} onChange={e => { const n = [...(module.practiceProblems || [])]; n[pi] = { ...n[pi], source: e.target.value }; updateField('practiceProblems', n); }}
-                            className="bg-slate-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none w-24">
+                            className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none w-24">
                             <option value="external">External</option>
                             <option value="internal">Internal</option>
                         </select>
@@ -505,16 +505,16 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
                     </div>
                 ))}
                 <button onClick={() => updateField('practiceProblems', [...(module.practiceProblems || []), { title: '', url: '', difficulty: 'Medium', source: 'external' }])}
-                    className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">+ Add Problem</button>
+                    className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest">+ Add Problem</button>
             </div>
 
             {/* Learning Resources */}
-            <div className="bg-slate-900/50 rounded-lg p-3 border border-emerald-500/10">
-                <label className="block text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-2">Learning Resources</label>
+            <div className="bg-white dark:bg-slate-900/50 rounded-lg p-3 border border-emerald-200 dark:border-emerald-500/10 shadow-sm dark:shadow-none">
+                <label className="block text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-2">Learning Resources</label>
                 {(module.learningResources || []).map((lr, li) => (
                     <div key={li} className="flex gap-2 mb-2">
                         <input value={lr.title || ''} onChange={e => { const n = [...(module.learningResources || [])]; n[li] = { ...n[li], title: e.target.value }; updateField('learningResources', n); }}
-                            placeholder="Resource title" className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none" />
+                            placeholder="Resource title" className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                         {lr.source === 'internal' ? (
                             <select value={lr.url || ''} onChange={e => {
                                 const n = [...(module.learningResources || [])];
@@ -522,7 +522,7 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
                                 n[li] = { ...n[li], url: e.target.value, title: selectedKnowledge?.topic || n[li].title, type: 'doc' };
                                 updateField('learningResources', n);
                             }}
-                                className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none">
+                                className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none">
                                 <option value="">Select Knowledge Doc</option>
                                 {knowledge.map(k => (
                                     <option key={k._id} value={`/knowledge/${k.slug}`}>{k.topic} ({k.category})</option>
@@ -530,14 +530,14 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
                             </select>
                         ) : (
                             <input value={lr.url || ''} onChange={e => { const n = [...(module.learningResources || [])]; n[li] = { ...n[li], url: e.target.value }; updateField('learningResources', n); }}
-                                placeholder="https://docs.example.com/..." className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none" />
+                                placeholder="https://docs.example.com/..." className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                         )}
                         <select value={lr.type || 'doc'} onChange={e => { const n = [...(module.learningResources || [])]; n[li] = { ...n[li], type: e.target.value }; updateField('learningResources', n); }}
-                            className="bg-slate-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none w-24">
+                            className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none w-24">
                             <option value="doc">Doc</option><option value="article">Article</option><option value="video">Video</option><option value="course">Course</option>
                         </select>
                         <select value={lr.source || 'external'} onChange={e => { const n = [...(module.learningResources || [])]; n[li] = { ...n[li], source: e.target.value }; updateField('learningResources', n); }}
-                            className="bg-slate-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none w-24">
+                            className="bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none w-24">
                             <option value="external">External</option>
                             <option value="internal">Internal</option>
                         </select>
@@ -546,7 +546,7 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
                     </div>
                 ))}
                 <button onClick={() => updateField('learningResources', [...(module.learningResources || []), { title: '', url: '', type: 'doc', source: 'external' }])}
-                    className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">+ Add Resource</button>
+                    className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-widest">+ Add Resource</button>
             </div>
 
             {/* Interview & Effort Signals */}
@@ -554,48 +554,48 @@ const ModuleEditor = ({ index, module, problems: rawProblems, knowledge: rawKnow
                 <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Interview Importance</label>
                     <select value={module.interviewImportance || 'Medium'} onChange={e => updateField('interviewImportance', e.target.value)}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none">
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none">
                         <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
                     </select>
                 </div>
                 <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Concept Weight (1-10)</label>
                     <input type="number" min={1} max={10} value={module.conceptWeight || 5} onChange={e => updateField('conceptWeight', parseInt(e.target.value) || 5)}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none" />
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                 </div>
                 <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Reading (min)</label>
                     <input type="number" value={module.effortEstimate?.readingMinutes || 30} onChange={e => updateField('effortEstimate', { ...module.effortEstimate, readingMinutes: parseInt(e.target.value) || 0 })}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none" />
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                 </div>
                 <div>
                     <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Practice (min)</label>
                     <input type="number" value={module.effortEstimate?.practiceMinutes || 45} onChange={e => updateField('effortEstimate', { ...module.effortEstimate, practiceMinutes: parseInt(e.target.value) || 0 })}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none" />
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                 </div>
             </div>
 
             {/* Unlock Criteria */}
-            <div className="bg-slate-900/50 rounded-lg p-3 border border-amber-500/10">
-                <label className="block text-[10px] font-black text-amber-400 uppercase tracking-widest mb-2">Unlock Criteria</label>
+            <div className="bg-white dark:bg-slate-900/50 rounded-lg p-3 border border-amber-200 dark:border-amber-500/10 shadow-sm dark:shadow-none">
+                <label className="block text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-2">Unlock Criteria</label>
                 <div className="grid grid-cols-3 gap-3">
                     <div>
                         <label className="block text-[9px] text-slate-500 mb-1">Mastery Threshold %</label>
                         <input type="number" min={0} max={100} value={module.unlockCriteria?.masteryThreshold || 0}
                             onChange={e => updateField('unlockCriteria', { ...module.unlockCriteria, masteryThreshold: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-slate-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none" />
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                     </div>
                     <div>
                         <label className="block text-[9px] text-slate-500 mb-1">Quiz Score %</label>
                         <input type="number" min={0} max={100} value={module.unlockCriteria?.quizScore || 0}
                             onChange={e => updateField('unlockCriteria', { ...module.unlockCriteria, quizScore: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-slate-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none" />
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                     </div>
                     <div>
                         <label className="block text-[9px] text-slate-500 mb-1">Problems Solved</label>
                         <input type="number" min={0} value={module.unlockCriteria?.problemsSolved || 0}
                             onChange={e => updateField('unlockCriteria', { ...module.unlockCriteria, problemsSolved: parseInt(e.target.value) || 0 })}
-                            className="w-full bg-slate-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none" />
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded-lg px-2 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none" />
                     </div>
                 </div>
             </div>

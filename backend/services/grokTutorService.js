@@ -21,7 +21,7 @@ GROUNDING INSTRUCTIONS:
 - PRIORITIZE this information as the primary source of truth.
 - Incorporate this knowledge naturally without mentioning "snippets" or "internal docs".`;
 
-export const chatWithTutor = async (message, history = [], knowledgeContext = '') => {
+export const chatWithTutor = async (message, history = [], knowledgeContext = '', context = null) => {
   // Read env vars inside function, not at module level
   const TUTOR_GROQ_API_KEY = process.env.TUTOR_GROQ_API_KEY;
   const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
@@ -29,9 +29,17 @@ export const chatWithTutor = async (message, history = [], knowledgeContext = ''
 
   try {
     // Preparing the user message with context if available
-    const userMessageContent = knowledgeContext 
-      ? `CONTEXT FROM OUR KNOWLEDGE BASE:\n${knowledgeContext}\n\nUSER QUESTION: ${message}`
-      : message;
+    let userMessageContent = message;
+
+    if (context) {
+      userMessageContent = `I am asking about a specific topic within LearnSphere AI.\n\n` +
+        `CONTEXT TYPE: ${context.type.toUpperCase()}\n` +
+        `TOPIC TITLE: ${context.title}\n` +
+        `TOPIC CONTENT/DETAILS:\n${context.content}\n\n` +
+        `USER QUESTION: ${message}`;
+    } else if (knowledgeContext) {
+      userMessageContent = `CONTEXT FROM OUR KNOWLEDGE BASE:\n${knowledgeContext}\n\nUSER QUESTION: ${message}`;
+    }
 
     // Input validation
     const trimmedMessage = message.trim();

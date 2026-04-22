@@ -116,9 +116,9 @@ const CodingList = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-200 font-sans relative overflow-hidden">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans relative overflow-hidden">
             {/* Background Mesh */}
-            <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary-500/10 via-slate-950 to-slate-950 pointer-events-none z-0 transform-gpu will-change-transform" />
+            <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary-500/10 via-slate-50 to-slate-50 dark:via-slate-950 dark:to-slate-950 pointer-events-none z-0 transform-gpu will-change-transform" />
             <div className="fixed inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 pointer-events-none z-0" />
 
             <div className="max-w-7xl mx-auto px-6 py-12 relative z-10 space-y-12">
@@ -139,7 +139,7 @@ const CodingList = () => {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.1 }}
-                            className="text-5xl md:text-6xl font-black tracking-tighter text-white font-display"
+                            className="text-5xl md:text-6xl font-black tracking-tighter text-slate-900 dark:text-white font-display"
                         >
                             Master the <br /> <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-indigo-400">Algorithm</span>
                         </motion.h1>
@@ -157,24 +157,24 @@ const CodingList = () => {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 }}
-                        className="flex items-center gap-1 bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-sm shadow-xl"
+                        className="flex items-center gap-1 bg-white/60 dark:bg-slate-900/50 p-1.5 rounded-2xl border border-slate-200/50 dark:border-white/5 backdrop-blur-sm shadow-xl"
                     >
                         <button
                             onClick={() => handleFilterChange('status', 'all')}
-                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'all' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'all' ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
                         >
                             All
                         </button>
                         <button
                             onClick={() => handleFilterChange('status', 'solved')}
-                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'solved' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'solved' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
                         >
                             <CheckCircle2 className="w-3.5 h-3.5 inline mr-1.5" />
                             Solved
                         </button>
                         <button
                             onClick={() => handleFilterChange('status', 'unsolved')}
-                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'unsolved' ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/20' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${currentStatus === 'unsolved' ? 'bg-rose-600 text-white shadow-lg shadow-rose-500/20' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'}`}
                         >
                             <Circle className="w-3.5 h-3.5 inline mr-1.5" />
                             Unsolved
@@ -187,14 +187,14 @@ const CodingList = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center bg-slate-900/40 p-2 rounded-3xl border border-white/5 backdrop-blur-md shadow-2xl"
+                    className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center bg-white/60 dark:bg-slate-900/40 p-2 rounded-3xl border border-slate-200/50 dark:border-white/5 backdrop-blur-md shadow-2xl"
                 >
                     <div className="md:col-span-5 relative group">
                         <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-primary-400 transition-colors" />
                         <input
                             type="text"
                             placeholder="Search problems by title..."
-                            className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary-500/50 transition-all placeholder:text-slate-600 focus:ring-4 focus:ring-primary-500/10 text-white font-medium"
+                            className="w-full bg-white/50 dark:bg-slate-950/50 border border-slate-200/50 dark:border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm focus:outline-none focus:border-primary-500/50 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-4 focus:ring-primary-500/10 text-slate-900 dark:text-white font-medium"
                             value={currentSearch}
                             onChange={(e) => handleFilterChange('search', e.target.value)}
                         />
@@ -204,7 +204,7 @@ const CodingList = () => {
                         <div className="relative">
                             <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                             <select
-                                className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm focus:outline-none focus:border-primary-500/50 transition-all text-slate-300 appearance-none font-medium cursor-pointer hover:bg-slate-900"
+                                className="w-full bg-white/50 dark:bg-slate-950/50 border border-slate-200/50 dark:border-white/5 rounded-2xl py-4 pl-12 pr-6 text-sm focus:outline-none focus:border-primary-500/50 transition-all text-slate-700 dark:text-slate-300 appearance-none font-medium cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900"
                                 value={currentDifficulty}
                                 onChange={(e) => handleFilterChange('difficulty', e.target.value)}
                             >
@@ -218,8 +218,8 @@ const CodingList = () => {
                         <button
                             onClick={() => handleFilterChange('topic', '')}
                             className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${!currentTopic
-                                ? 'bg-white text-slate-950 border-white shadow-lg shadow-white/10 scale-105'
-                                : 'bg-slate-950/50 text-slate-500 hover:text-white border-white/5 hover:border-white/20'
+                                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 border-slate-900 dark:border-white shadow-lg shadow-slate-900/10 dark:shadow-white/10 scale-105'
+                                : 'bg-white/50 dark:bg-slate-950/50 text-slate-500 hover:text-slate-900 dark:hover:text-white border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'
                                 }`}
                         >
                             All
@@ -230,7 +230,7 @@ const CodingList = () => {
                                 onClick={() => handleFilterChange('topic', t)}
                                 className={`flex-shrink-0 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border ${currentTopic === t.toLowerCase() || currentTopic === t
                                     ? 'bg-primary-600 text-white border-primary-500 shadow-lg shadow-primary-500/20 scale-105'
-                                    : 'bg-slate-950/50 text-slate-500 hover:text-white border-white/5 hover:border-white/20'
+                                    : 'bg-white/50 dark:bg-slate-950/50 text-slate-500 hover:text-slate-900 dark:hover:text-white border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/20'
                                     }`}
                             >
                                 {t}
@@ -246,7 +246,7 @@ const CodingList = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="bg-slate-900/30 border border-white/5 rounded-3xl overflow-hidden shadow-xl"
+                    className="bg-white/60 dark:bg-slate-900/30 border border-slate-200/50 dark:border-white/5 rounded-3xl overflow-hidden shadow-xl"
                 >
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-32 space-y-4">
@@ -257,7 +257,7 @@ const CodingList = () => {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="border-b border-white/5 bg-slate-950/50">
+                                    <tr className="border-b border-slate-200/50 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/50">
                                         <th className="px-8 py-6 text-[11px] font-black text-slate-500 uppercase tracking-widest w-20">Status</th>
                                         <th className="px-8 py-6 text-[11px] font-black text-slate-500 uppercase tracking-widest">Title</th>
                                         <th className="px-8 py-6 text-[11px] font-black text-slate-500 uppercase tracking-widest">Difficulty</th>
@@ -265,7 +265,7 @@ const CodingList = () => {
                                         <th className="px-8 py-6 text-[11px] font-black text-slate-500 uppercase tracking-widest w-32 text-right">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/5">
+                                <tbody className="divide-y divide-slate-200/50 dark:divide-white/5">
                                     <AnimatePresence>
                                         {problems.length > 0 ? (
                                             problems.map((problem, i) => (
@@ -274,7 +274,7 @@ const CodingList = () => {
                                                     initial={{ opacity: 0, x: -20 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     transition={{ delay: i * 0.05 }}
-                                                    className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                                                    className="hover:bg-slate-100/50 dark:hover:bg-white/[0.02] transition-colors group cursor-pointer"
                                                     onClick={() => problem.slug && navigate(`/coding/${problem.slug}`)}
                                                 >
                                                     <td className="px-8 py-6">
@@ -283,14 +283,14 @@ const CodingList = () => {
                                                                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                                                             </div>
                                                         ) : (
-                                                            <div className="w-8 h-8 rounded-full bg-slate-800/50 flex items-center justify-center border border-white/5 group-hover:border-white/20 transition-colors">
-                                                                <Circle className="w-4 h-4 text-slate-600 group-hover:text-slate-400" />
+                                                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center border border-slate-200/50 dark:border-white/5 group-hover:border-slate-300 dark:group-hover:border-white/20 transition-colors">
+                                                                <Circle className="w-4 h-4 text-slate-400 dark:text-slate-600 group-hover:text-slate-600 dark:group-hover:text-slate-400" />
                                                             </div>
                                                         )}
                                                     </td>
                                                     <td className="px-8 py-6">
                                                         <div className="flex flex-col">
-                                                            <span className="text-lg font-bold text-slate-200 group-hover:text-primary-400 transition-colors">
+                                                            <span className="text-lg font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
                                                                 {problem.title}
                                                             </span>
                                                             {problem.isNew && (
@@ -306,7 +306,7 @@ const CodingList = () => {
                                                         </span>
                                                     </td>
                                                     <td className="px-8 py-6">
-                                                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-800/50 text-[11px] font-bold text-slate-400 font-mono tracking-tighter capitalize border border-white/5">
+                                                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-slate-100/80 dark:bg-slate-800/50 text-[11px] font-bold text-slate-600 dark:text-slate-400 font-mono tracking-tighter capitalize border border-slate-200/50 dark:border-white/5">
                                                             {problem.topic}
                                                         </span>
                                                     </td>
@@ -343,19 +343,19 @@ const CodingList = () => {
                         <button
                             disabled={stats.currentPage === 1}
                             onClick={() => handlePageChange(stats.currentPage - 1)}
-                            className="p-3 border border-white/10 rounded-xl disabled:opacity-30 hover:bg-white/5 text-slate-400 transition-all hover:scale-105 active:scale-95"
+                            className="p-3 border border-slate-200/50 dark:border-white/10 rounded-xl disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 transition-all hover:scale-105 active:scale-95"
                         >
                             <ChevronLeft className="w-5 h-5" />
                         </button>
 
-                        <div className="flex items-center gap-2 px-4 py-2 bg-slate-900/50 rounded-xl border border-white/5">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-white/50 dark:bg-slate-900/50 rounded-xl border border-slate-200/50 dark:border-white/5">
                             {Array.from({ length: stats.pages }, (_, i) => i + 1).map(p => (
                                 <button
                                     key={p}
                                     onClick={() => handlePageChange(p)}
                                     className={`w-10 h-10 rounded-lg text-xs font-black transition-all ${stats.currentPage === p
                                         ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20 scale-110'
-                                        : 'text-slate-500 hover:text-white hover:bg-white/5'
+                                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/5'
                                         }`}
                                 >
                                     {p}
@@ -366,7 +366,7 @@ const CodingList = () => {
                         <button
                             disabled={stats.currentPage === stats.pages}
                             onClick={() => handlePageChange(stats.currentPage + 1)}
-                            className="p-3 border border-white/10 rounded-xl disabled:opacity-30 hover:bg-white/5 text-slate-400 transition-all hover:scale-105 active:scale-95"
+                            className="p-3 border border-slate-200/50 dark:border-white/10 rounded-xl disabled:opacity-30 hover:bg-slate-200 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 transition-all hover:scale-105 active:scale-95"
                         >
                             <ChevronRight className="w-5 h-5" />
                         </button>

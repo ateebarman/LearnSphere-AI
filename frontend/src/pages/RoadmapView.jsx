@@ -73,7 +73,7 @@ const RoadmapView = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-6">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center space-y-6">
         <LoadingSpinner size="text-7xl" />
         <p className="text-slate-500 font-black uppercase tracking-[0.3em] text-xs animate-pulse">Initializing Interface...</p>
       </div>
@@ -82,18 +82,18 @@ const RoadmapView = () => {
 
   if (error || !roadmap) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-slate-900/50 border border-white/5 p-12 rounded-[3rem] max-w-lg w-full text-center space-y-8 backdrop-blur-xl shadow-2xl"
+          className="bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 p-12 rounded-[3rem] max-w-lg w-full text-center space-y-8 backdrop-blur-xl shadow-xl dark:shadow-2xl"
         >
-          <div className="w-24 h-24 bg-rose-500/10 text-rose-500 rounded-[2rem] flex items-center justify-center text-4xl mx-auto border border-rose-500/20">
+          <div className="w-24 h-24 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-500 rounded-[2rem] flex items-center justify-center text-4xl mx-auto border border-rose-200 dark:border-rose-500/20">
             <Shield className="w-12 h-12" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-3xl font-black text-white uppercase tracking-tighter">{error || 'Access Denied'}</h2>
-            <p className="text-slate-400 font-medium">This knowledge node is either encrypted or has been demanifested from our servers.</p>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{error || 'Access Denied'}</h2>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">This knowledge node is either encrypted or has been demanifested from our servers.</p>
           </div>
           <Link to="/explore" className="inline-flex items-center gap-2 px-10 py-4 bg-primary-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary-500 transition-all active:scale-95 shadow-xl shadow-primary-900/20">
             <ArrowLeft className="w-4 h-4" />
@@ -105,19 +105,19 @@ const RoadmapView = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 relative overflow-hidden pb-32">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 relative overflow-hidden pb-32">
       {/* Background Accents */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-indigo-500/5 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2" />
-        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-[0.02] invert" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-[0.02] dark:invert" />
       </div>
 
       <div className="max-w-6xl mx-auto px-8 relative z-10 pt-12 space-y-12">
         {/* Navigation & Actions */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 px-4 md:px-0">
-          <Link to="/explore" className="group flex items-center gap-3 text-slate-500 hover:text-primary-400 font-black text-[10px] uppercase tracking-[0.2em] transition-all">
-            <div className="p-2 bg-white/5 rounded-lg border border-white/10 group-hover:border-primary-500/30">
+          <Link to="/explore" className="group flex items-center gap-3 text-slate-500 hover:text-primary-500 dark:hover:text-primary-400 font-black text-[10px] uppercase tracking-[0.2em] transition-all">
+            <div className="p-2 bg-slate-200/50 dark:bg-white/5 rounded-lg border border-slate-300/50 dark:border-white/10 group-hover:border-primary-500/30">
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             </div>
             Back to Discovery
@@ -142,7 +142,7 @@ const RoadmapView = () => {
                 )}
               </button>
             )}
-            <button className="p-2.5 md:p-3 bg-slate-900/50 text-slate-500 hover:text-white rounded-2xl transition-all border border-white/5 hover:border-white/10 backdrop-blur-md shadow-xl group">
+            <button className="p-2.5 md:p-3 bg-white dark:bg-slate-900/50 text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-2xl transition-all border border-slate-200/50 dark:border-white/5 hover:border-slate-300/50 dark:hover:border-white/10 backdrop-blur-md shadow-xl group">
               <Share2 className="w-4 h-4 md:w-5 md:h-5 group-hover:scale-110 transition-transform" />
             </button>
           </div>
@@ -155,14 +155,14 @@ const RoadmapView = () => {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-slate-500 font-black text-[9px] uppercase tracking-widest">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-slate-200/50 dark:bg-white/5 border border-slate-300/50 dark:border-white/10 rounded-lg text-slate-500 font-black text-[9px] uppercase tracking-widest">
               <Layers className="w-3 h-3" />
               Knowledge Fragment {roadmap.topic}
             </div>
-            <h1 className="text-4xl md:text-7xl font-black text-white tracking-tighter leading-[1.1] md:leading-[0.85] font-display uppercase">
+            <h1 className="text-4xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tighter leading-[1.1] md:leading-[0.85] font-display uppercase">
               {roadmap.title}
             </h1>
-            <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-4xl">
+            <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-4xl">
               {roadmap.description}
             </p>
 
@@ -170,7 +170,7 @@ const RoadmapView = () => {
             {(roadmap.learningGoals?.length > 0 || roadmap.targetRoles?.length > 0 || roadmap.skillsCovered?.length > 0 || roadmap.prerequisites?.length > 0 || roadmap.tags?.length > 0) && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-6">
                 {roadmap.learningGoals?.length > 0 && (
-                  <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 space-y-2">
+                  <div className="bg-white dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 space-y-2">
                     <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5"><Crosshair className="w-3 h-3" /> Learning Goals</span>
                     <ul className="space-y-1">
                       {roadmap.learningGoals.map((g, i) => <li key={i} className="text-xs text-slate-400 flex items-start gap-2"><span className="w-1 h-1 bg-emerald-500 rounded-full mt-1.5 shrink-0" />{g}</li>)}
@@ -178,7 +178,7 @@ const RoadmapView = () => {
                   </div>
                 )}
                 {roadmap.targetRoles?.length > 0 && (
-                  <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 space-y-2">
+                  <div className="bg-white dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 space-y-2">
                     <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest flex items-center gap-1.5"><Target className="w-3 h-3" /> Target Roles</span>
                     <div className="flex flex-wrap gap-1.5">
                       {roadmap.targetRoles.map((r, i) => <span key={i} className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[10px] font-bold">{r}</span>)}
@@ -186,7 +186,7 @@ const RoadmapView = () => {
                   </div>
                 )}
                 {roadmap.expectedOutcomes?.length > 0 && (
-                  <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 space-y-2">
+                  <div className="bg-white dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 space-y-2">
                     <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5"><Award className="w-3 h-3" /> Expected Outcomes</span>
                     <ul className="space-y-1">
                       {roadmap.expectedOutcomes.map((o, i) => <li key={i} className="text-xs text-slate-400 flex items-start gap-2"><span className="w-1 h-1 bg-amber-500 rounded-full mt-1.5 shrink-0" />{o}</li>)}
@@ -194,7 +194,7 @@ const RoadmapView = () => {
                   </div>
                 )}
                 {roadmap.skillsCovered?.length > 0 && (
-                  <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 space-y-2">
+                  <div className="bg-white dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 space-y-2">
                     <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest flex items-center gap-1.5"><BookOpen className="w-3 h-3" /> Skills Covered</span>
                     <div className="flex flex-wrap gap-1.5">
                       {roadmap.skillsCovered.map((s, i) => <span key={i} className="px-2 py-0.5 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded text-[10px] font-bold">{s}</span>)}
@@ -202,7 +202,7 @@ const RoadmapView = () => {
                   </div>
                 )}
                 {roadmap.prerequisites?.length > 0 && (
-                  <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 space-y-2">
+                  <div className="bg-white dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 space-y-2">
                     <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest flex items-center gap-1.5"><Zap className="w-3 h-3" /> Prerequisites</span>
                     <ul className="space-y-1">
                       {roadmap.prerequisites.map((p, i) => <li key={i} className="text-xs text-slate-400 flex items-start gap-2"><span className="w-1 h-1 bg-rose-500 rounded-full mt-1.5 shrink-0" />{p}</li>)}
@@ -210,10 +210,10 @@ const RoadmapView = () => {
                   </div>
                 )}
                 {roadmap.tags?.length > 0 && (
-                  <div className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 space-y-2">
+                  <div className="bg-white dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5 rounded-2xl p-4 space-y-2">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><Layers className="w-3 h-3" /> Tags</span>
                     <div className="flex flex-wrap gap-1.5">
-                      {roadmap.tags.map((t, i) => <span key={i} className="px-2 py-0.5 bg-white/5 text-slate-400 border border-white/10 rounded text-[10px] font-bold">{t}</span>)}
+                      {roadmap.tags.map((t, i) => <span key={i} className="px-2 py-0.5 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-white/10 rounded text-[10px] font-bold">{t}</span>)}
                     </div>
                   </div>
                 )}
@@ -226,7 +226,7 @@ const RoadmapView = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="group relative bg-slate-900/40 p-10 rounded-[3rem] border border-white/5 backdrop-blur-3xl shadow-2xl overflow-hidden"
+            className="group relative bg-white dark:bg-slate-900/40 p-10 rounded-[3rem] border border-slate-200/50 dark:border-white/5 backdrop-blur-3xl shadow-xl dark:shadow-2xl overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-600/5 rounded-full blur-[80px] -mr-32 -mt-32 group-hover:bg-primary-600/10 transition-colors duration-1000"></div>
 
@@ -234,17 +234,17 @@ const RoadmapView = () => {
               <div className="md:col-span-8 space-y-6">
                 <div className="flex justify-between items-end">
                   <div className="space-y-1">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-400 flex items-center gap-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-500 dark:text-primary-400 flex items-center gap-2">
                       <Zap className="w-3 h-3 fill-current" /> Mastery Level
                     </span>
-                    <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter">Current Sync</h3>
+                    <h3 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Current Sync</h3>
                   </div>
                   <div className="text-right">
-                    <span className="text-3xl md:text-4xl font-black text-white font-display">{Math.round(roadmap.progress || 0)}%</span>
+                    <span className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white font-display">{Math.round(roadmap.progress || 0)}%</span>
                   </div>
                 </div>
 
-                <div className="relative h-4 bg-slate-950 rounded-full border border-white/5 overflow-hidden p-1 shadow-inner">
+                <div className="relative h-4 bg-slate-100 dark:bg-slate-950 rounded-full border border-slate-200/50 dark:border-white/5 overflow-hidden p-1 shadow-inner">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${roadmap.progress || 0}%` }}
@@ -261,12 +261,12 @@ const RoadmapView = () => {
                 </div>
               </div>
 
-              <div className="md:col-span-4 grid grid-cols-2 gap-8 border-l border-white/5 md:pl-12">
+              <div className="md:col-span-4 grid grid-cols-2 gap-8 border-l border-slate-200/50 dark:border-white/5 md:pl-12">
                 <div className="space-y-1">
                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1.5">
                     <Target className="w-3 h-3" /> Nodes
                   </p>
-                  <p className="text-3xl font-black text-white">{roadmap.modules?.length || 0}</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white">{roadmap.modules?.length || 0}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-1.5">
@@ -312,9 +312,9 @@ const RoadmapView = () => {
         {/* Modules List */}
         <div className="space-y-8">
           <div className="flex items-center gap-4 px-2">
-            <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Knowledge Nodes</h3>
-            <div className="h-px flex-1 bg-white/5" />
-            <div className="p-2 bg-slate-900 border border-white/10 rounded-lg">
+            <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Knowledge Nodes</h3>
+            <div className="h-px flex-1 bg-slate-200/50 dark:bg-white/5" />
+            <div className="p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-white/10 rounded-lg">
               <MapIcon className="w-4 h-4 text-slate-500" />
             </div>
           </div>
@@ -345,7 +345,7 @@ const RoadmapView = () => {
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
-              className="relative p-20 text-center space-y-8 bg-slate-900/30 border border-dashed border-primary-500/30 rounded-[4rem] mt-32 overflow-hidden"
+              className="relative p-20 text-center space-y-8 bg-white dark:bg-slate-900/30 border border-dashed border-primary-500/30 rounded-[4rem] mt-32 overflow-hidden shadow-xl dark:shadow-none"
             >
               <motion.div
                 animate={{ rotate: 360 }}
@@ -354,12 +354,12 @@ const RoadmapView = () => {
               />
 
               <div className="relative z-10 space-y-8">
-                <div className="w-32 h-32 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center text-5xl mx-auto border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.2)]">
+                <div className="w-32 h-32 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 rounded-full flex items-center justify-center text-5xl mx-auto border border-emerald-200 dark:border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.2)]">
                   <Trophy className="w-16 h-16 shadow-lg" />
                 </div>
                 <div className="space-y-4">
-                  <h2 className="text-5xl font-black text-white uppercase tracking-tighter leading-none font-display">Path Fully Integrated!</h2>
-                  <p className="text-slate-400 font-medium max-w-lg mx-auto text-lg leading-relaxed">You have successfully assimilated all knowledge nodes within this roadmap. Your cognitive profile has been updated.</p>
+                  <h2 className="text-5xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-none font-display">Path Fully Integrated!</h2>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium max-w-lg mx-auto text-lg leading-relaxed">You have successfully assimilated all knowledge nodes within this roadmap. Your cognitive profile has been updated.</p>
                 </div>
                 <Link to="/explore" className="inline-flex items-center gap-3 px-12 py-5 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-500 transition-all active:scale-95 shadow-2xl shadow-emerald-900/20 group">
                   New Discovery <Sparkles className="w-5 h-5 group-hover:rotate-12 transition-transform" />

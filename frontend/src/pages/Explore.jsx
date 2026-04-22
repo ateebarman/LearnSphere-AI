@@ -94,7 +94,7 @@ const Explore = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-8">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center space-y-8">
         <div className="relative">
           <div className="absolute inset-0 bg-primary-500/30 blur-[80px] rounded-full animate-pulse" />
           <Loader2 className="w-16 h-16 text-primary-500 animate-spin relative z-10" />
@@ -104,7 +104,7 @@ const Explore = () => {
           animate={{ opacity: 1 }}
           className="text-center space-y-2"
         >
-          <p className="text-white font-black uppercase tracking-[0.4em] text-xs">Accessing Knowledge Base</p>
+          <p className="text-slate-600 dark:text-white font-black uppercase tracking-[0.4em] text-xs">Accessing Knowledge Base</p>
           <div className="flex gap-1 justify-center">
             {[0, 1, 2].map(i => (
               <motion.div
@@ -121,7 +121,7 @@ const Explore = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 relative overflow-hidden pb-32">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 relative overflow-hidden pb-32">
       {/* Dynamic Background */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary-600/10 blur-[150px] rounded-full -translate-y-1/2 translate-x-1/2 opacity-50" />
@@ -145,7 +145,7 @@ const Explore = () => {
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-5xl md:text-8xl font-black tracking-tighter text-white font-display leading-[0.95] md:leading-[0.85] uppercase"
+              className="text-5xl md:text-8xl font-black tracking-tighter text-slate-900 dark:text-white font-display leading-[0.95] md:leading-[0.85] uppercase"
             >
               Proven <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 via-indigo-400 to-purple-400 px-1">
@@ -157,7 +157,7 @@ const Explore = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-slate-400 text-lg md:text-xl font-medium leading-relaxed max-w-2xl"
+              className="text-slate-600 dark:text-slate-400 text-lg md:text-xl font-medium leading-relaxed max-w-2xl"
             >
               Choose your next mastery. Explore community-curated roadmaps optimized for depth and efficiency.
             </motion.p>
@@ -167,13 +167,13 @@ const Explore = () => {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex items-center gap-2 bg-slate-900/40 p-2 rounded-2xl border border-white/5 backdrop-blur-xl shadow-2xl"
+            className="flex items-center gap-2 bg-white/60 dark:bg-slate-900/40 p-2 rounded-2xl border border-slate-200/50 dark:border-white/5 backdrop-blur-xl shadow-2xl"
           >
             <button className="px-8 py-4 bg-primary-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-primary-500 transition-all active:scale-95 shadow-xl shadow-primary-500/20">
               <Sparkles className="w-4 h-4" />
               Curated
             </button>
-            <button className="px-8 py-4 text-slate-500 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+            <button className="px-8 py-4 text-slate-600 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
               Top Rated
             </button>
           </motion.div>
@@ -194,7 +194,7 @@ const Explore = () => {
             placeholder="What would you like to master today?"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900/60 border border-white/5 rounded-2xl md:rounded-[2.5rem] py-5 md:py-8 pl-16 md:pl-20 pr-10 text-base md:text-xl focus:outline-none focus:border-primary-500/40 transition-all placeholder:text-slate-700 focus:ring-[8px] md:focus:ring-[12px] focus:ring-primary-500/5 backdrop-blur-md shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] text-white font-medium"
+            className="w-full bg-white/60 dark:bg-slate-900/60 border border-slate-200/50 dark:border-white/5 rounded-2xl md:rounded-[2.5rem] py-5 md:py-8 pl-16 md:pl-20 pr-10 text-base md:text-xl focus:outline-none focus:border-primary-500/40 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-700 focus:ring-[8px] md:focus:ring-[12px] focus:ring-primary-500/5 backdrop-blur-md shadow-[0_0_50px_-12px_rgba(0,0,0,0.1)] dark:shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)] text-slate-900 dark:text-white font-medium"
           />
           <AnimatePresence>
             {searchTerm && (
@@ -203,7 +203,7 @@ const Explore = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 onClick={() => setSearchTerm('')}
-                className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors text-[10px] font-black uppercase tracking-tighter"
+                className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors text-[10px] font-black uppercase tracking-tighter"
               >
                 Clear
               </motion.button>
@@ -215,9 +215,9 @@ const Explore = () => {
         <div className="flex items-center gap-4">
           <div className="h-px w-12 bg-primary-500/50" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-            Scanning <span className="text-white">{roadmaps.length}</span> proven nodes
+            Scanning <span className="text-slate-900 dark:text-white">{roadmaps.length}</span> proven nodes
           </span>
-          <div className="h-px flex-1 bg-white/5" />
+          <div className="h-px flex-1 bg-slate-200/50 dark:bg-white/5" />
         </div>
 
         {/* Roadmap Grid */}
@@ -232,36 +232,36 @@ const Explore = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ delay: i * 0.05 }}
-                  className="group relative flex flex-col h-full bg-slate-900/40 border border-white/5 rounded-3xl md:rounded-[3rem] p-6 md:p-10 hover:bg-slate-900/60 hover:border-primary-500/30 transition-all duration-700 backdrop-blur-md overflow-hidden"
+                  className="group relative flex flex-col h-full bg-white/40 dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5 rounded-3xl md:rounded-[3rem] p-6 md:p-10 hover:bg-white/60 dark:hover:bg-slate-900/60 hover:border-primary-500/30 transition-all duration-700 backdrop-blur-md overflow-hidden shadow-lg shadow-slate-200/20 dark:shadow-none"
                 >
                   {/* Visual Accents */}
                   <div className="absolute top-0 right-0 w-48 h-48 bg-primary-500/5 blur-[70px] rounded-full -mr-24 -mt-24 group-hover:bg-primary-500/10 transition-all duration-700" />
 
                   <div className="relative z-10 flex flex-col h-full space-y-8">
                     <div className="flex items-center justify-between">
-                      <div className="px-4 py-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 text-[10px] font-black uppercase tracking-widest">
+                      <div className="px-4 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/50 dark:border-white/10 text-slate-600 dark:text-slate-300 text-[10px] font-black uppercase tracking-widest">
                         {roadmap.topic}
                       </div>
                       <Layers className="w-5 h-5 text-slate-700 group-hover:text-primary-400 transition-colors" />
                     </div>
 
                     <div className="space-y-4">
-                      <h2 className="text-3xl font-black text-white font-display leading-[0.9] group-hover:text-primary-400 transition-colors uppercase tracking-tighter">
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white font-display leading-[0.9] group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors uppercase tracking-tighter">
                         {roadmap.title}
                       </h2>
-                      <p className="text-slate-500 text-sm font-medium leading-relaxed line-clamp-3">
+                      <p className="text-slate-500 dark:text-slate-500 text-sm font-medium leading-relaxed line-clamp-3">
                         {roadmap.description || "Master this domain with a structure optimized for cognitive retention and practical application."}
                       </p>
                     </div>
 
-                    <div className="mt-auto space-y-8 pt-8 border-t border-white/5">
+                    <div className="mt-auto space-y-8 pt-8 border-t border-slate-200/50 dark:border-white/5">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-[1rem] bg-slate-950 border border-white/5 flex items-center justify-center text-primary-400 font-black shadow-inner">
+                        <div className="w-12 h-12 rounded-[1rem] bg-white dark:bg-slate-950 border border-slate-200/50 dark:border-white/5 flex items-center justify-center text-primary-600 dark:text-primary-400 font-black shadow-inner">
                           {roadmap.user?.name ? roadmap.user.name.charAt(0).toUpperCase() : <UserIcon className="w-5 h-5" />}
                         </div>
                         <div>
                           <p className="text-[10px] font-black uppercase text-slate-600 tracking-tighter">Verified Author</p>
-                          <p className="text-sm font-bold text-white">{roadmap.user?.name || "Neural Assistant"}</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">{roadmap.user?.name || "Neural Assistant"}</p>
                         </div>
                         <div className="ml-auto flex flex-col items-end">
                           <Calendar className="w-4 h-4 text-slate-700 mb-1" />
@@ -272,9 +272,9 @@ const Explore = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <button
                           onClick={() => handleView(roadmap._id)}
-                          className="flex items-center justify-center gap-2 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest border border-white/5 group/view"
+                          className="flex items-center justify-center gap-2 py-4 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest border border-slate-200/50 dark:border-white/5 group/view"
                         >
-                          <Eye className="w-4 h-4 text-slate-500 group-hover/view:text-white group-hover/view:scale-110 transition-all" />
+                          <Eye className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover/view:text-slate-800 dark:group-hover/view:text-white group-hover/view:scale-110 transition-all" />
                           View Path
                         </button>
                         <button
@@ -300,11 +300,11 @@ const Explore = () => {
                 animate={{ opacity: 1 }}
                 className="col-span-full py-40 flex flex-col items-center justify-center text-center space-y-8"
               >
-                <div className="w-32 h-32 bg-slate-900/50 border border-white/5 rounded-full flex items-center justify-center shadow-[0_0_100px_-20px_rgba(59,130,246,0.1)]">
+                <div className="w-32 h-32 bg-white/50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-full flex items-center justify-center shadow-[0_0_100px_-20px_rgba(59,130,246,0.1)]">
                   <Map className="w-12 h-12 text-slate-700" />
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-3xl font-black text-white tracking-tighter uppercase">No Signal Found</h3>
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">No Signal Found</h3>
                   <p className="text-slate-500 max-w-sm font-medium">
                     {searchTerm
                       ? `The knowledge node for "${searchTerm}" is not currently in the repository.`
@@ -321,17 +321,17 @@ const Explore = () => {
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center gap-6 pt-20 border-t border-white/5"
+            className="flex flex-col items-center justify-center gap-6 pt-20 border-t border-slate-200/50 dark:border-white/5"
           >
             <div className="flex items-center gap-8">
               <div className="text-center">
                 <p className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-1">Global Coverage</p>
-                <p className="text-2xl font-black text-white">99.4%</p>
+                <p className="text-2xl font-black text-slate-900 dark:text-white">99.4%</p>
               </div>
-              <div className="w-px h-8 bg-white/10" />
+              <div className="w-px h-8 bg-slate-200/50 dark:bg-white/10" />
               <div className="text-center">
                 <p className="text-[10px] font-black uppercase text-slate-600 tracking-widest mb-1">Node Integrity</p>
-                <p className="text-2xl font-black text-white text-emerald-400 font-display">OPTIMAL</p>
+                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-display">OPTIMAL</p>
               </div>
             </div>
             <p className="text-slate-600 text-[10px] font-black uppercase tracking-[0.5em]">

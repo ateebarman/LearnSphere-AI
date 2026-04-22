@@ -9,6 +9,7 @@ import {
     FaGraduationCap, FaBrain
 } from 'react-icons/fa';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ContextChatModal from '../components/ContextChatModal';
 
 const KnowledgeLibrary = () => {
     const [nodes, setNodes] = useState([]);
@@ -19,6 +20,7 @@ const KnowledgeLibrary = () => {
     const [loading, setLoading] = useState(true);
     const [detailLoading, setDetailLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const location = useLocation();
 
     useEffect(() => {
@@ -130,8 +132,8 @@ const KnowledgeLibrary = () => {
                                     )}
                                     {detailedNode.difficulty && (
                                         <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1 ${detailedNode.difficulty === 'Beginner' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                                : detailedNode.difficulty === 'Advanced' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                                    : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                            : detailedNode.difficulty === 'Advanced' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                                             }`}>
                                             <FaGraduationCap size={10} /> {detailedNode.difficulty}
                                         </span>
@@ -144,17 +146,27 @@ const KnowledgeLibrary = () => {
                                 </div>
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                                     <h1 className="text-6xl font-black dark:text-white leading-tight">{detailedNode.topic}</h1>
-                                    <Link
-                                        to={`/quiz/knowledge/${encodeURIComponent(detailedNode.topic)}`}
-                                        className="btn-primary group flex items-center gap-3 px-8 py-4 shadow-xl shadow-indigo-500/20 whitespace-nowrap"
-                                    >
-                                        <FaClipboardList className="group-hover:rotate-12 transition-transform" />
-                                        Take Topic Quiz
-                                    </Link>
+                                    <div className="flex flex-col sm:flex-row gap-4">
+                                        <button
+                                            onClick={() => setIsChatOpen(true)}
+                                            className="group flex items-center justify-center gap-3 px-8 py-4 bg-indigo-600/10 hover:bg-indigo-600 text-indigo-600 hover:text-white border-2 border-indigo-600/30 hover:border-indigo-600 rounded-2xl font-black transition-all shadow-xl hover:shadow-indigo-600/20"
+                                        >
+                                            <FaBrain className="group-hover:scale-110 transition-transform" />
+                                            Ask AI about this
+                                        </button>
+                                        <Link
+                                            to={`/quiz/knowledge/${encodeURIComponent(detailedNode.topic)}`}
+                                            className="btn-primary group flex items-center justify-center gap-3 px-8 py-4 shadow-xl shadow-indigo-500/20 whitespace-nowrap"
+                                        >
+                                            <FaClipboardList className="group-hover:rotate-12 transition-transform" />
+                                            Take Topic Quiz
+                                        </Link>
+                                    </div>
                                 </div>
                                 <p className="text-xl text-gray-600 dark:text-gray-400 font-medium border-l-4 border-indigo-600 pl-6 py-2">
                                     {detailedNode.summary}
                                 </p>
+                                {/* ... existing tags ... */}
                                 {/* Tags */}
                                 {detailedNode.tags?.length > 0 && (
                                     <div className="flex flex-wrap gap-2 pt-2">
@@ -429,6 +441,18 @@ const KnowledgeLibrary = () => {
                         </div>
                     )}
                 </div>
+            )}
+
+            {detailedNode && (
+                <ContextChatModal
+                    isOpen={isChatOpen}
+                    onClose={() => setIsChatOpen(false)}
+                    context={{
+                        type: 'knowledge',
+                        title: detailedNode.topic,
+                        content: `${detailedNode.summary}\n\n${detailedNode.detailedContent}\n\nIntuition: ${detailedNode.intuition}`
+                    }}
+                />
             )}
         </div>
     );

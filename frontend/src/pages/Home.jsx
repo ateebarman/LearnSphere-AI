@@ -1,200 +1,145 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import {
-  Sparkles, Map, BrainCircuit, BarChart3,
-  BookOpen, Users, Terminal, CheckCircle2,
-  ArrowRight, Zap, Target, ShieldCheck
-} from 'lucide-react';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2 }
-  }
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] }
-  }
-};
 
 const Home = () => {
   return (
-    <div className="relative space-y-16 md:space-y-32 pb-12 md:pb-24">
+    <div className="space-y-16 py-12">
       {/* Hero Section */}
-      <section className="relative pt-10 md:pt-20 pb-8 md:pb-16 text-center overflow-hidden">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-4xl mx-auto space-y-8 relative z-10"
-        >
-          <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-500/10 border border-primary-500/20 text-primary-600 dark:text-primary-400 text-sm font-bold tracking-wide uppercase">
-            <Sparkles className="w-4 h-4" />
-            Next-Gen AI Learning Platform
-          </motion.div>
-
-          <motion.h1
-            variants={itemVariants}
-            className="text-4xl md:text-8xl font-black leading-[1.1] tracking-tight"
-          >
-            Master Any Skill with{' '}
-            <span className="text-gradient">LearnSphere AI</span>
-          </motion.h1>
-
-          <motion.p
-            variants={itemVariants}
-            className="text-lg md:text-2xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed px-4"
-          >
-            Your personalized, AI-powered learning companion. Break through complexity with adaptive roadmaps, real-time tutoring, and interactive coding labs.
-          </motion.p>
-
-          <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
-            <Link to="/signup" className="btn-primary text-lg px-10 py-4 group">
-              Start Your Journey
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <Link to="/explore" className="btn-secondary text-lg px-10 py-4">
-              Explore Roadmaps
-            </Link>
-          </motion.div>
-        </motion.div>
-
-        {/* Decorative Elements */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full pointer-events-none -z-10">
-          <div className="absolute top-0 left-1/4 w-72 h-72 bg-primary-500/10 rounded-full blur-[120px] animate-pulse-subtle" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-slow-drift" />
+      <div className="text-center space-y-6 py-12">
+        <h1 className="text-6xl md:text-7xl font-bold leading-tight">
+          Welcome to{' '}
+          <span className="bg-gradient-to-r from-indigo-600 to-indigo-700 bg-clip-text text-transparent">
+            LearnSphere AI
+          </span>
+        </h1>
+        <p className="text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          Your personalized, AI-powered learning companion. Master any topic with adaptive learning paths and real-time feedback.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          <Link to="/signup" className="btn-primary text-lg">
+            Get Started Free
+          </Link>
+          <Link to="/login" className="btn-secondary text-lg">
+            Sign In
+          </Link>
         </div>
-      </section>
+      </div>
 
-      {/* Statistics Section */}
-      <motion.section
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-8 px-4"
-      >
-        {[
-          { label: 'Active Learners', value: '10k+', icon: Users },
-          { label: 'AI Roadmaps', value: '500+', icon: Map },
-          { label: 'Quiz Questions', value: '25k+', icon: BrainCircuit },
-          { label: 'Success Rate', value: '94%', icon: Target }
-        ].map((stat, i) => (
-          <div key={i} className="card-premium flex flex-col items-center text-center space-y-2">
-            <stat.icon className="w-6 h-6 text-primary-500 mb-2" />
-            <span className="text-4xl font-black text-slate-900 dark:text-white">{stat.value}</span>
-            <span className="text-sm font-semibold text-slate-500 uppercase tracking-widest">{stat.label}</span>
-          </div>
-        ))}
-      </motion.section>
-
-      {/* Core Features */}
-      <section className="space-y-16">
-        <div className="text-center space-y-4">
-          <h2 className="text-4xl md:text-5xl font-black">Built for the Future of Learning</h2>
-          <p className="text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">Our ecosystem combines advanced AI models with proven memory science to accelerate your career.</p>
-        </div>
-
+      {/* Features Section */}
+      <div className="space-y-8">
+        <h2 className="text-4xl font-bold text-center mb-12">Why Choose LearnSphere AI?</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[
-            {
-              title: 'AI Roadmaps',
-              desc: 'Customized paths generated by LLMs based on your current knowledge and goals.',
-              icon: Map,
-              color: 'text-blue-500'
-            },
-            {
-              title: 'Adaptive Quizzes',
-              desc: 'Smart assessments that identify your weak spots and help you focus where it matters.',
-              icon: BrainCircuit,
-              color: 'text-indigo-500'
-            },
-            {
-              title: 'Coding Arena',
-              desc: 'Real-time code execution environment with AI-powered feedback and hints.',
-              icon: Terminal,
-              color: 'text-emerald-500'
-            },
-            {
-              title: 'Infinite Knowledge',
-              desc: 'Access our RAG-powered library that learns from every document you provide.',
-              icon: BookOpen,
-              color: 'text-violet-500'
-            },
-            {
-              title: 'Performance Insights',
-              desc: 'Granular tracking of your progress across all domains and sub-skills.',
-              icon: BarChart3,
-              color: 'text-pink-500'
-            },
-            {
-              title: 'Enterprise Security',
-              desc: 'Military-grade encryption for your private learning materials and data.',
-              icon: ShieldCheck,
-              color: 'text-amber-500'
-            }
-          ].map((feature, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              whileHover={{ y: -8 }}
-              transition={{ duration: 0.3 }}
-              viewport={{ once: true }}
-              className="card-premium group"
-            >
-              <div className={`w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center ${feature.color} mb-6 transition-colors group-hover:bg-primary-600 group-hover:text-white`}>
-                <feature.icon className="w-8 h-8" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{feature.desc}</p>
-            </motion.div>
-          ))}
+          {/* Feature 1 */}
+          <div className="card-hover group">
+            <div className="text-4xl mb-4 text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+              🗺️
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">AI-Powered Roadmaps</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Get a personalized, step-by-step learning plan for any topic. Our AI understands your level and creates the perfect path forward.
+            </p>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="card-hover group">
+            <div className="text-4xl mb-4 text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+              ✅
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Dynamic Quizzes</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Test your knowledge with intelligent quizzes that adapt to your learning. Get instant feedback and identify weak areas instantly.
+            </p>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="card-hover group">
+            <div className="text-4xl mb-4 text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+              📊
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Advanced Analytics</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Visualize your learning journey with detailed analytics. Track quiz performance, roadmap progress, and achievement metrics.
+            </p>
+          </div>
+
+          {/* Feature 4 */}
+          <div className="card-hover group">
+            <div className="text-4xl mb-4 text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+              🤖
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">AI Tutor Chat</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Get instant help with your learning. Chat with our AI tutor powered by advanced LLM technology for real-time explanations and guidance.
+            </p>
+          </div>
+
+          {/* Feature 5 */}
+          <div className="card-hover group">
+            <div className="text-4xl mb-4 text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+              📚
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Resource Library</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Access a curated collection of learning resources including videos, articles, and tutorials. Search and explore content across any topic.
+            </p>
+          </div>
+
+          {/* Feature 6 */}
+          <div className="card-hover group">
+            <div className="text-4xl mb-4 text-indigo-600 group-hover:scale-110 transition-transform duration-300">
+              🌐
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Community Roadmaps</h3>
+            <p className="text-gray-600 leading-relaxed">
+              Explore and clone roadmaps created by the community. Share your learning paths and learn from others' experiences and insights.
+            </p>
+          </div>
         </div>
-      </section>
+      </div>
 
       {/* CTA Section */}
-      <motion.section
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        className="relative"
-      >
-        <div className="bg-gradient-to-br from-primary-600 to-indigo-900 rounded-[3rem] p-12 md:p-24 text-center text-white space-y-8 overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 blur-[100px] -rotate-45 translate-x-1/2 -translate-y-1/2" />
-
-          <h2 className="text-3xl md:text-6xl font-black max-w-3xl mx-auto leading-tight">
-            Don't Just Learn. <br /><span className="text-indigo-200">Engineer Your Career.</span>
-          </h2>
-
-          <p className="text-lg md:text-xl text-primary-100 max-w-xl mx-auto">
-            Join 10,000+ developers and students using LearnSphere AI to master complex topics 3x faster.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Link to="/signup" className="bg-white text-indigo-900 px-10 py-4 rounded-2xl font-black hover:bg-slate-50 transition-all flex items-center justify-center gap-2 group shadow-2xl">
-              Unlock Full Access
-              <Zap className="w-5 h-5 fill-current transition-transform group-hover:scale-125" />
-            </Link>
-            <Link to="/explore" className="bg-transparent border-2 border-white/20 px-10 py-4 rounded-2xl font-black hover:bg-white/10 transition-all">
-              Browse Case Studies
-            </Link>
-          </div>
-
-          <div className="pt-12 grid grid-cols-2 md:grid-cols-4 gap-4 opacity-70 border-t border-white/10">
-            {['Adaptive AI', '24/7 Tutoring', 'Free Starter', 'Expert Paths'].map((item, i) => (
-              <div key={i} className="flex items-center justify-center gap-2 text-sm font-bold uppercase tracking-widest">
-                <CheckCircle2 className="w-4 h-4" /> {item}
+      <div className="space-y-12">
+        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/40 dark:to-blue-900/40 rounded-2xl p-12 border-2 border-indigo-200 dark:border-indigo-500/20">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 text-center">What Makes Us Different?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="flex gap-4">
+              <span className="text-2xl">⚡</span>
+              <div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Intelligent Adaptation</h4>
+                <p className="text-gray-600 dark:text-gray-400">The platform adapts to your learning speed and style, ensuring optimal learning outcomes.</p>
               </div>
-            ))}
+            </div>
+            <div className="flex gap-4">
+              <span className="text-2xl">🔒</span>
+              <div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Secure & Private</h4>
+                <p className="text-gray-600 dark:text-gray-400">JWT-based authentication ensures your data and learning progress are always secure.</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <span className="text-2xl">🎓</span>
+              <div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Proven Learning Science</h4>
+                <p className="text-gray-600 dark:text-gray-400">Based on spaced repetition and active recall for better knowledge retention.</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <span className="text-2xl">🚀</span>
+              <div>
+                <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Always Improving</h4>
+                <p className="text-gray-600 dark:text-gray-400">Our AI continuously learns from your interactions to provide better recommendations.</p>
+              </div>
+            </div>
           </div>
         </div>
-      </motion.section>
+
+        <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-2xl p-12 text-center text-white space-y-4">
+          <h2 className="text-3xl font-bold">Ready to Start Learning?</h2>
+          <p className="text-lg text-indigo-100">Join thousands of learners already using LearnSphere AI</p>
+          <Link to="/signup" className="inline-block bg-white text-indigo-600 px-8 py-3 rounded-lg font-bold hover:bg-indigo-50 transition">
+            Sign Up Now
+          </Link>
+        </div>
+      </div>
     </div>
   );
 };

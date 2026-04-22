@@ -30,15 +30,17 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { getProblemBySlug, runCode, submitCode, getProgress, getSubmissions } from '../services/codingService';
+import { getProblemBySlug, runCode, submitCode, getProgress, getSubmissions, checkStatus } from '../services/codingService';
 import { getProfile } from '../services/authService';
 import { useAuthStore } from '../store/useAuthStore';
+import { useThemeStore } from '../store/useThemeStore';
 import toast from 'react-hot-toast';
 
 const CodingArena = () => {
     const { slug } = useParams();
     const navigate = useNavigate();
     const { userInfo, setUserInfo } = useAuthStore();
+    const { darkMode } = useThemeStore();
 
     const [question, setQuestion] = useState(null);
     const [code, setCode] = useState('');
@@ -213,24 +215,48 @@ const CodingArena = () => {
         };
     }, []);
 
+    const pollResult = async (token, type) => {
+        const maxAttempts = 30;
+        for (let i = 0; i < maxAttempts; i++) {
+            try {
+                const res = await checkStatus(token, {
+                    type,
+                    questionId: question._id,
+                    topic: question.topic,
+                    code,
+                    language
+                });
+
+                if (!res.isProcessing) return res;
+                await new Promise(r => setTimeout(r, 1500));
+            } catch (err) {
+                console.error('Polling error:', err);
+                throw err;
+            }
+        }
+        throw new Error('Timeout waiting for code execution');
+    };
+
     const handleRun = async () => {
         if (!question) return;
         setRunning(true);
         setBottomTab('testresult');
-        if (isMobile) {
-            setMobileTab('output');
-        }
+        if (isMobile) setMobileTab('output');
+        
         try {
-            const res = await runCode(question._id, code, language);
-            setResults(res);
-            const passed = res.filter(r => r.passed).length;
-            if (passed === res.length) {
-                toast.success(`Success! All sample cases passed`);
-            } else {
-                toast.error(`${res.length - passed} cases failed`);
+            const initial = await runCode(question._id, code, language);
+            if (initial.token) {
+                const res = await pollResult(initial.token, 'run');
+                setResults(res);
+                const passed = res.filter(r => r.passed).length;
+                if (passed === res.length) {
+                    toast.success(`Success! All sample cases passed`);
+                } else {
+                    toast.error(`${res.length - passed} cases failed`);
+                }
             }
         } catch (err) {
-            toast.error('Execution failed');
+            toast.error(err.message || 'Execution failed');
         } finally {
             setRunning(false);
         }
@@ -240,29 +266,27 @@ const CodingArena = () => {
         if (!question) return;
         setRunning(true);
         setBottomTab('testresult');
-        if (isMobile) {
-            setMobileTab('output');
-        }
+        if (isMobile) setMobileTab('output');
+        
         try {
-            const res = await submitCode(question._id, code, language, question.topic);
-            setResults(res.status === 'Accepted' ? { status: 'Accepted', ...res } : (res.visibleResults || res.failedCases || res));
-            if (res.status === 'Accepted') {
-                toast.success('Accepted! All test cases passed.');
-                setIsTimerActive(false);
-                fetchProgress(question.topic);
-
-                if (leftTab === 'submissions') {
-                    fetchSubmissions();
+            const initial = await submitCode(question._id, code, language, question.topic);
+            if (initial.token) {
+                const res = await pollResult(initial.token, 'submit');
+                setResults(res.status === 'Accepted' ? { status: 'Accepted', ...res } : (res.visibleResults || res.failedCases || res));
+                
+                if (res.status === 'Accepted') {
+                    toast.success('Accepted! All test cases passed.');
+                    setIsTimerActive(false);
+                    fetchProgress(question.topic);
+                    if (leftTab === 'submissions') fetchSubmissions();
+                    const profile = await getProfile();
+                    setUserInfo(profile);
+                } else {
+                    toast.error(`Wrong Answer: Only ${res.passed}/${res.total} passed.`);
                 }
-
-                // Refresh global streak
-                const profile = await getProfile();
-                setUserInfo(profile);
-            } else {
-                toast.error(`Wrong Answer: Only ${res.passed}/${res.total} passed.`);
             }
         } catch (err) {
-            toast.error('Submission failed');
+            toast.error(err.message || 'Submission failed');
         } finally {
             setRunning(false);
         }
@@ -276,7 +300,7 @@ const CodingArena = () => {
 
     if (loading) {
         return (
-            <div className="h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-500">
+            <div className="h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center text-slate-500">
                 <Loader2 className="w-12 h-12 animate-spin text-primary-500 mb-4" />
                 <span className="text-xs font-black tracking-widest uppercase animate-pulse">Initializing Environment...</span>
             </div>
@@ -284,27 +308,27 @@ const CodingArena = () => {
     }
 
     return (
-        <div className="h-screen bg-slate-950 text-[#eff1f6] flex flex-col font-sans overflow-hidden font-display">
+        <div className="h-screen bg-white dark:bg-slate-950 text-slate-800 dark:text-[#eff1f6] flex flex-col font-sans overflow-hidden font-display">
             {/* Nav Header */}
-            <header className="h-14 border-b border-white/5 bg-slate-950 flex items-center justify-between px-4 z-50">
+            <header className="h-14 border-b border-slate-200/50 dark:border-white/5 bg-slate-50 dark:bg-slate-950 flex items-center justify-between px-4 z-50">
                 <div className="flex items-center gap-2 md:gap-6">
                     <Link to="/coding" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors group">
                         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                         <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest hidden min-[400px]:block">Exit</span>
                     </Link>
 
-                    <div className="h-4 w-[1px] bg-slate-800 hidden md:block" />
+                    <div className="h-4 w-[1px] bg-slate-200 dark:bg-slate-800 hidden md:block" />
 
                     <div className="flex items-center gap-2 md:gap-3">
                         <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-primary-500/10 flex items-center justify-center border border-primary-500/20">
                             <Code2 className="w-3.5 h-3.5 md:w-4 md:h-4 text-primary-500" />
                         </div>
                         <div>
-                            <h1 className="text-xs md:text-sm font-bold text-white max-w-[100px] min-[400px]:max-w-[200px] truncate leading-tight">{question?.title}</h1>
+                            <h1 className="text-xs md:text-sm font-bold text-slate-900 dark:text-white max-w-[100px] min-[400px]:max-w-[200px] truncate leading-tight">{question?.title}</h1>
                             <div className="flex items-center gap-2">
-                                <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${question.difficulty === 'Easy' ? 'text-emerald-400' :
-                                    question.difficulty === 'Medium' ? 'text-amber-400' :
-                                        'text-rose-400'
+                                <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${question.difficulty === 'Easy' ? 'text-emerald-600 dark:text-emerald-400' :
+                                    question.difficulty === 'Medium' ? 'text-amber-600 dark:text-amber-400' :
+                                        'text-rose-600 dark:text-rose-400'
                                     }`}>
                                     {question.difficulty}
                                 </span>
@@ -314,14 +338,14 @@ const CodingArena = () => {
                 </div>
 
                 <div className="flex items-center gap-2 md:gap-4">
-                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm dark:shadow-none">
                         <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                        <span className="text-[11px] font-bold text-slate-300">{userInfo?.streak || 0} Day Streak</span>
+                        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{userInfo?.streak || 0} Day Streak</span>
                     </div>
 
-                    <div className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                    <div className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm dark:shadow-none">
                         <Clock className={`w-3 h-3 md:w-3.5 md:h-3.5 ${isTimerActive ? 'text-emerald-500 animate-pulse' : 'text-slate-500'}`} />
-                        <span className="text-[10px] md:text-[11px] font-mono font-bold text-slate-300">{formatTime(timer)}</span>
+                        <span className="text-[10px] md:text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300">{formatTime(timer)}</span>
                     </div>
 
                     <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 p-[1px] shadow-lg shadow-primary-500/20">
@@ -333,7 +357,7 @@ const CodingArena = () => {
             </header>
 
             {/* Mobile Tab Switcher */}
-            <div className="lg:hidden flex border-b border-white/5 bg-slate-900/50">
+            <div className="lg:hidden flex border-b border-slate-200/50 dark:border-white/5 bg-slate-100/50 dark:bg-slate-900/50">
                 {[
                     { id: 'problem', label: 'Problem', icon: FileText },
                     { id: 'code', label: 'Code', icon: Code2 },
@@ -358,16 +382,16 @@ const CodingArena = () => {
                 {/* Left Panel */}
                 <div
                     style={{ width: !isMobile ? leftPanelWidth : '100%' }}
-                    className={`lg:flex flex-col border-r border-white/5 bg-slate-950 flex-shrink-0 ${isMobile ? 'flex-1' : ''} ${mobileTab === 'problem' ? 'flex' : 'hidden'}`}
+                    className={`lg:flex flex-col border-r border-slate-200/50 dark:border-white/5 bg-white dark:bg-slate-950 flex-shrink-0 ${isMobile ? 'flex-1' : ''} ${mobileTab === 'problem' ? 'flex' : 'hidden'}`}
                 >
-                    <div className="flex items-center bg-slate-900/50 px-2 h-10 border-b border-white/5 gap-1">
+                    <div className="flex items-center bg-slate-50/80 dark:bg-slate-900/50 px-2 h-10 border-b border-slate-200/50 dark:border-white/5 gap-1">
                         {['description', 'editorial', 'submissions'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setLeftTab(tab)}
                                 className={`px-4 h-full text-[11px] font-bold capitalize flex items-center gap-2 transition-all relative rounded-t-lg mx-0.5 ${leftTab === tab
-                                    ? 'text-white bg-slate-800/50'
-                                    : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
+                                    ? 'text-primary-600 dark:text-white bg-white dark:bg-slate-800/50 shadow-[0_-2px_10px_rgba(0,0,0,0.02)] dark:shadow-none'
+                                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/30'
                                     }`}
                             >
                                 {tab === 'description' && <FileText className="w-3.5 h-3.5" />}
@@ -391,13 +415,13 @@ const CodingArena = () => {
                             >
                                 <div>
                                     <div className="flex items-center gap-3 mb-4">
-                                        <h1 className="text-2xl font-black text-white">{question.title}</h1>
-                                        <div className="bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 uppercase tracking-tight">
+                                        <h1 className="text-2xl font-black text-slate-900 dark:text-white">{question.title}</h1>
+                                        <div className="bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700 px-2 py-0.5 rounded text-[10px] font-mono text-slate-600 dark:text-slate-400 uppercase tracking-tight">
                                             {question.topic}
                                         </div>
                                     </div>
 
-                                    <div className="prose prose-invert prose-sm max-w-none text-slate-300/90 leading-relaxed font-sans prose-pre:bg-slate-900/50 prose-pre:border prose-pre:border-white/5 prose-code:text-primary-300">
+                                    <div className={`prose ${darkMode ? 'prose-invert text-slate-300/90' : 'text-slate-700'} prose-sm max-w-none leading-relaxed font-sans prose-pre:bg-slate-50 dark:prose-pre:bg-slate-900/50 prose-pre:border prose-pre:border-slate-200/50 dark:prose-pre:border-white/5 prose-code:text-primary-600 dark:prose-code:text-primary-300`}>
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                             {question.problemStatement}
                                         </ReactMarkdown>
@@ -411,22 +435,22 @@ const CodingArena = () => {
                                         explanation: ''
                                     })))?.map((ex, i) => (
                                         <div key={i} className="group">
-                                            <h4 className="text-[13px] font-bold text-slate-300 mb-2 flex items-center gap-2">
+                                            <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                                                 Example {i + 1}:
                                             </h4>
-                                            <div className="bg-slate-900/40 border border-white/5 rounded-xl p-5 font-mono text-[13px] space-y-4 shadow-xl shadow-black/20 group-hover:border-primary-500/20 transition-all">
+                                            <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200/50 dark:border-white/5 rounded-xl p-5 font-mono text-[13px] space-y-4 shadow-sm dark:shadow-xl dark:shadow-black/20 group-hover:border-primary-500/20 transition-all">
                                                 <div className="flex gap-4">
-                                                    <span className="text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Input</span>
-                                                    <div className="text-white bg-black/30 px-3 py-1.5 rounded-lg border border-white/5 flex-1 break-all">{ex.input}</div>
+                                                    <span className="text-slate-500 dark:text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Input</span>
+                                                    <div className="text-slate-800 dark:text-white bg-slate-200/50 dark:bg-black/30 px-3 py-1.5 rounded-lg border border-slate-300/50 dark:border-white/5 flex-1 break-all">{ex.input}</div>
                                                 </div>
                                                 <div className="flex gap-4">
-                                                    <span className="text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Output</span>
-                                                    <div className="text-emerald-400 bg-emerald-950/20 px-3 py-1.5 rounded-lg border border-emerald-500/10 flex-1 font-bold break-all shadow-[0_0_15px_-5px_rgba(52,211,153,0.1)]">{ex.output}</div>
+                                                    <span className="text-slate-500 dark:text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Output</span>
+                                                    <div className="text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20 px-3 py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-500/10 flex-1 font-bold break-all shadow-[0_0_15px_-5px_rgba(52,211,153,0.1)]">{ex.output}</div>
                                                 </div>
                                                 {ex.explanation && (
-                                                    <div className="flex gap-4 pt-2 border-t border-white/5">
-                                                        <span className="text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Explanation</span>
-                                                        <div className="text-slate-400 text-sm italic leading-relaxed flex-1">{ex.explanation}</div>
+                                                    <div className="flex gap-4 pt-2 border-t border-slate-200/50 dark:border-white/5">
+                                                        <span className="text-slate-500 dark:text-slate-400 font-black uppercase text-[10px] w-20 flex-shrink-0 pt-0.5">Explanation</span>
+                                                        <div className="text-slate-600 dark:text-slate-400 text-sm italic leading-relaxed flex-1">{ex.explanation}</div>
                                                     </div>
                                                 )}
                                             </div>
@@ -434,14 +458,14 @@ const CodingArena = () => {
                                     ))}
                                 </div>
 
-                                <div className="pt-6 border-t border-white/5">
+                                <div className="pt-6 border-t border-slate-200/50 dark:border-white/5">
                                     <h4 className="text-[11px] font-black mb-4 uppercase text-slate-500 tracking-widest flex items-center gap-2">
                                         <Bug className="w-3 h-3" /> Constraints
                                     </h4>
                                     <div className="grid grid-cols-1 gap-2">
                                         {question.constraints.map((c, i) => (
-                                            <div key={i} className="flex items-center gap-3 text-[12px] font-mono text-slate-400 bg-slate-900/30 px-3 py-2 rounded-lg border border-white/5">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                                            <div key={i} className="flex items-center gap-3 text-[12px] font-mono text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900/30 px-3 py-2 rounded-lg border border-slate-200/50 dark:border-white/5">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-700" />
                                                 {c}
                                             </div>
                                         ))}
@@ -455,13 +479,13 @@ const CodingArena = () => {
                                 className="space-y-4"
                             >
                                 <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                         <History className="w-5 h-5 text-primary-500" />
                                         Submissions
                                     </h2>
                                     <button
                                         onClick={fetchSubmissions}
-                                        className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white"
+                                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                                         title="Refresh"
                                     >
                                         <RotateCcw className="w-4 h-4" />
@@ -478,7 +502,7 @@ const CodingArena = () => {
                                         {submissions.map((sub, i) => (
                                             <div
                                                 key={sub._id}
-                                                className="bg-slate-900/50 border border-white/5 rounded-xl p-4 hover:border-primary-500/30 transition-all group relative overflow-hidden"
+                                                className="bg-slate-50 dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-xl p-4 hover:border-primary-500/30 transition-all group relative overflow-hidden shadow-sm dark:shadow-none"
                                             >
                                                 <div className="flex items-center justify-between mb-3 relative z-10">
                                                     <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${sub.status === 'Accepted'
@@ -494,22 +518,22 @@ const CodingArena = () => {
 
                                                 <div className="grid grid-cols-2 gap-4 mb-4 relative z-10">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="p-1.5 bg-slate-800 rounded-lg">
-                                                            <Code2 className="w-3 h-3 text-slate-400" />
+                                                        <div className="p-1.5 bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-none rounded-lg shadow-sm dark:shadow-none">
+                                                            <Code2 className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                                                         </div>
                                                         <div>
-                                                            <p className="text-[9px] font-black uppercase text-slate-600 tracking-tighter">Language</p>
-                                                            <p className="text-[11px] font-bold text-slate-300 uppercase">{sub.language}</p>
+                                                            <p className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-600 tracking-tighter">Language</p>
+                                                            <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">{sub.language}</p>
                                                         </div>
                                                     </div>
                                                     {sub.runtime && (
                                                         <div className="flex items-center gap-2">
-                                                            <div className="p-1.5 bg-slate-800 rounded-lg">
-                                                                <Clock className="w-3 h-3 text-slate-400" />
+                                                            <div className="p-1.5 bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-none rounded-lg shadow-sm dark:shadow-none">
+                                                                <Clock className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                                                             </div>
                                                             <div>
-                                                                <p className="text-[9px] font-black uppercase text-slate-600 tracking-tighter">Runtime</p>
-                                                                <p className="text-[11px] font-bold text-slate-300">{sub.runtime}ms</p>
+                                                                <p className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-600 tracking-tighter">Runtime</p>
+                                                                <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300">{sub.runtime}ms</p>
                                                             </div>
                                                         </div>
                                                     )}
@@ -523,7 +547,7 @@ const CodingArena = () => {
                                                         setTimeout(() => setCode(sub.code), 10);
                                                         toast.success(`Restored ${sub.language} version`);
                                                     }}
-                                                    className="w-full py-2 bg-slate-800 hover:bg-primary-600 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white rounded-lg transition-all border border-slate-700 hover:border-primary-500 relative z-10"
+                                                    className="w-full py-2 bg-white dark:bg-slate-800 hover:bg-primary-50 dark:hover:bg-primary-600 text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:text-primary-600 dark:hover:text-white rounded-lg transition-all border border-slate-200/50 dark:border-slate-700 hover:border-primary-500 relative z-10 shadow-sm dark:shadow-none"
                                                 >
                                                     View & Restore Code
                                                 </button>
@@ -551,24 +575,24 @@ const CodingArena = () => {
 
                 {/* Resizer Handle */}
                 <div
-                    className="hidden lg:flex w-1 cursor-col-resize hover:bg-primary-500 transition-colors bg-black/50 border-r border-white/5 border-l border-white/5 z-20 flex-col justify-center items-center group"
+                    className="hidden lg:flex w-1 cursor-col-resize hover:bg-primary-500 transition-colors bg-slate-200 dark:bg-black/50 border-r border-slate-200/50 dark:border-white/5 border-l border-slate-200/50 dark:border-white/5 z-20 flex-col justify-center items-center group"
                     onMouseDown={() => isResizingLeft.current = true}
                 >
-                    <div className="h-8 w-0.5 bg-slate-700 rounded-full group-hover:bg-white transition-colors" />
+                    <div className="h-8 w-0.5 bg-slate-400 dark:bg-slate-700 rounded-full group-hover:bg-slate-600 dark:group-hover:bg-white transition-colors" />
                 </div>
 
-                <div className={`flex-1 flex flex-col min-w-0 bg-[#0d1117] overflow-hidden ${(mobileTab === 'code' || (isMobile && mobileTab === 'output')) ? 'flex' : 'hidden lg:flex'}`}>
+                <div className={`flex-1 flex flex-col min-w-0 bg-white dark:bg-[#0d1117] overflow-hidden ${(mobileTab === 'code' || (isMobile && mobileTab === 'output')) ? 'flex' : 'hidden lg:flex'}`}>
                     {/* Editor Header */}
-                    <div className="flex items-center justify-between px-4 h-12 border-b border-white/5 bg-slate-900/30">
+                    <div className="flex items-center justify-between px-4 h-12 border-b border-slate-200/50 dark:border-white/5 bg-slate-50 dark:bg-slate-900/30">
                         <div className="flex items-center gap-4 h-full">
                             <div className="relative group">
                                 <select
                                     value={language}
                                     onChange={(e) => setLanguage(e.target.value)}
-                                    className="appearance-none bg-white/5 border border-white/5 hover:border-white/10 rounded-lg pl-9 pr-8 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-500/50 cursor-pointer transition-colors"
+                                    className="appearance-none bg-white dark:bg-white/5 border border-slate-200/50 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 rounded-lg pl-9 pr-8 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-primary-500/50 cursor-pointer transition-colors shadow-sm dark:shadow-none"
                                 >
                                     {languages.map(lang => (
-                                        <option key={lang.id} value={lang.id} className="bg-slate-900 text-slate-300 py-2">
+                                        <option key={lang.id} value={lang.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-300 py-2">
                                             {lang.name}
                                         </option>
                                     ))}
@@ -581,7 +605,7 @@ const CodingArena = () => {
                                 <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none group-hover:text-slate-300 transition-colors" />
                             </div>
 
-                            <div className="h-4 w-[1px] bg-white/10" />
+                            <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10" />
 
                             <button
                                 onClick={() => {
@@ -591,7 +615,7 @@ const CodingArena = () => {
                                         toast('Code Reset to Default', { icon: '🔄', style: { background: '#1e293b', color: '#fff', fontSize: '12px' } });
                                     }
                                 }}
-                                className="text-slate-500 text-[11px] font-bold hover:text-white transition-colors flex items-center gap-1.5 group"
+                                className="text-slate-500 text-[11px] font-bold hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1.5 group"
                             >
                                 <RotateCcw className="w-3.5 h-3.5 group-hover:-rotate-180 transition-transform duration-500" />
                                 Reset
@@ -604,7 +628,7 @@ const CodingArena = () => {
                                     <button
                                         onClick={handleRun}
                                         disabled={running || !question}
-                                        className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-all disabled:opacity-50"
+                                        className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg border border-slate-200/50 dark:border-slate-700 transition-all disabled:opacity-50"
                                         title="Run Code"
                                     >
                                         {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
@@ -619,21 +643,21 @@ const CodingArena = () => {
                                     </button>
                                 </>
                             )}
-                            <button className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                            <button className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5 rounded-lg transition-colors">
                                 <Settings className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
 
-                    <div className={`flex-1 relative min-h-0 bg-[#0d1117] ${isMobile && mobileTab === 'output' ? 'hidden' : 'block'}`}>
+                    <div className={`flex-1 relative min-h-0 ${darkMode ? 'bg-[#0d1117]' : 'bg-white'} ${isMobile && mobileTab === 'output' ? 'hidden' : 'block'}`}>
                         {/* Subtle Background Mesh for Editor Area */}
                         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none opacity-20" />
 
                         <Editor
-                            key={language} // Force re-mount on language change to ensure clean state
+                            key={`${language}-${darkMode}`} // Force re-mount on language change to ensure clean state
                             height="100%"
                             language={language}
-                            theme="vs-dark"
+                            theme={darkMode ? "vs-dark" : "light"}
                             value={code}
                             onChange={setCode}
                             onMount={(editor) => editorRef.current = editor}
@@ -662,24 +686,24 @@ const CodingArena = () => {
 
                     {/* Console Resizer */}
                     <div
-                        className="hidden lg:flex h-1 cursor-row-resize bg-black/50 hover:bg-primary-500 transition-colors flex items-center justify-center relative z-20 border-t border-b border-white/5 group"
+                        className="hidden lg:flex h-1 cursor-row-resize bg-slate-200 dark:bg-black/50 hover:bg-primary-500 transition-colors flex items-center justify-center relative z-20 border-t border-b border-slate-200/50 dark:border-white/5 group"
                         onMouseDown={() => isResizingConsole.current = true}
                     >
-                        <div className="w-12 h-1 bg-slate-700 rounded-full group-hover:bg-white transition-colors opacity-0 group-hover:opacity-100" />
+                        <div className="w-12 h-1 bg-slate-400 dark:bg-slate-700 rounded-full group-hover:bg-white transition-colors opacity-0 group-hover:opacity-100" />
                     </div>
 
                     {/* Bottom Console Panel */}
                     <div
                         style={{ height: !isMobile ? consoleHeight : '100%' }}
-                        className={`lg:flex flex-col bg-slate-950 border-t border-white/5 shadow-2xl z-10 ${mobileTab === 'output' ? 'flex flex-1' : 'hidden'}`}
+                        className={`lg:flex flex-col bg-white dark:bg-slate-950 border-t border-slate-200/50 dark:border-white/5 shadow-2xl z-10 ${mobileTab === 'output' ? 'flex flex-1' : 'hidden'}`}
                     >
-                        <div className="flex items-center justify-between px-4 h-11 border-b border-white/5 bg-slate-900/40">
+                        <div className="flex items-center justify-between px-4 h-11 border-b border-slate-200/50 dark:border-white/5 bg-slate-50 dark:bg-slate-900/40">
                             <div className="flex items-center gap-1 h-full">
                                 <button
                                     onClick={() => setBottomTab('testcase')}
                                     className={`px-4 h-full text-[11px] font-bold uppercase flex items-center gap-2 relative transition-all rounded-t-lg mx-0.5 ${bottomTab === 'testcase'
-                                        ? 'text-white bg-slate-800/30'
-                                        : 'text-slate-500 hover:text-slate-300'
+                                        ? 'text-primary-600 dark:text-white bg-white dark:bg-slate-800/30'
+                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                                         }`}
                                 >
                                     <Target className={`w-3.5 h-3.5 ${bottomTab === 'testcase' ? 'text-emerald-500' : ''}`} />
@@ -689,8 +713,8 @@ const CodingArena = () => {
                                 <button
                                     onClick={() => setBottomTab('testresult')}
                                     className={`px-4 h-full text-[11px] font-bold uppercase flex items-center gap-2 relative transition-all rounded-t-lg mx-0.5 ${bottomTab === 'testresult'
-                                        ? 'text-white bg-slate-800/30'
-                                        : 'text-slate-500 hover:text-slate-300'
+                                        ? 'text-primary-600 dark:text-white bg-white dark:bg-slate-800/30'
+                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                                         }`}
                                 >
                                     <Terminal className={`w-3.5 h-3.5 ${bottomTab === 'testresult' ? 'text-primary-500' : ''}`} />
@@ -703,7 +727,7 @@ const CodingArena = () => {
                                 <button
                                     onClick={handleRun}
                                     disabled={running || !question}
-                                    className="px-5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-black uppercase tracking-wider rounded-lg border border-slate-700 hover:border-slate-600 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-95"
+                                    className="px-5 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-[10px] font-black uppercase tracking-wider rounded-lg border border-slate-200/50 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-95 shadow-sm dark:shadow-none"
                                 >
                                     {running ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
                                     Run Code
@@ -722,7 +746,7 @@ const CodingArena = () => {
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-950/50">
+                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-50 dark:bg-slate-950/50">
                             <AnimatePresence mode="wait">
                                 {bottomTab === 'testcase' && question ? (
                                     <motion.div
@@ -738,10 +762,10 @@ const CodingArena = () => {
                                                     <div className={`absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded opacity-0 transition duration-500 ${activeCaseIndex === i ? 'opacity-100 blur-sm' : 'group-hover:opacity-20 blur'}`} />
                                                     <button
                                                         onClick={() => setActiveCaseIndex(i)}
-                                                        className={`relative px-6 py-3 border rounded-lg text-left hover:-translate-y-1 transition-transform w-[140px] ${activeCaseIndex === i ? 'bg-slate-900 border-emerald-500/50' : 'bg-slate-900 border-slate-800'}`}
+                                                        className={`relative px-6 py-3 border rounded-lg text-left hover:-translate-y-1 transition-transform w-[140px] shadow-sm dark:shadow-none ${activeCaseIndex === i ? 'bg-white dark:bg-slate-900 border-emerald-500/50' : 'bg-slate-100 dark:bg-slate-900 border-slate-200/50 dark:border-slate-800'}`}
                                                     >
-                                                        <div className={`text-[9px] font-black uppercase tracking-widest mb-1 ${activeCaseIndex === i ? 'text-emerald-400' : 'text-slate-500'}`}>Case {i + 1}</div>
-                                                        <div className="font-mono text-[11px] text-slate-300 truncate">
+                                                        <div className={`text-[9px] font-black uppercase tracking-widest mb-1 ${activeCaseIndex === i ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-500'}`}>Case {i + 1}</div>
+                                                        <div className="font-mono text-[11px] text-slate-800 dark:text-slate-300 truncate">
                                                             {typeof tc.input === 'object' ? JSON.stringify(tc.input) : tc.input}
                                                         </div>
                                                     </button>
@@ -749,7 +773,7 @@ const CodingArena = () => {
                                             ))}
                                         </div>
 
-                                        <div className="space-y-4 pt-4 border-t border-white/5">
+                                        <div className="space-y-4 pt-4 border-t border-slate-200/50 dark:border-white/5">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Active Case Details</span>
                                                 <span className="text-[10px] font-mono text-slate-600">Index: {activeCaseIndex}</span>
@@ -758,7 +782,7 @@ const CodingArena = () => {
                                             <div className="grid grid-cols-1 gap-4">
                                                 <div className="space-y-1.5">
                                                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest pl-1">Input</span>
-                                                    <div className="text-[12px] p-3 bg-slate-900/50 border border-white/5 text-slate-300 rounded-lg font-mono overflow-auto custom-scrollbar max-h-[100px]">
+                                                    <div className="text-[12px] p-3 bg-white dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 text-slate-800 dark:text-slate-300 rounded-lg font-mono overflow-auto custom-scrollbar max-h-[100px] shadow-sm dark:shadow-none">
                                                         {(() => {
                                                             const val = question.visibleTestCases?.[activeCaseIndex]?.input;
                                                             return typeof val === 'object' ? JSON.stringify(val, null, 2) : val;
@@ -767,7 +791,7 @@ const CodingArena = () => {
                                                 </div>
                                                 <div className="space-y-1.5">
                                                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest pl-1">Expected Output</span>
-                                                    <div className="text-[12px] p-3 bg-emerald-950/10 border border-emerald-900/20 text-emerald-500/70 rounded-lg font-mono overflow-auto custom-scrollbar max-h-[100px]">
+                                                    <div className="text-[12px] p-3 bg-emerald-50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/20 text-emerald-600 dark:text-emerald-500/70 rounded-lg font-mono overflow-auto custom-scrollbar max-h-[100px]">
                                                         {(() => {
                                                             const val = question.visibleTestCases?.[activeCaseIndex]?.expectedOutput;
                                                             return typeof val === 'object' ? JSON.stringify(val, null, 2) : val;
@@ -787,7 +811,7 @@ const CodingArena = () => {
                                     >
                                         {!results ? (
                                             <div className="flex flex-col items-center justify-center py-10 text-slate-600 font-bold text-xs tracking-widest uppercase opacity-40">
-                                                <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-slate-800">
+                                                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-slate-200/50 dark:border-slate-800">
                                                     <Terminal className="w-8 h-8" />
                                                 </div>
                                                 Waiting for Execution...
@@ -802,7 +826,7 @@ const CodingArena = () => {
                                                         key={i}
                                                         className={`p-1 rounded-xl bg-gradient-to-br ${r.passed ? 'from-emerald-500/10 via-emerald-500/5 to-transparent border-emerald-500/20' : 'from-rose-500/10 via-rose-500/5 to-transparent border-rose-500/20'} border`}
                                                     >
-                                                        <div className="bg-slate-950/80 rounded-lg p-5">
+                                                        <div className="bg-white dark:bg-slate-950/80 rounded-lg p-5 shadow-sm dark:shadow-none border border-slate-100 dark:border-none">
                                                             <div className="flex items-center justify-between mb-4">
                                                                 <div className="flex items-center gap-3">
                                                                     <div className={`w-2 h-2 rounded-full ${r.passed ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-rose-500 shadow-[0_0_10px_#f43f5e]'}`} />
@@ -817,22 +841,22 @@ const CodingArena = () => {
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                 <div className="space-y-1.5">
                                                                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest pl-1">Input</span>
-                                                                    <div className="text-[12px] p-3 bg-black/40 border border-white/5 text-slate-400 rounded-lg font-mono overflow-auto custom-scrollbar">{r.input}</div>
+                                                                    <div className="text-[12px] p-3 bg-slate-50 dark:bg-black/40 border border-slate-200/50 dark:border-white/5 text-slate-700 dark:text-slate-400 rounded-lg font-mono overflow-auto custom-scrollbar">{r.input}</div>
                                                                 </div>
                                                                 <div className="space-y-1.5">
                                                                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest pl-1">Expected</span>
-                                                                    <div className="text-[12px] p-3 bg-emerald-950/10 border border-emerald-900/20 text-emerald-500/70 rounded-lg font-mono overflow-auto custom-scrollbar">{r.expected}</div>
+                                                                    <div className="text-[12px] p-3 bg-emerald-50 dark:bg-emerald-950/10 border border-emerald-200 dark:border-emerald-900/20 text-emerald-600 dark:text-emerald-500/70 rounded-lg font-mono overflow-auto custom-scrollbar">{r.expected}</div>
                                                                 </div>
                                                                 <div className="space-y-1.5 md:col-span-2">
                                                                     <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest pl-1">Output</span>
-                                                                    <div className={`text-[12px] p-3 rounded-lg border font-mono overflow-auto custom-scrollbar ${r.passed ? 'bg-emerald-950/20 border-emerald-500/20 text-emerald-400' : 'bg-rose-950/20 border-rose-500/20 text-rose-400'}`}>
+                                                                    <div className={`text-[12px] p-3 rounded-lg border font-mono overflow-auto custom-scrollbar ${r.passed ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400'}`}>
                                                                         {r.actual || (r.status === 'Runtime Error (NZEC)' ? '[PROCESS TERMINATED WITHOUT OUTPUT]' : '[NO OUTPUT]')}
                                                                     </div>
                                                                 </div>
                                                             </div>
 
                                                             {(r.stderr || r.compile_output) && (
-                                                                <div className="mt-4 p-3 bg-black/60 rounded border border-rose-900/30 text-rose-300 font-mono text-[11px] whitespace-pre-wrap relative group/error">
+                                                                <div className="mt-4 p-3 bg-rose-50 dark:bg-black/60 rounded border border-rose-200 dark:border-rose-900/30 text-rose-700 dark:text-rose-300 font-mono text-[11px] whitespace-pre-wrap relative group/error">
                                                                     <div className="flex items-center justify-between mb-2">
                                                                         <div className="flex items-center gap-2 text-rose-500 font-bold uppercase text-[9px] tracking-widest">
                                                                             <Bug className="w-3 h-3" />
@@ -874,16 +898,16 @@ const CodingArena = () => {
                                                 </motion.div>
                                                 <h3 className="text-4xl font-black text-white mb-2 uppercase italic tracking-tighter drop-shadow-lg">Accepted</h3>
                                                 <p className="text-sm text-emerald-400/80 font-bold uppercase tracking-widest py-4">All test cases passed successfully.</p>
-                                                <button onClick={() => navigate('/coding')} className="px-8 py-3 bg-white text-emerald-950 hover:bg-emerald-50 rounded-lg font-black uppercase text-[11px] tracking-widest transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1">
+                                                <button onClick={() => navigate('/coding')} className="px-8 py-3 bg-white dark:bg-white text-emerald-900 dark:text-emerald-950 hover:bg-emerald-50 rounded-lg font-black uppercase text-[11px] tracking-widest transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1">
                                                     Continue Journey
                                                 </button>
 
                                                 {results.visibleResults && (
-                                                    <div className="mt-8 pt-8 border-t border-white/5 text-left">
+                                                    <div className="mt-8 pt-8 border-t border-emerald-200 focus:border-emerald-500/20 dark:border-white/5 text-left">
                                                         <h4 className="text-[10px] font-black uppercase text-slate-500 mb-4 tracking-widest">Visible Test Cases Details</h4>
                                                         <div className="space-y-3">
                                                             {results.visibleResults.map((r, i) => (
-                                                                <div key={i} className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-white/5">
+                                                                <div key={i} className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-slate-900/50 rounded-lg border border-emerald-200 dark:border-white/5">
                                                                     <div className="flex items-center gap-3">
                                                                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                                                         <span className="text-[11px] font-bold text-slate-300">Case {i + 1}</span>

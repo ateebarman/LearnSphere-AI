@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FaCheckCircle, FaVideo, FaBook, FaCode, FaChevronDown, FaChevronUp, FaExternalLinkAlt, FaChevronRight, FaClock, FaBrain, FaLock, FaFire } from 'react-icons/fa';
+import ContextChatModal from './ContextChatModal';
 
-// Helper component for the resource icons
 const ResourceIcon = ({ type }) => {
   switch (type) {
     case 'video':
@@ -33,6 +33,7 @@ const importanceColor = (imp) => {
 
 const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = true }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const effortTotal = (module.effortEstimate?.readingMinutes || 0) + (module.effortEstimate?.practiceMinutes || 0) + (module.effortEstimate?.assessmentMinutes || 0);
 
@@ -142,7 +143,33 @@ const ModuleCard = ({ module, roadmapId, index, defaultOpen = false, isOwner = t
                 )}
               </div>
             )}
+
+            {/* ASK AI BUTTON (ROADMAP CONTEXT) */}
+            <div className="pt-4 mt-4 border-t dark:border-gray-800/10">
+              <button
+                onClick={() => setIsChatOpen(true)}
+                className="flex items-center gap-3 px-6 py-4 bg-indigo-600/5 hover:bg-indigo-600 text-indigo-600 hover:text-white border-2 border-indigo-600/20 hover:border-indigo-600 rounded-2xl w-full transition-all group shadow-sm hover:shadow-indigo-600/20"
+              >
+                <div className="p-2.5 bg-indigo-600/10 group-hover:bg-white/20 rounded-xl transition-colors">
+                  <FaBrain className="text-lg" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-black uppercase tracking-wider">Ask AI about {module.title}</div>
+                  <div className="text-[10px] opacity-80 font-bold group-hover:opacity-100 uppercase tracking-widest">Get instant clarification & learning tips</div>
+                </div>
+              </button>
+            </div>
           </div>
+
+          <ContextChatModal
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+            context={{
+              type: 'roadmap',
+              title: module.title,
+              content: `Description: ${module.description}\nObjectives: ${module.objectives?.join(', ')}\nConcepts: ${module.keyConcepts?.join(', ')}`
+            }}
+          />
 
           {/* Practice Problems Section */}
           {module.practiceProblems?.length > 0 && module.practiceProblems.some(p => p.title || p.url) && (
