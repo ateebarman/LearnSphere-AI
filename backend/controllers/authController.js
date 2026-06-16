@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import User from '../models/userModel.js';
 import jwt from 'jsonwebtoken';
+import { google } from 'googleapis';
 
 // Utility to generate token
 const generateToken = (id) => {
@@ -174,4 +175,71 @@ const deleteUserAccount = asyncHandler(async (req, res) => {
   });
 });
 
-export { registerUser, loginUser, getUserProfile, updateUserProfile, changePassword, deleteUserAccount };
+// @desc    Redirect to Google OAuth
+// @route   GET /api/auth/google
+// @access  Public
+const googleLogin = asyncHandler(async (req, res) => {
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_CALLBACK_URL
+  );
+  
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: ['profile', 'email'],
+  });
+  res.redirect(url);
+});
+
+// @desc    Google OAuth Callback
+// @route   GET /api/auth/google/callback
+// @access  Public
+const googleCallback = asyncHandler(async (req, res) => {
+  const { code } = req.query;
+  
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_CALLBACK_URL
+  );
+  
+  try {
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+
+    const oauth2 = google.oauth2({
+      auth: oauth2Client,
+      version: 'v2',
+    });
+
+    const { data } = await oauth2.userinfo.get();
+    
+    if (!data.email) {
+      res.status(400);
+      throw new Error('No email found from Google');
+    }
+
+    let user = await User.findOne({ email: data.email });
+
+    if (!user) {
+      user = await User.create({
+        name: data.name,
+        email: data.email,
+        authProvider: 'google',
+        avatarUrl: data.picture,
+      });
+    }
+
+    const token = generateToken(user._id);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+  }
+});
+
+export { registerUser, loginUser, getUserProfile, updateUserProfile, changePassword, deleteUserAccount, googleLogin, googleCallback };

@@ -19,6 +19,7 @@ import CodingArena from './pages/CodingArena';
 import CodingList from './pages/CodingList';
 import AdminDashboard from './pages/AdminDashboard';
 import MyPlanner from './pages/MyPlanner';
+import OAuthCallback from './pages/OAuthCallback';
 import ScrollToTop from './components/ScrollToTop';
 
 import { useEffect } from 'react';
@@ -53,6 +54,7 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
           <Route path="explore" element={<Explore />} />
+          <Route path="auth/callback" element={<OAuthCallback />} />
 
           {/* Private Routes */}
           <Route element={<ProtectedRoute />}>

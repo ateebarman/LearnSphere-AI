@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useAuthStore } from '../store/useAuthStore';
 
 const Home = () => {
+  const token = useAuthStore((state) => state.token);
+
   return (
     <div className="space-y-16 py-12">
       {/* Hero Section */}
@@ -14,14 +17,22 @@ const Home = () => {
         <p className="text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
           Your personalized, AI-powered learning companion. Master any topic with adaptive learning paths and real-time feedback.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-          <Link to="/signup" className="btn-primary text-lg">
-            Get Started Free
-          </Link>
-          <Link to="/login" className="btn-secondary text-lg">
-            Sign In
-          </Link>
-        </div>
+        {token ? (
+          <div className="flex justify-center pt-4">
+            <Link to="/dashboard" className="btn-primary text-lg">
+              Go to Dashboard
+            </Link>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            <Link to="/signup" className="btn-primary text-lg">
+              Get Started Free
+            </Link>
+            <Link to="/login" className="btn-secondary text-lg">
+              Sign In
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Features Section */}
@@ -135,9 +146,15 @@ const Home = () => {
         <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 rounded-2xl p-12 text-center text-white space-y-4">
           <h2 className="text-3xl font-bold">Ready to Start Learning?</h2>
           <p className="text-lg text-indigo-100">Join thousands of learners already using LearnSphere AI</p>
-          <Link to="/signup" className="inline-block bg-white text-indigo-600 px-8 py-3 rounded-lg font-bold hover:bg-indigo-50 transition">
-            Sign Up Now
-          </Link>
+          {token ? (
+            <Link to="/dashboard" className="inline-block bg-white text-indigo-600 px-8 py-3 rounded-lg font-bold hover:bg-indigo-50 transition">
+              Go to Dashboard
+            </Link>
+          ) : (
+            <Link to="/signup" className="inline-block bg-white text-indigo-600 px-8 py-3 rounded-lg font-bold hover:bg-indigo-50 transition">
+              Sign Up Now
+            </Link>
+          )}
         </div>
       </div>
     </div>

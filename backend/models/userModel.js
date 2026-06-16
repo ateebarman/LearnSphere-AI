@@ -6,7 +6,9 @@ const userSchema = mongoose.Schema(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String }, // Optional for Google Auth users
+    authProvider: { type: String, default: 'local' },
+    avatarUrl: { type: String },
     topicsOfInterest: [String],
     solvedProblems: [{
       type: mongoose.Schema.Types.ObjectId,
