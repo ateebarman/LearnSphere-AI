@@ -1,7 +1,7 @@
 # LearnSphere AI 🚀
 > **The Ultimate Intelligent Learning Platform**
 
-**LearnSphere AI** is an advanced, AI-powered educational ecosystem designed to streamline the journey from beginner to expert. By combining **Large Language Models (Gemini, Llama-3)**, **Vector Search (RAG)**, and **Redis-backed Performance Optimization**, it delivers personalized roadmaps, high-fidelity coding practice, and a verified knowledge library—all tracked via a gamified Analytics engine.
+**LearnSphere AI** is an advanced, AI-powered educational ecosystem designed to streamline the journey from beginner to expert. By combining **Large Language Models (Gemini, Llama-3)**, **Vector Search (RAG)**, **Real-Time WebSockets (Socket.IO)**, and **Redis-backed Performance Optimization**, it delivers personalized roadmaps, high-fidelity coding practice, AI mock interview simulations, and a verified knowledge library—all tracked via a gamified Analytics engine.
 
 ---
 
@@ -15,6 +15,7 @@
   - [2. Coding Arena & Judge System](#2-coding-arena--judge-system)
   - [3. Knowledge Base (Docs 2.0)](#3-knowledge-base-docs-20)
   - [4. RAG Engine (PDF Analysis)](#4-rag-engine-pdf-analysis)
+  - [5. AI Mock Interview Studio (Voice & Real-Time)](#5-ai-mock-interview-studio-voice--real-time)
 - [🧪 Testing & Benchmarking](#-testing--benchmarking)
 - [🛠 Tech Stack](#-tech-stack)
 - [🚀 Rapid Deployment](#-rapid-deployment)
@@ -26,11 +27,12 @@
 
 | Feature | Description |
 | :--- | :--- |
+| **AI Mock Interview Studio** | Real-time voice & text technical/behavioral interviews with automated AI feedback and scoring. |
 | **AI Roadmap Architect** | Generates 8-15 module progressive paths with real video & doc verification. |
 | **RAG Study Material** | Upload PDFs to generate custom curricula based strictly on your documents. |
 | **Coding Arena** | Monaco-powered editor with real-time C++, Python, and JS execution. |
 | **Knowledge Base** | High-density docs with ELI5 intuition, complexity analysis, and code snippets. |
-| **Dynamic Analytics** | Real-time mastery tracking through quizzes and roadmap completion. |
+| **Dynamic Analytics** | Real-time mastery tracking through quizzes, roadmaps, and interview evaluations. |
 | **AI Tutor Chat** | 1-on-1 real-time tutoring using Llama-3 (Groq) with conversation memory. |
 | **Admin OS** | Fully integrated CRUD dashboard with AI content generation tools. |
 
@@ -50,6 +52,7 @@ We implement a **multi-tier caching strategy** using Redis to reduce MongoDB loa
 Optimized query execution using compound and text indexes:
 - `Roadmap`: `{ user: 1, createdAt: -1 }` for instant dashboard loads.
 - `Submission`: `{ user: 1, question: 1, status: 1 }` for checking problem solve status.
+- `Interview`: `{ candidateId: 1, createdAt: -1 }` for fast history retrieval.
 - `QuizAttempt`: `{ user: 1, roadmap: 1 }` for module completion checks.
 
 ### 3. Query Efficiency
@@ -92,6 +95,17 @@ Our knowledge nodes are more than just text:
 - **Complexity Analysis**: Big O time and space complexity clearly tagged for interview prep.
 - **Further Reading**: Curated links to official MDN, GeeksForGeeks, or documentation.
 
+### 4. RAG Engine (PDF Analysis)
+Upload study guides or textbook PDFs to generate customized roadmaps and quizzes grounded strictly in the uploaded materials using vector embeddings and LangChain.
+
+### 5. AI Mock Interview Studio (Voice & Real-Time)
+A comprehensive, end-to-end simulated technical and behavioral interview studio:
+- **Multi-Stage Engine**: Automated stage flow covering `Warm-Up` → `Introduction` → `Resume Project Deep-Dive` → `DSA / Coding` → `System Design` → `HR Round` → `Comprehensive Evaluation Report`.
+- **Voice & Speech Intelligence**: Powered by Web Speech API for speech-to-text input and natural TTS speech synthesis output. Includes live confidence meters and speaking duration timers.
+- **Silence Watchdog**: Proactively provides warm nudges if the user is silent, gracefully helping candidates think through complex problems.
+- **Embedded Code Workspace**: Monaco Editor integrated inside the interview room allowing candidates to solve live DSA problems while explaining their logic to the AI interviewer.
+- **Comprehensive Analytics**: Auto-evaluates candidates on Technical Competency, Communication, Problem Solving, and Confidence with an actionable improvement roadmap.
+
 ---
 
 ## 🧪 Testing & Benchmarking
@@ -107,8 +121,8 @@ We take performance seriously. Use these scripts to verify your setup:
 
 | Layer | Technologies |
 | :--- | :--- |
-| **Frontend** | React 18, Vite, Framer Motion, Tailwind CSS, Lucide React, Monaco Editor. |
-| **Backend** | Node.js, Express, Mongoose, ioredis. |
+| **Frontend** | React 18, Vite, Framer Motion, Tailwind CSS, Lucide React, Monaco Editor, Socket.IO Client. |
+| **Backend** | Node.js, Express, Socket.IO, Mongoose, ioredis. |
 | **AI Models** | Google Gemini 2.0 Flash, Meta Llama 3.3 (Groq). |
 | **Database/Cache** | MongoDB Atlas, Upstash Redis. |
 | **Execution** | Judge0 API (Remote Compiler). |

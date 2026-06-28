@@ -20,6 +20,9 @@ import CodingList from './pages/CodingList';
 import AdminDashboard from './pages/AdminDashboard';
 import MyPlanner from './pages/MyPlanner';
 import OAuthCallback from './pages/OAuthCallback';
+import MockInterviewSetup from './pages/MockInterviewSetup';
+import MockInterviewRoom from './pages/MockInterviewRoom';
+import MockInterviewResults from './pages/MockInterviewResults';
 import ScrollToTop from './components/ScrollToTop';
 
 import { useEffect } from 'react';
@@ -70,6 +73,9 @@ function App() {
             <Route path="coding" element={<CodingList />} />
             <Route path="coding/:slug" element={<CodingArena />} />
             <Route path="planner" element={<MyPlanner />} />
+            <Route path="mock-interview" element={<MockInterviewSetup />} />
+            <Route path="mock-interview/room/:sessionId" element={<MockInterviewRoom />} />
+            <Route path="mock-interview/results/:sessionId" element={<MockInterviewResults />} />
 
             {/* Admin Routes */}
             <Route element={<AdminRoute />}>

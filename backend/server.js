@@ -28,11 +28,26 @@ import knowledgeRoutes from './routes/knowledgeRoutes.js';
 import codingRoutes from './routes/codingRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import interviewRoutes from './routes/interviewRoutes.js';
+import resumeRoutes from './routes/resumeRoutes.js';
+import { setupInterviewHandlers } from './services/interviewSocketHandler.js';
+
 initializeAI();
 
 connectDB();
 
 const app = express();
+const httpServer = createServer(app);
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL || '*',
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
 
 // CORS Configuration
 const corsOptions = {
@@ -60,7 +75,15 @@ app.use('/api/study-materials', studyMaterialRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/coding', codingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/interview', interviewRoutes);
+app.use('/api/resume', resumeRoutes);
 
+// Socket.IO Events
+io.on('connection', (socket) => {
+  console.log(`🔌 Socket Connected: ${socket.id}`);
+  setupInterviewHandlers(io, socket);
+  socket.on('disconnect', () => console.log(`🔌 Socket Disconnected: ${socket.id}`));
+});
 
 // Health check for monitoring and keeping service awake (Render)
 app.get('/api/ping', (req, res) => res.sendStatus(200));
@@ -71,9 +94,8 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
-// Render/Heroku/Railway provide a PORT, Vercel provides process.env.VERCEL
 if (process.env.PORT || !process.env.VERCEL) {
-  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 }
 
 export default app;

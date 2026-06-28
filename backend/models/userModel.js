@@ -26,6 +26,15 @@ const userSchema = mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
       required: true
+    },
+    stats: {
+      interviewsCount: { type: Number, default: 0 },
+      averageScore: { type: Number, default: 0 }
+    },
+    profile: {
+      resumeText: { type: String },
+      resumeData: { type: Object },
+      skills: [String]
     }
   },
   { timestamps: true }

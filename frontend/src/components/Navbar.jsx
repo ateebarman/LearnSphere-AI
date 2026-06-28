@@ -24,6 +24,7 @@ const Navbar = () => {
 
   const navLinks = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/mock-interview', label: 'Mock Interview', icon: Sparkles },
     { to: '/planner', label: 'Planner', icon: Calendar },
     { to: '/tutor', label: 'AI Tutor', icon: GraduationCap },
     { to: '/explore', label: 'Explore', icon: Search },
