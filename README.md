@@ -122,7 +122,7 @@ We take performance seriously. Use these scripts to verify your setup:
 | Layer | Technologies |
 | :--- | :--- |
 | **Frontend** | React 18, Vite, Framer Motion, Tailwind CSS, Lucide React, Monaco Editor, Socket.IO Client. |
-| **Backend** | Node.js, Express, Socket.IO, Mongoose, ioredis. |
+| **Backend (Dual Architecture)** | **Option 1:** Node.js, Express, Socket.IO<br>**Option 2:** Java 17, Spring Boot, Spring Security |
 | **AI Models** | Google Gemini 2.0 Flash, Meta Llama 3.3 (Groq). |
 | **Database/Cache** | MongoDB Atlas, Upstash Redis. |
 | **Execution** | Judge0 API (Remote Compiler). |
@@ -131,44 +131,62 @@ We take performance seriously. Use these scripts to verify your setup:
 
 ## 🚀 Rapid Deployment
 
-### 1. Backend Prep
+### 1. Start the Backend (Choose One)
+
+**Option A: Node.js Backend (Port 5001)**
 ```bash
 cd backend
 npm install
-# Configure .env (see below)
 node scripts/seedMappings.js   # Populate Skill Tree categories
-node scripts/seedKnowledge.js # Populate initial Knowledge Base
+node scripts/seedKnowledge.js  # Populate initial Knowledge Base
 npm run dev
 ```
 
-### 2. Frontend Prep
+**Option B: Java Spring Boot Backend (Port 8080)**
+```bash
+cd backend_java
+# Ensure JAVA_HOME is set to Java 17+
+./mvnw clean spring-boot:run
+```
+
+### 2. Start the Frontend
 ```bash
 cd frontend
 npm install
-npm run dev
+
+# If running Node.js backend:
+npm run dev:node
+
+# If running Java backend:
+npm run dev:java
 ```
 
 ---
 
 ## 🔑 Environment Configuration
-Create `backend/.env` with the following:
 
+### Node.js Backend (`backend/.env`)
 ```env
-# Infrastructure
 PORT=5001
 MONGO_URI=your_mongodb_uri
 REDIS_URL=your_upstash_redis_url
 JWT_SECRET=your_super_secret_key
-
-# AI Configuration
 GEMINI_API_KEYS=key1,key2,key3 # Comma-separated for rotation
-GROQ_API_KEY=your_key           # General AI
-TUTOR_GROQ_API_KEY=your_key     # High-priority Tutor Chat key
-
-# External Services
+GROQ_API_KEY=your_key
+TUTOR_GROQ_API_KEY=your_key
 YOUTUBE_API_KEY=your_key
-JUDGE0_BASE_URL=https://ce.judge0.com        # Default public instance
-JUDGE0_API_KEY=your_key                       # OPTIONAL (For RapidAPI/Private instances)
+JUDGE0_BASE_URL=https://ce.judge0.com
+```
+
+### Java Backend (`backend_java/.env`)
+```env
+PORT=8080
+MONGO_URI=your_mongodb_uri
+REDIS_URL=your_upstash_redis_url
+JWT_SECRET=your_super_secret_key
+GEMINI_API_KEY=your_key
+GOOGLE_CLIENT_ID=your_google_oauth_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_secret
 ```
 
 ---
