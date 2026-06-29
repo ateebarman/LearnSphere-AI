@@ -96,7 +96,6 @@ const Login = () => {
               <span>{loading ? 'Signing in...' : 'Sign In'}</span>
             </button>
           </form>
-
           <div className="mt-6 flex items-center justify-between">
             <span className="w-1/5 border-b dark:border-slate-700 lg:w-1/4"></span>
             <span className="text-xs text-center text-slate-500 dark:text-slate-400 uppercase">or login with</span>

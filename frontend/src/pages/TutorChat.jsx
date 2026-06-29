@@ -95,7 +95,7 @@ const TutorChat = () => {
                 <FaRobot />
               </div>
               <div className="space-y-1 md:space-y-2">
-                <h2 className="text-xl md:text-2xl font-black dark:text-white">Hello, {userInfo?.name.split(' ')[0]}!</h2>
+                <h2 className="text-xl md:text-2xl font-black dark:text-white">Hello, {userInfo?.name?.split(' ')[0] || 'Learner'}!</h2>
                 <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-sm leading-relaxed">
                   I'm your AI Tutor. Ask me about React, Node.js, System Design, or anything you're curious about!
                 </p>

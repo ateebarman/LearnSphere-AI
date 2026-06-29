@@ -79,7 +79,7 @@ const Navbar = () => {
                       <User className="w-4 h-4" />
                     </div>
                     <span className="font-semibold text-sm hidden md:block">
-                      {userInfo.name.split(' ')[0]}
+                      {userInfo?.name?.split(' ')[0] || 'User'}
                     </span>
                   </Link>
 
@@ -176,8 +176,8 @@ const Navbar = () => {
                         <User className="w-6 h-6" />
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 dark:text-white">{userInfo.name}</p>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{userInfo.email}</p>
+                        <p className="font-bold text-slate-900 dark:text-white">{userInfo?.name || 'User'}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{userInfo?.email || ''}</p>
                       </div>
                     </div>
 

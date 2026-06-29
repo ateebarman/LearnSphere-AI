@@ -170,6 +170,7 @@ const Signup = () => {
             </svg>
             Google
           </button>
+
         </div>
 
         {/* Footer */}

@@ -179,10 +179,11 @@ const deleteUserAccount = asyncHandler(async (req, res) => {
 // @route   GET /api/auth/google
 // @access  Public
 const googleLogin = asyncHandler(async (req, res) => {
+  const callbackUrl = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5001/api/auth/google/callback';
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_CALLBACK_URL
+    callbackUrl
   );
   
   const url = oauth2Client.generateAuthUrl({
@@ -198,10 +199,11 @@ const googleLogin = asyncHandler(async (req, res) => {
 const googleCallback = asyncHandler(async (req, res) => {
   const { code } = req.query;
   
+  const callbackUrl = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5001/api/auth/google/callback';
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_CALLBACK_URL
+    callbackUrl
   );
   
   try {

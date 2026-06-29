@@ -17,8 +17,8 @@ const OAuthCallback = () => {
       
       if (token) {
         try {
-          // Temporarily set the token with an empty user info
-          login({}, token);
+          // Temporarily set the token with temporary user object
+          login({ name: 'User' }, token);
           // Fetch the real user info using the token
           await refreshProfile();
           navigate('/dashboard', { replace: true });

@@ -130,7 +130,7 @@ const Dashboard = () => {
         </div>
         <h1 className="text-3xl md:text-5xl font-black font-display tracking-tight leading-tight">
           Welcome back, <br className="sm:hidden" />
-          <span className="text-gradient leading-[1.2]">{userInfo?.name.split(' ')[0]}!</span>
+          <span className="text-gradient leading-[1.2]">{userInfo?.name?.split(' ')[0] || 'Learner'}!</span>
         </h1>
         <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 font-medium font-display">
           {isAdmin ? 'Platform command center at your fingertips.' : 'Ready to hack your next skill today?'}
