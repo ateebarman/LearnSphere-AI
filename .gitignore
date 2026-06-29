@@ -25,3 +25,11 @@ backend/scripts/test*
 backend/data/
 frontend/dist/
 frontend/build/
+
+# Java Backend
+backend_java/target/
+backend_java/.mvn/
+backend_java/uploads/
+*.class
+*.jar
+*.war

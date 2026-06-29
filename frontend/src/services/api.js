@@ -1,8 +1,15 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/useAuthStore';
 
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const backendType = import.meta.env.VITE_BACKEND_TYPE || 'Default Node.js';
+
+if (import.meta.env.DEV) {
+  console.log(`🚀 [API Target] Connected to ${backendType} -> ${baseURL}`);
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+  baseURL,
 });
 
 // Add a request interceptor to include the token
