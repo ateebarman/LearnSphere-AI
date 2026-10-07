@@ -1,6 +1,7 @@
 package com.learnsphere.controller;
 
 import com.learnsphere.model.StudyMaterial;
+import com.learnsphere.security.AuthenticatedUserId;
 import com.learnsphere.service.StudyMaterialService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class StudyMaterialController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadMaterial(Authentication authentication, @RequestParam("pdf") MultipartFile file) {
         try {
-            String userId = authentication.getName();
+            String userId = AuthenticatedUserId.from(authentication);
             StudyMaterial material = studyMaterialService.uploadMaterial(userId, file);
             return ResponseEntity.status(HttpStatus.CREATED).body(material);
         } catch (IllegalArgumentException e) {
@@ -40,7 +41,7 @@ public class StudyMaterialController {
     @GetMapping
     public ResponseEntity<?> getUserMaterials(Authentication authentication) {
         try {
-            String userId = authentication.getName();
+            String userId = AuthenticatedUserId.from(authentication);
             List<StudyMaterial> materials = studyMaterialService.getUserMaterials(userId);
             return ResponseEntity.ok(materials);
         } catch (Exception e) {
@@ -53,7 +54,7 @@ public class StudyMaterialController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMaterial(Authentication authentication, @PathVariable String id) {
         try {
-            String userId = authentication.getName();
+            String userId = AuthenticatedUserId.from(authentication);
             studyMaterialService.deleteMaterial(userId, id);
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Material removed");

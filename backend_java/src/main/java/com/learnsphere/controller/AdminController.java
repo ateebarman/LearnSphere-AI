@@ -3,6 +3,7 @@ package com.learnsphere.controller;
 import com.learnsphere.model.CodingQuestion;
 import com.learnsphere.model.KnowledgeNode;
 import com.learnsphere.model.Roadmap;
+import com.learnsphere.security.AuthenticatedUserId;
 import com.learnsphere.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -74,7 +75,7 @@ public class AdminController {
 
     @PostMapping("/roadmaps")
     public ResponseEntity<?> createRoadmap(Authentication authentication, @RequestBody Roadmap roadmap) {
-        String userId = authentication.getName();
+        String userId = AuthenticatedUserId.from(authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createRoadmap(userId, roadmap));
     }
 

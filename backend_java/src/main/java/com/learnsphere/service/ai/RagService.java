@@ -60,7 +60,8 @@ public class RagService {
         try {
             this.embeddingModel = GoogleAiEmbeddingModel.builder()
                     .apiKey(geminiApiKey)
-                    .modelName("models/text-embedding-004")
+                    .modelName("models/gemini-embedding-2")
+                    .outputDimensionality(768)
                     .build();
 
             this.embeddingStore = MongoDbEmbeddingStore.builder()

@@ -1,6 +1,7 @@
 package com.learnsphere.controller;
 
 import com.learnsphere.model.Roadmap;
+import com.learnsphere.security.AuthenticatedUserId;
 import com.learnsphere.service.RoadmapService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +37,7 @@ public class RoadmapController {
 
     @PostMapping
     public ResponseEntity<Roadmap> createRoadmap(@RequestBody Roadmap roadmap, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         Roadmap created = roadmapService.createRoadmap(roadmap, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
@@ -48,7 +49,7 @@ public class RoadmapController {
             return ResponseEntity.badRequest().build();
         }
 
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         Roadmap generated = roadmapService.generateRoadmap(topic, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(generated);
     }
@@ -62,14 +63,14 @@ public class RoadmapController {
             return ResponseEntity.badRequest().build();
         }
 
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         Roadmap generated = roadmapService.generateRAGRoadmap(topic, materialId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(generated);
     }
 
     @GetMapping
     public ResponseEntity<List<Roadmap>> getUserRoadmaps(Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         return ResponseEntity.ok(roadmapService.getUserRoadmaps(userId));
     }
 
@@ -81,20 +82,20 @@ public class RoadmapController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Roadmap> getRoadmapById(@PathVariable String id, Authentication authentication) {
-        String userId = authentication != null ? (String) authentication.getPrincipal() : null;
+        String userId = authentication != null ? AuthenticatedUserId.from(authentication) : null;
         return ResponseEntity.ok(roadmapService.getRoadmapById(id, userId));
     }
 
     @PutMapping("/{id}/visibility")
     public ResponseEntity<Map<String, Boolean>> toggleVisibility(@PathVariable String id, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         Roadmap roadmap = roadmapService.toggleRoadmapVisibility(id, userId);
         return ResponseEntity.ok(Map.of("isPublic", roadmap.getIsPublic()));
     }
 
     @PostMapping("/{id}/clone")
     public ResponseEntity<Map<String, String>> cloneRoadmap(@PathVariable String id, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         
         Roadmap source = roadmapService.getRoadmapById(id, userId);
         
@@ -115,7 +116,7 @@ public class RoadmapController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Roadmap> updateRoadmap(@PathVariable String id, @RequestBody Roadmap updates, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         Roadmap existing = roadmapService.getRoadmapById(id, userId);
 
         if (!existing.getUser().equals(userId)) {
@@ -131,7 +132,7 @@ public class RoadmapController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteRoadmap(@PathVariable String id, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         roadmapService.deleteRoadmap(id, userId);
         return ResponseEntity.ok(Map.of("message", "Roadmap deleted successfully"));
     }

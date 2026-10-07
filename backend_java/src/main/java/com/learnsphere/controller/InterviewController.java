@@ -1,6 +1,7 @@
 package com.learnsphere.controller;
 
 import com.learnsphere.model.InterviewSession;
+import com.learnsphere.security.AuthenticatedUserId;
 import com.learnsphere.service.InterviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,7 @@ public class InterviewController {
     @PostMapping("/start")
     public ResponseEntity<?> startInterview(Authentication authentication, @RequestBody Map<String, Object> body) {
         try {
-            String userId = authentication.getName();
+            String userId = AuthenticatedUserId.from(authentication);
             InterviewSession session = interviewService.startInterview(userId, body);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -41,7 +42,7 @@ public class InterviewController {
     @GetMapping("/history")
     public ResponseEntity<?> getHistory(Authentication authentication) {
         try {
-            String userId = authentication.getName();
+            String userId = AuthenticatedUserId.from(authentication);
             List<InterviewSession> interviews = interviewService.getHistory(userId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -95,7 +96,7 @@ public class InterviewController {
     @PostMapping("/{id}/complete")
     public ResponseEntity<?> completeInterview(Authentication authentication, @PathVariable String id, @RequestBody Map<String, Object> body) {
         try {
-            String userId = authentication.getName();
+            String userId = AuthenticatedUserId.from(authentication);
             InterviewSession session = interviewService.completeInterview(id, userId, body);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

@@ -1,6 +1,7 @@
 package com.learnsphere.controller;
 
 import com.learnsphere.service.ResumeService;
+import com.learnsphere.security.AuthenticatedUserId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,7 +22,7 @@ public class ResumeController {
     @PostMapping("/upload")
     public ResponseEntity<?> uploadResume(Authentication authentication, @RequestParam("resume") MultipartFile file) {
         try {
-            String userId = authentication.getName();
+            String userId = AuthenticatedUserId.from(authentication);
             Map<String, Object> result = resumeService.processAndSaveResume(userId, file);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
@@ -40,7 +41,7 @@ public class ResumeController {
     @GetMapping("/data")
     public ResponseEntity<?> getResumeData(Authentication authentication) {
         try {
-            String userId = authentication.getName();
+            String userId = AuthenticatedUserId.from(authentication);
             Map<String, Object> result = resumeService.getResumeData(userId);
             return ResponseEntity.ok(result);
         } catch (Exception e) {

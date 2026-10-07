@@ -1,6 +1,7 @@
 package com.learnsphere.controller;
 
 import com.learnsphere.service.QuizService;
+import com.learnsphere.security.AuthenticatedUserId;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +42,7 @@ public class QuizController {
         String moduleTitle = (String) request.get("moduleTitle");
         List<String> answers = (List<String>) request.get("answers");
         List<Map<String, String>> questions = (List<Map<String, String>>) request.get("questions");
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
 
         try {
             Map<String, Object> response = quizService.submitQuiz(roadmapId, moduleTitle, answers, questions, userId);

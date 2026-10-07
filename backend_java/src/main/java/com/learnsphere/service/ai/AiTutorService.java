@@ -49,7 +49,7 @@ public class AiTutorService {
         try {
             this.chatModel = GoogleAiGeminiChatModel.builder()
                     .apiKey(geminiApiKey)
-                    .modelName("gemini-1.5-flash")
+                    .modelName("gemini-3.8-flash")
                     .temperature(0.7)
                     .build();
         } catch (Exception e) {

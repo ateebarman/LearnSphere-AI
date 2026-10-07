@@ -10,6 +10,7 @@ import com.learnsphere.repository.UserCodingProgressRepository;
 import com.learnsphere.repository.UserRepository;
 import com.learnsphere.service.CodingService;
 import com.learnsphere.service.ai.CodingGeneratorService;
+import com.learnsphere.security.AuthenticatedUserId;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -100,14 +101,14 @@ public class CodingController {
         String code = request.get("code");
         String language = request.get("language");
         String topic = request.get("topic");
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(codingService.submitCode(questionId, code, language, topic, userId));
     }
 
     @GetMapping("/status/{token}")
     public ResponseEntity<?> checkResult(@PathVariable String token, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         return ResponseEntity.ok(codingService.checkResult(token, userId));
     }
 
@@ -121,7 +122,7 @@ public class CodingController {
             @RequestParam(defaultValue = "20") int limit,
             Authentication authentication) {
 
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         Query query = new Query();
 
         if (topic != null && !topic.isEmpty()) {
@@ -184,7 +185,7 @@ public class CodingController {
 
     @GetMapping("/progress")
     public ResponseEntity<List<UserCodingProgress>> getProgress(@RequestParam(required = false) String topic, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         
         if (topic != null && !topic.isEmpty()) {
             return userCodingProgressRepository.findByUserAndTopicIgnoreCase(userId, topic)
@@ -197,7 +198,7 @@ public class CodingController {
 
     @GetMapping("/analytics")
     public ResponseEntity<Map<String, Object>> getAnalytics(Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
 
         User user = userRepository.findById(userId).orElse(new User());
         List<UserCodingProgress> progresses = userCodingProgressRepository.findByUser(userId);
@@ -260,7 +261,7 @@ public class CodingController {
 
     @GetMapping("/submissions/{questionId}")
     public ResponseEntity<List<Submission>> getSubmissions(@PathVariable String questionId, Authentication authentication) {
-        String userId = (String) authentication.getPrincipal();
+        String userId = AuthenticatedUserId.from(authentication);
         return ResponseEntity.ok(submissionRepository.findByUserAndQuestionOrderByCreatedAtDesc(userId, questionId));
     }
 }
