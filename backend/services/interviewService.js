@@ -2,6 +2,8 @@ import { generateJsonGroq } from './ai/providers/groq.client.js';
 import { generateJsonGemini } from './ai/providers/gemini.client.js';
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
+const DEFAULT_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+const FALLBACK_MODEL = 'openai/gpt-oss-20b';
 
 const getGroqKeys = () => {
   const keys = [];
@@ -16,6 +18,8 @@ let groqKeyIndex = 0;
 
 export class AIService {
   async generateResponse(options) {
+    const selectedModel = options.model || process.env.GROQ_MODEL || DEFAULT_MODEL;
+
     try {
       if (options.messages && Array.isArray(options.messages)) {
         const keys = getGroqKeys();
@@ -29,7 +33,7 @@ export class AIService {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              model: options.model || 'llama-3.3-70b-versatile',
+              model: selectedModel,
               messages: options.messages,
               temperature: options.temperature || 0.7,
               max_tokens: options.maxTokens || 800
@@ -38,6 +42,27 @@ export class AIService {
           const data = await res.json();
           if (res.ok && data.choices?.[0]?.message) {
             return { text: data.choices[0].message.content };
+          }
+          // If 120b was rate limited or failed, try 20b
+          if (!res.ok && selectedModel === DEFAULT_MODEL) {
+            console.warn(`⚠️ AIService primary model failed (${res.status}). Retrying with fallback model ${FALLBACK_MODEL}...`);
+            const fallbackRes = await fetch(GROQ_ENDPOINT, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${key}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                model: FALLBACK_MODEL,
+                messages: options.messages,
+                temperature: options.temperature || 0.7,
+                max_tokens: options.maxTokens || 800
+              })
+            });
+            const fallbackData = await fallbackRes.json();
+            if (fallbackRes.ok && fallbackData.choices?.[0]?.message) {
+              return { text: fallbackData.choices[0].message.content };
+            }
           }
         }
       }
@@ -51,7 +76,7 @@ export class AIService {
       : String(options.prompt || '');
       
     try {
-      const json = await generateJsonGroq(prompt);
+      const json = await generateJsonGroq(prompt, selectedModel);
       return { text: typeof json === 'string' ? json : JSON.stringify(json), json };
     } catch (err) {
       const json = await generateJsonGemini(prompt);
@@ -60,6 +85,8 @@ export class AIService {
   }
 
   async generateStream(options, onChunk) {
+    const selectedModel = options.model || process.env.GROQ_MODEL || DEFAULT_MODEL;
+
     try {
       const keys = getGroqKeys();
       if (keys.length > 0) {
@@ -72,7 +99,7 @@ export class AIService {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: options.model || 'llama-3.3-70b-versatile',
+            model: selectedModel,
             messages: options.messages,
             temperature: options.temperature || 0.7,
             max_tokens: options.maxTokens || 600,
@@ -129,8 +156,10 @@ export class AIService {
       ? options.messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n')
       : String(options.prompt || '');
 
+    const selectedModel = options.model || process.env.GROQ_MODEL || DEFAULT_MODEL;
+
     try {
-      return await generateJsonGroq(prompt);
+      return await generateJsonGroq(prompt, selectedModel);
     } catch (err) {
       return await generateJsonGemini(prompt);
     }

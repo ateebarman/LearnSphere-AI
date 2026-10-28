@@ -82,11 +82,11 @@ const refineLibrary = async () => {
 
             let success = false;
             let providerAttempts = 0;
-            // Strategy: Gemini (High Quality/High Quota) -> Groq 70B (High Quality) -> Groq 8B (Safety)
+            // Strategy: try Gemini first, then fall back to Groq GPT-OSS 120B.
             const strategies = [
                 { type: 'gemini', model: 'Gemini-Rotation' },
-                { type: 'groq', model: 'llama-3.3-70b-versatile' },
-                { type: 'groq', model: 'llama-3.1-8b-instant' }
+                { type: 'groq', model: 'openai/gpt-oss-120b' },
+                { type: 'groq', model: 'openai/gpt-oss-20b' }
             ];
 
             while (!success && providerAttempts < strategies.length) {

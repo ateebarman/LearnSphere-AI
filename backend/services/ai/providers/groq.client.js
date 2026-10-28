@@ -1,7 +1,9 @@
 // Groq API Provider Client
-// OpenAI-compatible API using llama3-70b for strong JSON generation
+// OpenAI-compatible API using GPT-OSS 120B / 20B for strong JSON generation
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
+const DEFAULT_MODEL = 'openai/gpt-oss-120b';
+const FALLBACK_MODEL = 'openai/gpt-oss-20b';
 
 const extractJSON = (text) => {
   const clean = (jsonStr) => {
@@ -62,12 +64,22 @@ export const initializeGroq = () => {
   console.log(`✅ Groq Service initialized with ${apiKeys.length} keys`);
 };
 
-export const generateJsonGroq = async (prompt, retryCount = 0) => {
+export const generateJsonGroq = async (prompt, modelOrOptions = null, retryCount = 0) => {
   if (apiKeys.length === 0) initializeGroq();
   if (apiKeys.length === 0) throw new Error('No Groq API keys configured');
 
+  // Support signatures: generateJsonGroq(prompt), generateJsonGroq(prompt, model), generateJsonGroq(prompt, retryCount)
+  let targetModel = process.env.GROQ_MODEL || DEFAULT_MODEL;
+  let actualRetry = 0;
+
+  if (typeof modelOrOptions === 'string' && modelOrOptions.trim()) {
+    targetModel = modelOrOptions.trim();
+    actualRetry = typeof retryCount === 'number' ? retryCount : 0;
+  } else if (typeof modelOrOptions === 'number') {
+    actualRetry = modelOrOptions;
+  }
+
   const apiKey = apiKeys[currentKeyIndex];
-  const model = 'llama-3.3-70b-versatile';
 
   try {
     const controller = new AbortController();
@@ -81,7 +93,7 @@ export const generateJsonGroq = async (prompt, retryCount = 0) => {
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model,
+        model: targetModel,
         messages: [
           {
             role: 'system',
@@ -99,10 +111,10 @@ export const generateJsonGroq = async (prompt, retryCount = 0) => {
 
     if (!res.ok) {
       if (res.status === 429) {
-        console.warn(`🔄 Groq Key ${currentKeyIndex + 1} rate-limited.`);
-        if (retryCount < apiKeys.length - 1) {
+        console.warn(`🔄 Groq Key ${currentKeyIndex + 1} rate-limited on model ${targetModel}.`);
+        if (actualRetry < apiKeys.length - 1) {
           currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
-          return generateJsonGroq(prompt, retryCount + 1);
+          return generateJsonGroq(prompt, targetModel, actualRetry + 1);
         }
       }
       throw new Error(`Groq API Error: ${data.error?.message || 'Unknown'}`);
@@ -112,17 +124,25 @@ export const generateJsonGroq = async (prompt, retryCount = 0) => {
     return extractJSON(content);
   } catch (error) {
     if (error.name === 'AbortError') {
-      console.warn(`❌ Groq Key ${currentKeyIndex + 1} timed out.`);
+      console.warn(`❌ Groq Key ${currentKeyIndex + 1} timed out on model ${targetModel}.`);
     } else {
-      console.error(`❌ Groq Error (Key ${currentKeyIndex + 1}):`, error.message);
+      console.error(`❌ Groq Error (Key ${currentKeyIndex + 1}, Model ${targetModel}):`, error.message);
     }
     
-    // Failover to next key on ANY error
-    if (retryCount < apiKeys.length - 1) {
+    // Failover to next key on error
+    if (actualRetry < apiKeys.length - 1) {
       currentKeyIndex = (currentKeyIndex + 1) % apiKeys.length;
       console.log(`🔄 Attempting Groq failover to Key ${currentKeyIndex + 1}...`);
-      return generateJsonGroq(prompt, retryCount + 1);
+      return generateJsonGroq(prompt, targetModel, actualRetry + 1);
     }
+
+    // Secondary model failover: If primary model failed across all keys, fallback to 20B
+    if (targetModel !== FALLBACK_MODEL && (!modelOrOptions || modelOrOptions === DEFAULT_MODEL)) {
+      console.warn(`⚠️ All Groq keys failed for ${targetModel}. Attempting fallback to ${FALLBACK_MODEL}...`);
+      currentKeyIndex = 0;
+      return generateJsonGroq(prompt, FALLBACK_MODEL, 0);
+    }
+
     throw error;
   }
 };

@@ -1,7 +1,7 @@
 # LearnSphere AI 🚀
 > **The Ultimate Intelligent Learning Platform**
 
-**LearnSphere AI** is an advanced, AI-powered educational ecosystem designed to streamline the journey from beginner to expert. By combining **Large Language Models (Gemini, Llama-3)**, **Vector Search (RAG)**, **Real-Time WebSockets (Socket.IO)**, and **Redis-backed Performance Optimization**, it delivers personalized roadmaps, high-fidelity coding practice, AI mock interview simulations, and a verified knowledge library—all tracked via a gamified Analytics engine.
+**LearnSphere AI** is an advanced, AI-powered educational ecosystem designed to streamline the journey from beginner to expert. By combining **Large Language Models (Gemini, Groq GPT-OSS)**, **Vector Search (RAG)**, **Real-Time WebSockets (Socket.IO)**, and **Redis-backed Performance Optimization**, it delivers personalized roadmaps, high-fidelity coding practice, AI mock interview simulations, and a verified knowledge library—all tracked via a gamified Analytics engine.
 
 ---
 
@@ -33,7 +33,7 @@
 | **Coding Arena** | Monaco-powered editor with real-time C++, Python, and JS execution. |
 | **Knowledge Base** | High-density docs with ELI5 intuition, complexity analysis, and code snippets. |
 | **Dynamic Analytics** | Real-time mastery tracking through quizzes, roadmaps, and interview evaluations. |
-| **AI Tutor Chat** | 1-on-1 real-time tutoring using Llama-3 (Groq) with conversation memory. |
+| **AI Tutor Chat** | 1-on-1 real-time tutoring using Groq (GPT-OSS 120B/20B) with conversation memory. |
 | **Admin OS** | Fully integrated CRUD dashboard with AI content generation tools. |
 
 ---
@@ -123,7 +123,7 @@ We take performance seriously. Use these scripts to verify your setup:
 | :--- | :--- |
 | **Frontend** | React 18, Vite, Framer Motion, Tailwind CSS, Lucide React, Monaco Editor, Socket.IO Client. |
 | **Backend (Dual Architecture)** | **Option 1:** Node.js, Express, Socket.IO<br>**Option 2:** Java 17, Spring Boot, Spring Security |
-| **AI Models** | Google Gemini 2.0 Flash, Meta Llama 3.3 (Groq). |
+| **AI Models** | Google Gemini 2.5 Flash / Flash Latest, Groq (GPT-OSS 120B & 20B). |
 | **Database/Cache** | MongoDB Atlas, Upstash Redis. |
 | **Execution** | Judge0 API (Remote Compiler). |
 

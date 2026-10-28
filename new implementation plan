@@ -96,7 +96,7 @@ These changes take 1-3 days each and dramatically improve the project's perceive
 ### 2.1 — AI Mock Interview Mode
 **What**: A brand new page where the AI conducts a full mock interview.
 - User selects topic (DSA, System Design, Behavioral).
-- AI asks questions one by one (streamed via Groq Llama-3).
+- AI asks questions one by one (streamed via Groq GPT-OSS 120B).
 - User answers in text or voice (Web Speech API).
 - AI evaluates and gives detailed feedback with a score.
 - Session saved to analytics.

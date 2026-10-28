@@ -5,20 +5,36 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnsphere.model.Roadmap;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class AiService {
 
+    @Value("${AI_PROVIDER:hybrid}")
+    private String aiProvider;
+
+    @Value("${GROQ_API_KEY1:${GROQ_API_KEY:}}")
+    private String groqApiKey;
+
+    @Value("${GROQ_BASE_URL:https://api.groq.com/openai/v1}")
+    private String groqBaseUrl;
+
+    @Value("${GROQ_MODEL:openai/gpt-oss-120b}")
+    private String groqModel;
+
     @Value("${GEMINI_API_KEY:${GEMINI_API_KEY1:}}")
     private String geminiApiKey;
 
-    private ChatLanguageModel chatModel;
+    private ChatLanguageModel groqPrimaryModel;
+    private ChatLanguageModel groqFallbackModel;
+    private ChatLanguageModel geminiModel;
     private final ObjectMapper objectMapper;
 
     public AiService() {
@@ -28,19 +44,47 @@ public class AiService {
 
     @PostConstruct
     public void init() {
-        if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
-            System.err.println("⚠️ GEMINI_API_KEY not found in environment. AI operations will fail.");
-            return;
+        String targetModel = (groqModel != null && !groqModel.isBlank()) ? groqModel.trim() : "openai/gpt-oss-120b";
+
+        if (groqApiKey != null && !groqApiKey.trim().isEmpty()) {
+            try {
+                this.groqPrimaryModel = OpenAiChatModel.builder()
+                        .baseUrl(groqBaseUrl)
+                        .apiKey(groqApiKey.trim())
+                        .modelName(targetModel)
+                        .temperature(0.7)
+                        .timeout(Duration.ofSeconds(30))
+                        .build();
+                System.out.println("✅ AiService Groq Primary Model initialized: " + targetModel);
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to initialize Groq Primary Model: " + e.getMessage());
+            }
+
+            try {
+                this.groqFallbackModel = OpenAiChatModel.builder()
+                        .baseUrl(groqBaseUrl)
+                        .apiKey(groqApiKey.trim())
+                        .modelName("openai/gpt-oss-20b")
+                        .temperature(0.7)
+                        .timeout(Duration.ofSeconds(20))
+                        .build();
+                System.out.println("✅ AiService Groq Fallback Model initialized: openai/gpt-oss-20b");
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to initialize Groq Fallback Model: " + e.getMessage());
+            }
         }
 
-        try {
-            this.chatModel = GoogleAiGeminiChatModel.builder()
-                    .apiKey(geminiApiKey)
-                    .modelName("gemini-3.8-flash")
-                    .temperature(0.7)
-                    .build();
-        } catch (Exception e) {
-            System.err.println("⚠️ Failed to initialize Gemini Chat Model: " + e.getMessage());
+        if (geminiApiKey != null && !geminiApiKey.trim().isEmpty()) {
+            try {
+                this.geminiModel = GoogleAiGeminiChatModel.builder()
+                        .apiKey(geminiApiKey.trim())
+                        .modelName("gemini-3.8-flash")
+                        .temperature(0.7)
+                        .build();
+                System.out.println("✅ AiService Gemini Model initialized: gemini-3.8-flash");
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to initialize Gemini Chat Model: " + e.getMessage());
+            }
         }
     }
 
@@ -129,19 +173,64 @@ public class AiService {
     }
 
     public String generateText(String prompt) {
-        if (chatModel == null) {
-            throw new RuntimeException("Chat model is not initialized. Ensure GEMINI_API_KEY is set.");
-        }
-        return chatModel.generate(prompt);
+        return executeWithProvider(prompt);
     }
 
     public String generateJson(String prompt) {
-        if (chatModel == null) {
-            throw new RuntimeException("Chat model is not initialized. Ensure GEMINI_API_KEY is set.");
+        String response = executeWithProvider(prompt);
+        return extractJsonFromMarkdown(response);
+    }
+
+    private String executeWithProvider(String prompt) {
+        boolean preferGroq = "groq".equalsIgnoreCase(aiProvider) || "hybrid".equalsIgnoreCase(aiProvider);
+
+        if (preferGroq) {
+            if (groqPrimaryModel != null) {
+                try {
+                    return groqPrimaryModel.generate(prompt);
+                } catch (Exception e) {
+                    System.err.println("⚠️ Groq Primary (" + groqModel + ") failed: " + e.getMessage() + ". Retrying with fallback model...");
+                }
+            }
+            if (groqFallbackModel != null) {
+                try {
+                    return groqFallbackModel.generate(prompt);
+                } catch (Exception e) {
+                    System.err.println("⚠️ Groq Fallback (openai/gpt-oss-20b) failed: " + e.getMessage() + ". Retrying with Gemini...");
+                }
+            }
+            if (geminiModel != null) {
+                try {
+                    return geminiModel.generate(prompt);
+                } catch (Exception e) {
+                    throw new RuntimeException("AI failure: all models failed. " + e.getMessage(), e);
+                }
+            }
+        } else {
+            if (geminiModel != null) {
+                try {
+                    return geminiModel.generate(prompt);
+                } catch (Exception e) {
+                    System.err.println("⚠️ Gemini model failed: " + e.getMessage() + ". Retrying with Groq...");
+                }
+            }
+            if (groqPrimaryModel != null) {
+                try {
+                    return groqPrimaryModel.generate(prompt);
+                } catch (Exception e) {
+                    System.err.println("⚠️ Groq Primary model failed: " + e.getMessage());
+                }
+            }
+            if (groqFallbackModel != null) {
+                try {
+                    return groqFallbackModel.generate(prompt);
+                } catch (Exception e) {
+                    throw new RuntimeException("AI failure: all models failed. " + e.getMessage(), e);
+                }
+            }
         }
 
-        String response = chatModel.generate(prompt);
-        return extractJsonFromMarkdown(response);
+        throw new RuntimeException("No AI chat model is initialized. Ensure GROQ_API_KEY or GEMINI_API_KEY is configured.");
     }
 
     private String extractJsonFromMarkdown(String text) {

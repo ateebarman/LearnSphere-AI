@@ -20,6 +20,18 @@ public class LearnSphereApplication {
                     System.setProperty(entry.getKey(), entry.getValue());
                 }
             });
+
+            // Also check ./backend_java directory if started from workspace root
+            if (System.getProperty("GROQ_API_KEY1") == null && System.getProperty("GROQ_API_KEY") == null) {
+                try {
+                    Dotenv subDotenv = Dotenv.configure().directory("./backend_java").ignoreIfMissing().load();
+                    subDotenv.entries().forEach(entry -> {
+                        if (System.getProperty(entry.getKey()) == null) {
+                            System.setProperty(entry.getKey(), entry.getValue());
+                        }
+                    });
+                } catch (Exception ignored) {}
+            }
         } catch (Exception e) {
             System.out.println("No .env file found or error loading it, using default properties.");
         }

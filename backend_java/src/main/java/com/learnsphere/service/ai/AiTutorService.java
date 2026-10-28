@@ -6,10 +6,12 @@ import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +19,21 @@ import java.util.Map;
 @Service
 public class AiTutorService {
 
-    @Value("${GEMINI_API_KEY:}")
+    @Value("${TUTOR_GROQ_API_KEY:${GROQ_API_KEY1:${GROQ_API_KEY:}}}")
+    private String groqApiKey;
+
+    @Value("${GROQ_BASE_URL:https://api.groq.com/openai/v1}")
+    private String groqBaseUrl;
+
+    @Value("${GROQ_MODEL:openai/gpt-oss-120b}")
+    private String groqModel;
+
+    @Value("${GEMINI_API_KEY:${GEMINI_API_KEY1:}}")
     private String geminiApiKey;
 
-    private ChatLanguageModel chatModel;
+    private ChatLanguageModel primaryChatModel;
+    private ChatLanguageModel fallbackChatModel;
+    private ChatLanguageModel geminiChatModel;
 
     private static final String SYSTEM_PROMPT = 
         "You are \"LearnSphere AI Tutor\", a premium, professional coding mentor. You are helpful, expert, yet humble.\n\n" +
@@ -43,25 +56,54 @@ public class AiTutorService {
 
     @PostConstruct
     public void init() {
-        if (geminiApiKey == null || geminiApiKey.trim().isEmpty()) {
-            return;
+        String targetModel = (groqModel != null && !groqModel.isBlank()) ? groqModel.trim() : "openai/gpt-oss-120b";
+
+        // Initialize primary Groq model (flagship free model)
+        if (groqApiKey != null && !groqApiKey.trim().isEmpty()) {
+            try {
+                this.primaryChatModel = OpenAiChatModel.builder()
+                        .baseUrl(groqBaseUrl)
+                        .apiKey(groqApiKey.trim())
+                        .modelName(targetModel)
+                        .temperature(0.7)
+                        .timeout(Duration.ofSeconds(30))
+                        .build();
+                System.out.println("✅ Tutor Groq Primary Model initialized: " + targetModel);
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to initialize Groq Primary Model for Tutor: " + e.getMessage());
+            }
+
+            // Initialize fallback Groq model (fast free 20b model)
+            try {
+                this.fallbackChatModel = OpenAiChatModel.builder()
+                        .baseUrl(groqBaseUrl)
+                        .apiKey(groqApiKey.trim())
+                        .modelName("openai/gpt-oss-20b")
+                        .temperature(0.7)
+                        .timeout(Duration.ofSeconds(20))
+                        .build();
+                System.out.println("✅ Tutor Groq Fallback Model initialized: openai/gpt-oss-20b");
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to initialize Groq Fallback Model for Tutor: " + e.getMessage());
+            }
         }
-        try {
-            this.chatModel = GoogleAiGeminiChatModel.builder()
-                    .apiKey(geminiApiKey)
-                    .modelName("gemini-3.8-flash")
-                    .temperature(0.7)
-                    .build();
-        } catch (Exception e) {
-            System.err.println("⚠️ Failed to initialize Gemini Chat Model for Tutor: " + e.getMessage());
+
+        // Initialize Gemini as safety fallback
+        if (geminiApiKey != null && !geminiApiKey.trim().isEmpty()) {
+            try {
+                this.geminiChatModel = GoogleAiGeminiChatModel.builder()
+                        .apiKey(geminiApiKey.trim())
+                        .modelName("gemini-3.8-flash")
+                        .temperature(0.7)
+                        .build();
+                System.out.println("✅ Tutor Gemini Fallback Model initialized: gemini-3.8-flash");
+            } catch (Exception e) {
+                System.err.println("⚠️ Failed to initialize Gemini Model for Tutor: " + e.getMessage());
+            }
         }
     }
 
     public String chatWithTutor(String message, List<Map<String, String>> history, String knowledgeContext, Map<String, String> context) {
-        if (chatModel == null) {
-            throw new RuntimeException("Tutor AI model is not initialized. Ensure GEMINI_API_KEY is set.");
-        }
-
         String userMessageContent = message;
 
         if (context != null && !context.isEmpty()) {
@@ -93,6 +135,33 @@ public class AiTutorService {
 
         chatMessages.add(UserMessage.from(userMessageContent));
 
-        return chatModel.generate(chatMessages).content().text().trim();
+        // 1. Try Primary Groq Model
+        if (primaryChatModel != null) {
+            try {
+                return primaryChatModel.generate(chatMessages).content().text().trim();
+            } catch (Exception e) {
+                System.err.println("⚠️ Tutor primary model (" + groqModel + ") failed: " + e.getMessage() + ". Retrying with fallback model...");
+            }
+        }
+
+        // 2. Try Fallback Groq Model
+        if (fallbackChatModel != null) {
+            try {
+                return fallbackChatModel.generate(chatMessages).content().text().trim();
+            } catch (Exception e) {
+                System.err.println("⚠️ Tutor fallback model (openai/gpt-oss-20b) failed: " + e.getMessage() + ". Retrying with Gemini...");
+            }
+        }
+
+        // 3. Try Gemini Model
+        if (geminiChatModel != null) {
+            try {
+                return geminiChatModel.generate(chatMessages).content().text().trim();
+            } catch (Exception e) {
+                throw new RuntimeException("Tutor service error: All AI models failed. " + e.getMessage(), e);
+            }
+        }
+
+        throw new RuntimeException("Tutor AI model is not initialized. Ensure GROQ_API_KEY or GEMINI_API_KEY is configured.");
     }
 }
