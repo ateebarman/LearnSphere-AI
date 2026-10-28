@@ -4,6 +4,7 @@ GUIDE_SDE_CURRICULUM.md
 PROBLEM_TEMPLATE.txt
 *.pdf
 *.docx
+*implementation plan*
 
 # Environment and Secrets
 .env
