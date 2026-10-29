@@ -82,5 +82,8 @@ public class User {
         private String experienceLevel = "Beginner";
         private String bio;
         private List<String> targetCompanies;
+        private String resumeText;
+        private Object resumeData;
+        private List<String> skills;
     }
 }

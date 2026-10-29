@@ -5,6 +5,7 @@ import com.learnsphere.security.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -30,6 +31,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**", "/api/health/**").permitAll()
                 .requestMatchers("/api/ping", "/").permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                .requestMatchers("/api/roadmaps/public/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/roadmaps/*").permitAll()
                 // Require auth for everything else
                 .anyRequest().authenticated()
             )
