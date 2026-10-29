@@ -5,6 +5,15 @@ const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = 'openai/gpt-oss-120b';
 const FALLBACK_MODEL = 'openai/gpt-oss-20b';
 
+const sanitizeGroqModel = (model) => {
+  if (!model || typeof model !== 'string') return DEFAULT_MODEL;
+  const m = model.trim().toLowerCase();
+  if (m.includes('llama') || m.includes('mixtral') || m.includes('gemma')) {
+    return DEFAULT_MODEL;
+  }
+  return model.trim();
+};
+
 const extractJSON = (text) => {
   const clean = (jsonStr) => {
     return jsonStr
@@ -69,16 +78,17 @@ export const generateJsonGroq = async (prompt, modelOrOptions = null, retryCount
   if (apiKeys.length === 0) throw new Error('No Groq API keys configured');
 
   // Support signatures: generateJsonGroq(prompt), generateJsonGroq(prompt, model), generateJsonGroq(prompt, retryCount)
-  let targetModel = process.env.GROQ_MODEL || DEFAULT_MODEL;
+  let rawModel = process.env.GROQ_MODEL || DEFAULT_MODEL;
   let actualRetry = 0;
 
   if (typeof modelOrOptions === 'string' && modelOrOptions.trim()) {
-    targetModel = modelOrOptions.trim();
+    rawModel = modelOrOptions.trim();
     actualRetry = typeof retryCount === 'number' ? retryCount : 0;
   } else if (typeof modelOrOptions === 'number') {
     actualRetry = modelOrOptions;
   }
 
+  const targetModel = sanitizeGroqModel(rawModel);
   const apiKey = apiKeys[currentKeyIndex];
 
   try {

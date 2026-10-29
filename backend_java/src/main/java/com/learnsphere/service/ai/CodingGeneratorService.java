@@ -46,7 +46,9 @@ public class CodingGeneratorService {
 
     @PostConstruct
     public void init() {
-        String targetModel = (groqModel != null && !groqModel.isBlank()) ? groqModel.trim() : "openai/gpt-oss-120b";
+        String targetModel = (groqModel != null && !groqModel.isBlank() && !groqModel.toLowerCase().contains("llama") && !groqModel.toLowerCase().contains("mixtral"))
+                ? groqModel.trim()
+                : "openai/gpt-oss-120b";
 
         if (groqApiKey != null && !groqApiKey.trim().isEmpty()) {
             try {

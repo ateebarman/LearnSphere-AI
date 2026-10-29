@@ -9,6 +9,12 @@ if (!process.env.VERCEL) {
   dotenv.config({ path: path.join(__dirname, '.env') });
 }
 
+// Auto-sanitize decommissioned models from hosting platforms (e.g., Render env variables)
+if (process.env.GROQ_MODEL && (process.env.GROQ_MODEL.toLowerCase().includes('llama') || process.env.GROQ_MODEL.toLowerCase().includes('mixtral') || process.env.GROQ_MODEL.toLowerCase().includes('gemma'))) {
+  console.warn(`⚠️ Overriding decommissioned GROQ_MODEL='${process.env.GROQ_MODEL}' in environment to 'openai/gpt-oss-120b'`);
+  process.env.GROQ_MODEL = 'openai/gpt-oss-120b';
+}
+
 // Now import everything else
 import express from 'express';
 import cors from 'cors';

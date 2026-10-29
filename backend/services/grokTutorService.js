@@ -24,11 +24,21 @@ GROUNDING INSTRUCTIONS:
 const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
 const FALLBACK_GROQ_MODEL = 'openai/gpt-oss-20b';
 
+const sanitizeGroqModel = (model) => {
+  if (!model || typeof model !== 'string') return DEFAULT_GROQ_MODEL;
+  const m = model.trim().toLowerCase();
+  if (m.includes('llama') || m.includes('mixtral') || m.includes('gemma')) {
+    console.warn(`⚠️ Decommissioned model '${model}' detected. Automatically routing to '${DEFAULT_GROQ_MODEL}'.`);
+    return DEFAULT_GROQ_MODEL;
+  }
+  return model.trim();
+};
+
 export const chatWithTutor = async (message, history = [], knowledgeContext = '', context = null) => {
   // Read env vars inside function, not at module level
-  const TUTOR_GROQ_API_KEY = process.env.TUTOR_GROQ_API_KEY;
+  const TUTOR_GROQ_API_KEY = process.env.TUTOR_GROQ_API_KEY || process.env.GROQ_API_KEY1 || process.env.GROQ_API_KEY;
   const GROQ_BASE_URL = process.env.GROQ_BASE_URL || 'https://api.groq.com/openai/v1';
-  const GROQ_MODEL = process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL;
+  const GROQ_MODEL = sanitizeGroqModel(process.env.GROQ_MODEL);
 
   try {
     // Preparing the user message with context if available
@@ -90,30 +100,34 @@ export const chatWithTutor = async (message, history = [], knowledgeContext = ''
         }
       );
     } catch (primaryErr) {
-      // Fallback attempt with fast 20b model if 120b is rate-limited or fails
-      if (GROQ_MODEL !== FALLBACK_GROQ_MODEL && (primaryErr.response?.status === 429 || primaryErr.response?.status >= 500)) {
-        console.warn(`⚠️ Tutor primary model (${GROQ_MODEL}) error ${primaryErr.response?.status}. Falling back to ${FALLBACK_GROQ_MODEL}...`);
-        response = await axios.post(
-          `${GROQ_BASE_URL}/chat/completions`,
-          {
-            model: FALLBACK_GROQ_MODEL,
-            messages: [
-              {
-                role: 'system',
-                content: SYSTEM_PROMPT,
-              },
-              ...messages,
-            ],
-            temperature: 0.7,
-            max_tokens: 2048,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${TUTOR_GROQ_API_KEY}`,
-              'Content-Type': 'application/json',
+      // Fallback attempt: if primary model fails for ANY reason (404, 400, 429, 500), try fallback model
+      if (GROQ_MODEL !== FALLBACK_GROQ_MODEL) {
+        console.warn(`⚠️ Tutor primary model (${GROQ_MODEL}) error (${primaryErr.response?.status || primaryErr.message}). Retrying with fallback model ${FALLBACK_GROQ_MODEL}...`);
+        try {
+          response = await axios.post(
+            `${GROQ_BASE_URL}/chat/completions`,
+            {
+              model: FALLBACK_GROQ_MODEL,
+              messages: [
+                {
+                  role: 'system',
+                  content: SYSTEM_PROMPT,
+                },
+                ...messages,
+              ],
+              temperature: 0.7,
+              max_tokens: 2048,
             },
-          }
-        );
+            {
+              headers: {
+                Authorization: `Bearer ${TUTOR_GROQ_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+        } catch (fallbackErr) {
+          throw primaryErr;
+        }
       } else {
         throw primaryErr;
       }
@@ -141,8 +155,8 @@ export const chatWithTutor = async (message, history = [], knowledgeContext = ''
         throw new Error('Groq API authentication failed. Check TUTOR_GROQ_API_KEY in .env');
       } else if (status === 429) {
         throw new Error('Rate limit exceeded. Please wait a moment and try again.');
-      } else if (status === 400) {
-        throw new Error('Invalid request to Groq API');
+      } else if (status === 404 || status === 400) {
+        throw new Error(`Groq API model error: ${data.error?.message || 'Invalid or decommissioned model'}`);
       } else {
         throw new Error(`Groq API error: ${data.error?.message || 'Unknown error'}`);
       }

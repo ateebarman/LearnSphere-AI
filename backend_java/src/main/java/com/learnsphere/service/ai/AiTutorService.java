@@ -56,7 +56,9 @@ public class AiTutorService {
 
     @PostConstruct
     public void init() {
-        String targetModel = (groqModel != null && !groqModel.isBlank()) ? groqModel.trim() : "openai/gpt-oss-120b";
+        String targetModel = (groqModel != null && !groqModel.isBlank() && !groqModel.toLowerCase().contains("llama") && !groqModel.toLowerCase().contains("mixtral"))
+                ? groqModel.trim()
+                : "openai/gpt-oss-120b";
 
         // Initialize primary Groq model (flagship free model)
         if (groqApiKey != null && !groqApiKey.trim().isEmpty()) {

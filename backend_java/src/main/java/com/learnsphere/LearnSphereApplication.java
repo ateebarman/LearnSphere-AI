@@ -32,6 +32,13 @@ public class LearnSphereApplication {
                     });
                 } catch (Exception ignored) {}
             }
+
+            // Sanitize decommissioned Groq models from environment
+            String envGroqModel = System.getProperty("GROQ_MODEL");
+            if (envGroqModel != null && (envGroqModel.toLowerCase().contains("llama") || envGroqModel.toLowerCase().contains("mixtral"))) {
+                System.out.println("⚠️ Overriding decommissioned GROQ_MODEL='" + envGroqModel + "' to 'openai/gpt-oss-120b'");
+                System.setProperty("GROQ_MODEL", "openai/gpt-oss-120b");
+            }
         } catch (Exception e) {
             System.out.println("No .env file found or error loading it, using default properties.");
         }

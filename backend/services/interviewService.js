@@ -2,8 +2,17 @@ import { generateJsonGroq } from './ai/providers/groq.client.js';
 import { generateJsonGemini } from './ai/providers/gemini.client.js';
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
-const DEFAULT_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
+const DEFAULT_MODEL = 'openai/gpt-oss-120b';
 const FALLBACK_MODEL = 'openai/gpt-oss-20b';
+
+const sanitizeGroqModel = (model) => {
+  if (!model || typeof model !== 'string') return DEFAULT_MODEL;
+  const m = model.trim().toLowerCase();
+  if (m.includes('llama') || m.includes('mixtral') || m.includes('gemma')) {
+    return DEFAULT_MODEL;
+  }
+  return model.trim();
+};
 
 const getGroqKeys = () => {
   const keys = [];
@@ -18,7 +27,7 @@ let groqKeyIndex = 0;
 
 export class AIService {
   async generateResponse(options) {
-    const selectedModel = options.model || process.env.GROQ_MODEL || DEFAULT_MODEL;
+    const selectedModel = sanitizeGroqModel(options.model || process.env.GROQ_MODEL);
 
     try {
       if (options.messages && Array.isArray(options.messages)) {
@@ -43,8 +52,8 @@ export class AIService {
           if (res.ok && data.choices?.[0]?.message) {
             return { text: data.choices[0].message.content };
           }
-          // If 120b was rate limited or failed, try 20b
-          if (!res.ok && selectedModel === DEFAULT_MODEL) {
+          // If primary model failed (404, 400, 429, etc.), try 20b fallback
+          if (!res.ok) {
             console.warn(`⚠️ AIService primary model failed (${res.status}). Retrying with fallback model ${FALLBACK_MODEL}...`);
             const fallbackRes = await fetch(GROQ_ENDPOINT, {
               method: 'POST',
@@ -85,7 +94,7 @@ export class AIService {
   }
 
   async generateStream(options, onChunk) {
-    const selectedModel = options.model || process.env.GROQ_MODEL || DEFAULT_MODEL;
+    const selectedModel = sanitizeGroqModel(options.model || process.env.GROQ_MODEL);
 
     try {
       const keys = getGroqKeys();
@@ -156,7 +165,7 @@ export class AIService {
       ? options.messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n')
       : String(options.prompt || '');
 
-    const selectedModel = options.model || process.env.GROQ_MODEL || DEFAULT_MODEL;
+    const selectedModel = sanitizeGroqModel(options.model || process.env.GROQ_MODEL);
 
     try {
       return await generateJsonGroq(prompt, selectedModel);
