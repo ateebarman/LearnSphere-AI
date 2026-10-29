@@ -1,5 +1,7 @@
 package com.learnsphere.service.ai;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.learnsphere.model.Roadmap;
@@ -17,16 +19,16 @@ import java.util.regex.Pattern;
 @Service
 public class AiService {
 
-    @Value("${AI_PROVIDER:hybrid}")
+    @Value("${app.ai.provider:hybrid}")
     private String aiProvider;
+
+    @Value("${groq.base-url:https://api.groq.com/openai/v1}")
+    private String groqBaseUrl;
 
     @Value("${GROQ_API_KEY1:${GROQ_API_KEY:}}")
     private String groqApiKey;
 
-    @Value("${GROQ_BASE_URL:https://api.groq.com/openai/v1}")
-    private String groqBaseUrl;
-
-    @Value("${GROQ_MODEL:openai/gpt-oss-120b}")
+    @Value("${groq.model:openai/gpt-oss-120b}")
     private String groqModel;
 
     @Value("${GEMINI_API_KEY:${GEMINI_API_KEY1:}}")
@@ -40,6 +42,10 @@ public class AiService {
     public AiService() {
         this.objectMapper = new ObjectMapper();
         this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        this.objectMapper.configure(JsonReadFeature.ALLOW_TRAILING_COMMA.mappedFeature(), true);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
     }
 
     @PostConstruct
@@ -55,7 +61,8 @@ public class AiService {
                         .apiKey(groqApiKey.trim())
                         .modelName(targetModel)
                         .temperature(0.7)
-                        .timeout(Duration.ofSeconds(30))
+                        .maxTokens(4000)
+                        .timeout(Duration.ofSeconds(60))
                         .build();
                 System.out.println("✅ AiService Groq Primary Model initialized: " + targetModel);
             } catch (Exception e) {
@@ -68,7 +75,8 @@ public class AiService {
                         .apiKey(groqApiKey.trim())
                         .modelName("openai/gpt-oss-20b")
                         .temperature(0.7)
-                        .timeout(Duration.ofSeconds(20))
+                        .maxTokens(4000)
+                        .timeout(Duration.ofSeconds(45))
                         .build();
                 System.out.println("✅ AiService Groq Fallback Model initialized: openai/gpt-oss-20b");
             } catch (Exception e) {
@@ -80,10 +88,10 @@ public class AiService {
             try {
                 this.geminiModel = GoogleAiGeminiChatModel.builder()
                         .apiKey(geminiApiKey.trim())
-                        .modelName("gemini-3.8-flash")
+                        .modelName("gemini-1.5-flash")
                         .temperature(0.7)
                         .build();
-                System.out.println("✅ AiService Gemini Model initialized: gemini-3.8-flash");
+                System.out.println("✅ AiService Gemini Model initialized: gemini-1.5-flash");
             } catch (Exception e) {
                 System.err.println("⚠️ Failed to initialize Gemini Chat Model: " + e.getMessage());
             }
@@ -93,21 +101,21 @@ public class AiService {
     public Roadmap generateRoadmapFromAI(String topic) {
         String prompt = String.format(
             "You are a World-Class Educational Architect.\n" +
-            "Generate a MASTERCLASS roadmap for: \"%s\".\n\n" +
+            "Generate a structured learning roadmap for: \"%s\".\n\n" +
             "CURRICULUM RULES:\n" +
-            "1. STRUCTURE: 8 strictly progressive modules.\n" +
+            "1. STRUCTURE: 6-8 progressive modules.\n" +
             "2. RICH DETAIL:\n" +
-            "   - \"description\": 3-4 professional sentences focusing on technical depth.\n" +
-            "   - \"objectives\": 4-5 high-level technical outcomes.\n" +
-            "   - \"keyConcepts\": 5-6 granular technical terms.\n" +
+            "   - \"description\": 2-3 professional sentences focusing on practical depth.\n" +
+            "   - \"objectives\": 3-4 concrete learning outcomes.\n" +
+            "   - \"keyConcepts\": 4-5 granular technical terms.\n" +
             "3. REAL RESOURCES:\n" +
             "   - Provide URLs to official documentation or top learning sites.\n\n" +
             "JSON STRUCTURE:\n" +
             "{\n" +
             "  \"title\": \"Mastering %s\",\n" +
-            "  \"description\": \"Comprehensive summary.\",\n" +
+            "  \"description\": \"Comprehensive summary of the learning path.\",\n" +
             "  \"difficulty\": \"Intermediate\",\n" +
-            "  \"totalDuration\": \"8 Weeks\",\n" +
+            "  \"totalDuration\": \"6 Weeks\",\n" +
             "  \"modules\": [\n" +
             "    {\n" +
             "      \"title\": \"string\",\n" +
@@ -115,7 +123,7 @@ public class AiService {
             "      \"objectives\": [\"string\"],\n" +
             "      \"keyConcepts\": [\"string\"],\n" +
             "      \"estimatedTime\": \"1 Week\",\n" +
-            "      \"suggestedResources\": [\n" +
+            "      \"learningResources\": [\n" +
             "         { \"title\": \"Official Doc\", \"url\": \"https://...\", \"type\": \"doc\" }\n" +
             "      ]\n" +
             "    }\n" +
@@ -128,7 +136,13 @@ public class AiService {
         try {
             return objectMapper.readValue(jsonResponse, Roadmap.class);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse AI Roadmap JSON: " + e.getMessage(), e);
+            System.err.println("⚠️ First JSON parse failed: " + e.getMessage() + ". Attempting sanitization...");
+            try {
+                String sanitized = jsonResponse.replaceAll(",\\s*([}\\]])", "$1");
+                return objectMapper.readValue(sanitized, Roadmap.class);
+            } catch (Exception ex) {
+                throw new RuntimeException("Failed to parse AI Roadmap JSON: " + e.getMessage() + " | Raw: " + jsonResponse, e);
+            }
         }
     }
 
@@ -139,13 +153,13 @@ public class AiService {
             "CONTEXT FROM STUDY MATERIAL:\n" +
             "\"\"\"\n%s\n\"\"\"\n\n" +
             "TASK:\n" +
-            "Generate a MASTERCLASS roadmap based on this SPECIFIC context.\n\n" +
+            "Generate a structured roadmap based on this SPECIFIC context.\n\n" +
             "CURRICULUM RULES:\n" +
-            "1. STRUCTURE: 7-10 progressive modules based exclusively on the context.\n" +
+            "1. STRUCTURE: 5-8 progressive modules based on the context.\n" +
             "2. RICH DETAIL:\n" +
-            "   - \"description\": 3-4 detailed sentences explaining the core concepts found in the text.\n" +
-            "   - \"objectives\": 4-5 outcomes extracted from the context.\n" +
-            "   - \"keyConcepts\": 5-6 terms found in the context.\n\n" +
+            "   - \"description\": 2-3 detailed sentences explaining the core concepts found in the text.\n" +
+            "   - \"objectives\": 3-4 outcomes extracted from the context.\n" +
+            "   - \"keyConcepts\": 4-5 terms found in the context.\n\n" +
             "JSON STRUCTURE:\n" +
             "{\n" +
             "  \"title\": \"string\",\n" +
@@ -159,18 +173,24 @@ public class AiService {
             "      \"objectives\": [\"string\"],\n" +
             "      \"keyConcepts\": [\"string\"],\n" +
             "      \"estimatedTime\": \"1 Week\",\n" +
-            "      \"suggestedResources\": []\n" +
+            "      \"learningResources\": []\n" +
             "    }\n" +
             "  ]\n" +
             "}\n" +
-            "Respond ONLY with JSON.", topic, context
+            "Respond ONLY with valid JSON.", topic, context
         );
 
         String jsonResponse = generateJson(prompt);
         try {
             return objectMapper.readValue(jsonResponse, Roadmap.class);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse RAG AI Roadmap JSON: " + e.getMessage(), e);
+            System.err.println("⚠️ First RAG JSON parse failed: " + e.getMessage() + ". Attempting sanitization...");
+            try {
+                String sanitized = jsonResponse.replaceAll(",\\s*([}\\]])", "$1");
+                return objectMapper.readValue(sanitized, Roadmap.class);
+            } catch (Exception ex) {
+                throw new RuntimeException("Failed to parse RAG AI Roadmap JSON: " + e.getMessage() + " | Raw: " + jsonResponse, e);
+            }
         }
     }
 

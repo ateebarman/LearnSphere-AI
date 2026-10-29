@@ -51,7 +51,7 @@ const RoadmapView = () => {
     fetchRoadmap();
   }, [id]);
 
-  const isOwner = userInfo && roadmap && (roadmap.user === userInfo._id || roadmap.user?._id === userInfo._id);
+  const uId = userInfo?._id || userInfo?.id; const isOwner = userInfo && roadmap && (roadmap.user === uId || roadmap.user?._id === uId || roadmap.user?.id === uId);
 
   const handleToggleVisibility = async () => {
     setToggleLoading(true);
@@ -329,7 +329,7 @@ const RoadmapView = () => {
               >
                 <ModuleCard
                   module={module}
-                  roadmapId={roadmap._id}
+                  roadmapId={roadmap._id || roadmap.id || id}
                   index={index}
                   defaultOpen={index === openModule}
                   isOwner={isOwner}

@@ -97,10 +97,10 @@ const MyPlanner = () => {
         const tid = toast.loading('Saving your planner...');
         try {
             let savedData;
-            if (editingRoadmap._id) {
+            const editId = editingRoadmap._id || editingRoadmap.id; if (editId) {
                 // Update existing
-                savedData = await updateRoadmap(editingRoadmap._id, editingRoadmap);
-                setRoadmaps(roadmaps.map(r => r._id === savedData._id ? savedData : r));
+                savedData = await updateRoadmap(editId, editingRoadmap);
+                setRoadmaps(roadmaps.map(r => (r._id || r.id) === (savedData._id || savedData.id) ? savedData : r));
             } else {
                 // Create new
                 savedData = await createRoadmap(editingRoadmap);
@@ -229,10 +229,10 @@ const MyPlanner = () => {
                             {/* Form Header */}
                             <div className="flex items-center justify-between">
                                 <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                                    {editingRoadmap._id ? 'Edit Roadmap' : 'Create Roadmap'}
+                                    {(editingRoadmap._id || editingRoadmap.id) ? 'Edit Roadmap' : 'Create Roadmap'}
                                 </h3>
                                 <div className="flex items-center gap-2">
-                                    {editingRoadmap._id && (
+                                    {(editingRoadmap._id || editingRoadmap.id) && (
                                         <button onClick={() => setEditingRoadmap(null)}
                                             className="text-[10px] font-black uppercase text-slate-500 hover:text-white transition-colors">Cancel Edit</button>
                                     )}
@@ -316,8 +316,8 @@ const MyPlanner = () => {
                             </div>
 
                             <button onClick={handleSave}
-                                className={`w-full py-4 ${editingRoadmap._id ? 'bg-amber-600 shadow-amber-500/20' : 'bg-emerald-600 shadow-emerald-500/20'} text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg`}>
-                                <Save className="w-4 h-4" /> {editingRoadmap._id ? 'Update Roadmap' : 'Publish Roadmap'}
+                                className={`w-full py-4 ${(editingRoadmap._id || editingRoadmap.id) ? 'bg-amber-600 shadow-amber-500/20' : 'bg-emerald-600 shadow-emerald-500/20'} text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg`}>
+                                <Save className="w-4 h-4" /> {(editingRoadmap._id || editingRoadmap.id) ? 'Update Roadmap' : 'Publish Roadmap'}
                             </button>
                         </motion.div>
                     )}
@@ -335,7 +335,7 @@ const MyPlanner = () => {
                         </div>
                     )}
                     {roadmaps.map(r => (
-                        <div key={r._id} className="bg-white/60 dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 hover:border-primary-500/30 transition-all group shadow-md dark:shadow-none">
+                        <div key={r._id || r.id} className="bg-white/60 dark:bg-slate-900/50 border border-slate-200/50 dark:border-white/5 rounded-2xl p-5 hover:border-primary-500/30 transition-all group shadow-md dark:shadow-none">
                             <div className="flex items-start justify-between mb-3">
                                 <div>
                                     <h4 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">{r.title}</h4>
@@ -344,7 +344,7 @@ const MyPlanner = () => {
                                 <div className="flex gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
                                     <button onClick={() => handleEdit(r)}
                                         className="p-2 text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-lg"><Edit3 className="w-4 h-4" /></button>
-                                    <button onClick={() => handleDelete(r._id)}
+                                    <button onClick={() => handleDelete(r._id || r.id)}
                                         className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                                 </div>
                             </div>
@@ -355,7 +355,7 @@ const MyPlanner = () => {
                                     <span>•</span>
                                     <span>{new Date(r.createdAt).toLocaleDateString()}</span>
                                 </div>
-                                <Link to={`/roadmap/${r._id}`}
+                                <Link to={`/roadmap/${r._id || r.id}`}
                                     className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-colors flex items-center gap-1">
                                     Open <ChevronRight className="w-3 h-3" />
                                 </Link>

@@ -1,5 +1,8 @@
 package com.learnsphere.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -14,10 +17,29 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Document(collection = "users")
 public class User {
     @Id
+    @JsonProperty("_id")
+    @JsonAlias({"_id", "id"})
     private String id;
+
+    @JsonProperty("id")
+    public String getId() {
+        return this.id;
+    }
+
+    @JsonProperty("_id")
+    public String getUnderscoreId() {
+        return this.id;
+    }
+
+    @JsonProperty("_id")
+    public void setUnderscoreId(String id) {
+        this.id = id;
+    }
+
     private String name;
     private String email;
     private String password;
@@ -40,17 +62,25 @@ public class User {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class UserStats {
         private Integer interviewsCount = 0;
         private Double averageScore = 0.0;
+        private Integer codingProblemsSolved = 0;
+        private Integer roadmapsCreated = 0;
+        private Integer quizzesTaken = 0;
+        private Double quizAverageScore = 0.0;
+        private Integer totalStudyHours = 0;
     }
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class UserProfile {
-        private String resumeText;
-        private Object resumeData;
-        private List<String> skills;
+        private String targetRole;
+        private String experienceLevel = "Beginner";
+        private String bio;
+        private List<String> targetCompanies;
     }
 }

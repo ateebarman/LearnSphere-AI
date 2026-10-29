@@ -8,8 +8,13 @@ import com.learnsphere.repository.KnowledgeNodeRepository;
 import com.learnsphere.repository.RoadmapRepository;
 import com.learnsphere.service.ai.AiService;
 import com.learnsphere.service.ai.RagService;
+import org.bson.types.ObjectId;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -26,6 +31,7 @@ public class RoadmapService {
     private final RagService ragService;
     private final YouTubeService youtubeService;
     private final ResourceDatabase resourceDatabase;
+    private final MongoTemplate mongoTemplate;
 
     public RoadmapService(RoadmapRepository roadmapRepository,
                           KnowledgeNodeRepository knowledgeNodeRepository,
@@ -33,7 +39,8 @@ public class RoadmapService {
                           AiService aiService,
                           RagService ragService,
                           YouTubeService youtubeService,
-                          ResourceDatabase resourceDatabase) {
+                          ResourceDatabase resourceDatabase,
+                          MongoTemplate mongoTemplate) {
         this.roadmapRepository = roadmapRepository;
         this.knowledgeNodeRepository = knowledgeNodeRepository;
         this.codingQuestionRepository = codingQuestionRepository;
@@ -41,10 +48,10 @@ public class RoadmapService {
         this.ragService = ragService;
         this.youtubeService = youtubeService;
         this.resourceDatabase = resourceDatabase;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public Roadmap getRoadmapPreview(String topic, String difficulty, String targetRole) {
-        // Simple generation via AI
         Roadmap roadmap = aiService.generateRoadmapFromAI(topic);
         if (difficulty != null && !difficulty.isEmpty()) roadmap.setDifficulty(difficulty);
         enrichModules(roadmap);
@@ -54,12 +61,25 @@ public class RoadmapService {
     @CacheEvict(value = "roadmaps:public:list", allEntries = true)
     public Roadmap createRoadmap(Roadmap roadmap, String userId) {
         roadmap.setUser(userId);
+        if (roadmap.getProgress() == null) {
+            roadmap.setProgress(0.0);
+        }
+        if (roadmap.getIsPublic() == null) {
+            roadmap.setIsPublic(false);
+        }
         
         if (roadmap.getModules() != null) {
             for (int i = 0; i < roadmap.getModules().size(); i++) {
-                roadmap.getModules().get(i).setOrder(i);
-                if (roadmap.getModules().get(i).getQuizConfig() == null) {
-                    roadmap.getModules().get(i).setQuizConfig(new Roadmap.QuizConfig(true, roadmap.getModules().get(i).getTitle(), 5));
+                Roadmap.RoadmapModule m = roadmap.getModules().get(i);
+                m.setOrder(i);
+                if (m.getQuizConfig() == null) {
+                    m.setQuizConfig(new Roadmap.QuizConfig(true, m.getTitle(), 5));
+                }
+                if (m.getEffortEstimate() == null) {
+                    m.setEffortEstimate(new Roadmap.EffortEstimate(30, 45, 15));
+                }
+                if (m.getUnlockCriteria() == null) {
+                    m.setUnlockCriteria(new Roadmap.UnlockCriteria(0.0, 0.0, 0));
                 }
             }
         }
@@ -74,6 +94,12 @@ public class RoadmapService {
         
         aiRoadmap.setUser(userId);
         aiRoadmap.setTopic(topic);
+        if (aiRoadmap.getProgress() == null) {
+            aiRoadmap.setProgress(0.0);
+        }
+        if (aiRoadmap.getIsPublic() == null) {
+            aiRoadmap.setIsPublic(false);
+        }
         return roadmapRepository.save(aiRoadmap);
     }
 
@@ -91,20 +117,44 @@ public class RoadmapService {
         aiRoadmap.setUser(userId);
         aiRoadmap.setTopic(topic);
         aiRoadmap.setSourceMaterial(materialId);
+        if (aiRoadmap.getProgress() == null) {
+            aiRoadmap.setProgress(0.0);
+        }
+        if (aiRoadmap.getIsPublic() == null) {
+            aiRoadmap.setIsPublic(false);
+        }
         return roadmapRepository.save(aiRoadmap);
     }
 
     public List<Roadmap> getUserRoadmaps(String userId) {
-        return roadmapRepository.findByUserOrderByCreatedAtDesc(userId);
+        if (userId == null || userId.isBlank()) return List.of();
+
+        Criteria criteria;
+        if (ObjectId.isValid(userId)) {
+            criteria = new Criteria().orOperator(
+                    Criteria.where("user").is(userId),
+                    Criteria.where("user").is(new ObjectId(userId))
+            );
+        } else {
+            criteria = Criteria.where("user").is(userId);
+        }
+
+        Query query = new Query(criteria).with(Sort.by(Sort.Direction.DESC, "createdAt"));
+        return mongoTemplate.find(query, Roadmap.class);
     }
 
     @Cacheable(value = "roadmap:detail", key = "#roadmapId")
     public Roadmap getRoadmapById(String roadmapId, String userId) {
+        if (roadmapId == null || roadmapId.isBlank() || "undefined".equalsIgnoreCase(roadmapId)) {
+            throw new IllegalArgumentException("Invalid roadmap ID");
+        }
+
         Roadmap roadmap = roadmapRepository.findById(roadmapId)
                 .orElseThrow(() -> new RuntimeException("Roadmap not found"));
 
-        boolean isOwner = roadmap.getUser().equals(userId);
-        if (!isOwner && !roadmap.getIsPublic()) {
+        boolean isOwner = userId != null && userId.equals(roadmap.getUser());
+        boolean isPublic = Boolean.TRUE.equals(roadmap.getIsPublic());
+        if (!isOwner && !isPublic) {
             throw new RuntimeException("Not authorized to view this roadmap");
         }
         
@@ -125,7 +175,8 @@ public class RoadmapService {
             throw new RuntimeException("Not authorized to modify this roadmap");
         }
 
-        roadmap.setIsPublic(!roadmap.getIsPublic());
+        boolean current = Boolean.TRUE.equals(roadmap.getIsPublic());
+        roadmap.setIsPublic(!current);
         return roadmapRepository.save(roadmap);
     }
 

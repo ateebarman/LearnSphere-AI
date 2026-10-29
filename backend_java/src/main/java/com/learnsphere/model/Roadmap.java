@@ -1,5 +1,8 @@
 package com.learnsphere.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -14,12 +17,14 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Document(collection = "roadmaps")
 public class Roadmap {
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class RoadmapResource {
         private String title;
         private String type; // video, article, doc, challenge, course
@@ -33,6 +38,7 @@ public class Roadmap {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class PracticeProblem {
         private String title;
         private String url;
@@ -44,6 +50,7 @@ public class Roadmap {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class QuizConfig {
         private Boolean autoGenerate = true;
         private String topic;
@@ -53,6 +60,7 @@ public class Roadmap {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class EffortEstimate {
         private Integer readingMinutes = 30;
         private Integer practiceMinutes = 45;
@@ -62,6 +70,7 @@ public class Roadmap {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class UnlockCriteria {
         private Double masteryThreshold = 0.0;
         private Double quizScore = 0.0;
@@ -71,6 +80,7 @@ public class Roadmap {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class RoadmapModule {
         private String title;
         private String description;
@@ -85,6 +95,8 @@ public class Roadmap {
         
         private List<PracticeProblem> practiceProblems;
         private List<RoadmapResource> resources;
+        
+        @JsonAlias({"suggestedResources", "learningResources", "resources"})
         private List<RoadmapResource> learningResources;
         
         private QuizConfig quizConfig = new QuizConfig();
@@ -99,7 +111,25 @@ public class Roadmap {
     }
 
     @Id
+    @JsonProperty("_id")
+    @JsonAlias({"_id", "id"})
     private String id;
+
+    @JsonProperty("id")
+    public String getId() {
+        return this.id;
+    }
+
+    @JsonProperty("_id")
+    public String getUnderscoreId() {
+        return this.id;
+    }
+
+    @JsonProperty("_id")
+    public void setUnderscoreId(String id) {
+        this.id = id;
+    }
+
     private String user; // ref User
     private String title;
     private String topic = "General";

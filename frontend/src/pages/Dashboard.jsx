@@ -63,7 +63,7 @@ const Dashboard = () => {
     setError('');
     try {
       const newRoadmap = await generateRoadmap(topic);
-      navigate(`/roadmap/${newRoadmap._id}`);
+      const rid = newRoadmap._id || newRoadmap.id; if (rid) { navigate(`/roadmap/${rid}`); } else { fetchRoadmaps(); }
     } catch (err) {
       setError('Failed to generate roadmap. Please try again.');
     }
@@ -345,8 +345,8 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {roadmaps.map((roadmap) => (
               <Link
-                to={`/roadmap/${roadmap._id}`}
-                key={roadmap._id}
+                to={`/roadmap/${roadmap._id || roadmap.id}`}
+                key={roadmap._id || roadmap.id}
                 className="card-premium group"
               >
                 <div className="flex flex-col h-full space-y-6">

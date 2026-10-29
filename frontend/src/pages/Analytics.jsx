@@ -222,7 +222,7 @@ const Analytics = () => {
                         : 0;
 
                       return (
-                        <tr key={roadmap._id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                        <tr key={roadmap._id || roadmap.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
                           <td className="px-8 py-6 font-bold text-gray-900 dark:text-white">{roadmap.title}</td>
                           <td className="px-8 py-6">
                             <span className="px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-xs font-bold">

@@ -226,7 +226,7 @@ const Explore = () => {
             {filteredRoadmaps.length > 0 ? (
               filteredRoadmaps.map((roadmap, i) => (
                 <motion.div
-                  key={roadmap._id}
+                  key={roadmap._id || roadmap.id || i}
                   layout
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -271,23 +271,23 @@ const Explore = () => {
 
                       <div className="grid grid-cols-2 gap-4">
                         <button
-                          onClick={() => handleView(roadmap._id)}
+                          onClick={() => handleView(roadmap._id || roadmap.id)}
                           className="flex items-center justify-center gap-2 py-4 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest border border-slate-200/50 dark:border-white/5 group/view"
                         >
                           <Eye className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover/view:text-slate-800 dark:group-hover/view:text-white group-hover/view:scale-110 transition-all" />
                           View Path
                         </button>
                         <button
-                          onClick={() => handleClone(roadmap._id)}
-                          disabled={cloning[roadmap._id] || !userInfo}
+                          onClick={() => handleClone(roadmap._id || roadmap.id)}
+                          disabled={cloning[roadmap._id || roadmap.id] || !userInfo}
                           className="flex items-center justify-center gap-2 py-4 bg-primary-600 hover:bg-primary-500 text-white rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary-900/20 active:scale-95 disabled:opacity-50 group/clone"
                         >
-                          {cloning[roadmap._id] ? (
+                          {cloning[roadmap._id || roadmap.id] ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <Copy className="w-4 h-4 group-hover/clone:scale-110 transition-all" />
                           )}
-                          {cloning[roadmap._id] ? 'Syncing' : 'Clone Node'}
+                          {cloning[roadmap._id || roadmap.id] ? 'Syncing' : 'Clone Node'}
                         </button>
                       </div>
                     </div>
