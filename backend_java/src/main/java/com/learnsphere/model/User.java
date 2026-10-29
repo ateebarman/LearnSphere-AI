@@ -21,14 +21,7 @@ import java.util.List;
 @Document(collection = "users")
 public class User {
     @Id
-    @JsonProperty("_id")
-    @JsonAlias({"_id", "id"})
     private String id;
-
-    @JsonProperty("id")
-    public String getId() {
-        return this.id;
-    }
 
     @JsonProperty("_id")
     public String getUnderscoreId() {
@@ -37,7 +30,9 @@ public class User {
 
     @JsonProperty("_id")
     public void setUnderscoreId(String id) {
-        this.id = id;
+        if (this.id == null) {
+            this.id = id;
+        }
     }
 
     private String name;

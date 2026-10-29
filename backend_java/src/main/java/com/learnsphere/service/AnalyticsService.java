@@ -6,7 +6,11 @@ import com.learnsphere.model.Roadmap;
 import com.learnsphere.repository.CategoryMappingRepository;
 import com.learnsphere.repository.QuizAttemptRepository;
 import com.learnsphere.repository.RoadmapRepository;
-import org.springframework.cache.annotation.Cacheable;
+import org.bson.types.ObjectId;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -18,20 +22,51 @@ public class AnalyticsService {
     private final QuizAttemptRepository quizAttemptRepository;
     private final RoadmapRepository roadmapRepository;
     private final CategoryMappingRepository categoryMappingRepository;
+    private final MongoTemplate mongoTemplate;
 
     public AnalyticsService(QuizAttemptRepository quizAttemptRepository,
                             RoadmapRepository roadmapRepository,
-                            CategoryMappingRepository categoryMappingRepository) {
+                            CategoryMappingRepository categoryMappingRepository,
+                            MongoTemplate mongoTemplate) {
         this.quizAttemptRepository = quizAttemptRepository;
         this.roadmapRepository = roadmapRepository;
         this.categoryMappingRepository = categoryMappingRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
-    @Cacheable(value = "analytics", key = "'overview:' + #userId", unless = "#result == null")
+    private List<Roadmap> findRoadmapsByUser(String userId) {
+        if (userId == null || userId.isBlank()) return List.of();
+        Criteria criteria;
+        if (ObjectId.isValid(userId)) {
+            criteria = new Criteria().orOperator(
+                    Criteria.where("user").is(userId),
+                    Criteria.where("user").is(new ObjectId(userId))
+            );
+        } else {
+            criteria = Criteria.where("user").is(userId);
+        }
+        Query query = new Query(criteria).with(Sort.by(Sort.Direction.DESC, "createdAt"));
+        return mongoTemplate.find(query, Roadmap.class);
+    }
+
+    private List<QuizAttempt> findQuizAttemptsByUser(String userId) {
+        if (userId == null || userId.isBlank()) return List.of();
+        Criteria criteria;
+        if (ObjectId.isValid(userId)) {
+            criteria = new Criteria().orOperator(
+                    Criteria.where("user").is(userId),
+                    Criteria.where("user").is(new ObjectId(userId))
+            );
+        } else {
+            criteria = Criteria.where("user").is(userId);
+        }
+        Query query = new Query(criteria).with(Sort.by(Sort.Direction.DESC, "createdAt"));
+        return mongoTemplate.find(query, QuizAttempt.class);
+    }
+
     public Map<String, Object> getAnalytics(String userId) {
-        List<QuizAttempt> quizAttempts = quizAttemptRepository.findByUser(userId);
-        List<Roadmap> roadmaps = roadmapRepository.findByUserOrderByCreatedAtDesc(userId);
-        long totalRoadmapsCount = roadmapRepository.count();
+        List<QuizAttempt> quizAttempts = findQuizAttemptsByUser(userId);
+        List<Roadmap> roadmaps = findRoadmapsByUser(userId);
 
         Map<String, TopicScore> topicScores = new HashMap<>();
         for (QuizAttempt attempt : quizAttempts) {
@@ -182,7 +217,7 @@ public class AnalyticsService {
     }
 
     public List<Map<String, Object>> getRoadmapStats(String userId) {
-        List<Roadmap> roadmaps = roadmapRepository.findByUserOrderByCreatedAtDesc(userId);
+        List<Roadmap> roadmaps = findRoadmapsByUser(userId);
         return roadmaps.stream().map(roadmap -> {
             int totalModules = roadmap.getModules() != null ? roadmap.getModules().size() : 0;
             long completedModules = roadmap.getModules() != null ? roadmap.getModules().stream().filter(m -> m.getIsCompleted() != null && m.getIsCompleted()).count() : 0;
@@ -202,7 +237,7 @@ public class AnalyticsService {
     }
 
     public List<Map<String, Object>> getQuizStats(String userId) {
-        List<QuizAttempt> attempts = quizAttemptRepository.findByUserOrderByCreatedAtDesc(userId);
+        List<QuizAttempt> attempts = findQuizAttemptsByUser(userId);
         return attempts.stream().map(attempt -> {
             Map<String, Object> stat = new HashMap<>();
             stat.put("_id", attempt.getId());
