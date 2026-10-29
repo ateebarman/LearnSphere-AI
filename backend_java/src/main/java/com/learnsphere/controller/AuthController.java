@@ -3,12 +3,14 @@ package com.learnsphere.controller;
 import com.learnsphere.dto.AuthDto;
 import com.learnsphere.model.User;
 import com.learnsphere.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +20,11 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+
+    @GetMapping("/google")
+    public void googleLogin(HttpServletResponse response) throws IOException {
+        response.sendRedirect("/oauth2/authorization/google");
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<AuthDto.AuthResponse> register(@RequestBody AuthDto.RegisterRequest request) {
