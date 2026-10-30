@@ -109,4 +109,33 @@ public class InterviewController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
+
+    @PostMapping("/{id}/study-plan")
+    public ResponseEntity<?> generateStudyPlan(@PathVariable String id) {
+        try {
+            Map<String, Object> plan = interviewService.generateStudyPlan(id);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("studyPlan", plan);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
+    @PostMapping("/execute-code")
+    public ResponseEntity<?> executeCode(@RequestBody Map<String, Object> body) {
+        try {
+            Map<String, Object> result = interviewService.executeCode(body);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
 }

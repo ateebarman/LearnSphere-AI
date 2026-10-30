@@ -21,6 +21,10 @@ function computeConfidence(transcript) {
   return Math.max(10, Math.round(100 - hedgeRatio * 400));
 }
 
+const BROWSER_SUPPORTS_STT =
+  typeof window !== 'undefined' &&
+  !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+
 export function useVoice({
   onTranscript,
   onInterimTranscript,
@@ -34,6 +38,7 @@ export function useVoice({
   const [audioLevel, setAudioLevel] = useState(0);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [confidenceScore, setConfidenceScore] = useState(100);
+  const [transcriptionMode] = useState(BROWSER_SUPPORTS_STT ? 'browser' : 'whisper');
 
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
@@ -41,6 +46,11 @@ export function useVoice({
   const analyserRef = useRef(null);
   const animFrameRef = useRef(0);
   const streamRef = useRef(null);
+
+  // Whisper-mode refs
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const whisperIntervalRef = useRef(null);
 
   const lastSpeechTimeRef = useRef(0);
   const silenceNudgeTimerRef = useRef(null);
@@ -79,10 +89,10 @@ export function useVoice({
     }, silenceTimeoutDelay);
   }, [clearSilenceTimers, onSilenceNudge, onSilenceTimeout, silenceNudgeDelay, silenceTimeoutDelay]);
 
-  const startAudioAnalyser = useCallback(async () => {
+  const startAudioAnalyser = useCallback(async (existingStream = null) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+      const stream = existingStream || await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!existingStream) streamRef.current = stream;
 
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
@@ -116,20 +126,21 @@ export function useVoice({
     analyserRef.current = null;
     audioContextRef.current?.close().catch(() => {});
     audioContextRef.current = null;
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
+    if (!mediaRecorderRef.current) {
+      // Only stop stream in browser STT mode; Whisper manages its own stream
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+    }
     setAudioLevel(0);
   }, []);
 
+  // ─── Browser STT (Web Speech API) ────────────────────────────────────────
   useEffect(() => {
     synthRef.current = window.speechSynthesis;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.warn('Speech Recognition not supported in this browser');
-      return;
-    }
+    if (!BROWSER_SUPPORTS_STT) return; // Will use Whisper instead
 
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -170,9 +181,16 @@ export function useVoice({
       }
     };
 
+    // Fix: add 100ms delay to avoid Chrome's InvalidStateError on rapid restart
     recognition.onend = () => {
       if (isListeningRef.current) {
-        try { recognition.start(); } catch {}
+        setTimeout(() => {
+          if (isListeningRef.current) {
+            try { recognition.start(); } catch (e) {
+              console.warn('Failed to restart speech recognition:', e.message);
+            }
+          }
+        }, 100);
       } else {
         setIsListening(false);
         setInterimTranscript('');
@@ -184,31 +202,123 @@ export function useVoice({
         setIsListening(false);
         isListeningRef.current = false;
       }
+      // Ignore 'no-speech' errors — they fire when silence is detected
     };
 
     recognitionRef.current = recognition;
   }, [onTranscript, onInterimTranscript, clearSilenceTimers, startSilenceDetection]);
 
-  const startListening = useCallback(() => {
-    if (!recognitionRef.current || isListeningRef.current) return;
+  // ─── Whisper STT (Groq API via backend) ─────────────────────────────────
+  const startWhisperRecording = useCallback(async () => {
     try {
-      recognitionRef.current.start();
-      isListeningRef.current = true;
-      setIsListening(true);
-      startAudioAnalyser();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      audioChunksRef.current = [];
+
+      // Start audio level visualizer with the same stream
+      startAudioAnalyser(stream);
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : 'audio/webm';
+
+      const recorder = new MediaRecorder(stream, { mimeType });
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      recorder.start(3000); // collect 3s chunks
+      mediaRecorderRef.current = recorder;
+
+      // Send accumulated audio to Whisper every 4 seconds
+      whisperIntervalRef.current = setInterval(async () => {
+        if (audioChunksRef.current.length === 0 || !isListeningRef.current) return;
+
+        const chunks = [...audioChunksRef.current];
+        audioChunksRef.current = [];
+        const blob = new Blob(chunks, { type: mimeType });
+
+        // Skip very small blobs (silence)
+        if (blob.size < 5000) return;
+
+        try {
+          const formData = new FormData();
+          formData.append('audio', blob, 'chunk.webm');
+
+          const token = localStorage.getItem('userInfo')
+            ? JSON.parse(localStorage.getItem('userInfo'))?.token
+            : null;
+
+          const res = await fetch('/api/transcribe', {
+            method: 'POST',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            body: formData,
+          });
+          const data = await res.json();
+          if (data.transcript?.trim()) {
+            setConfidenceScore(computeConfidence(data.transcript));
+            onTranscript(data.transcript.trim());
+            clearSilenceTimers();
+            startSilenceDetection();
+          }
+        } catch (e) {
+          console.warn('Whisper transcription error:', e.message);
+        }
+      }, 4000);
+
       startSilenceDetection();
-    } catch (e) {}
-  }, [startAudioAnalyser, startSilenceDetection]);
+    } catch (err) {
+      console.warn('Whisper recording failed to start:', err.message);
+    }
+  }, [startAudioAnalyser, onTranscript, clearSilenceTimers, startSilenceDetection]);
+
+  const stopWhisperRecording = useCallback(() => {
+    clearInterval(whisperIntervalRef.current);
+    whisperIntervalRef.current = null;
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    mediaRecorderRef.current = null;
+    audioChunksRef.current = [];
+
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+  }, []);
+
+  // ─── Public API ──────────────────────────────────────────────────────────
+  const startListening = useCallback(() => {
+    if (isListeningRef.current) return;
+    isListeningRef.current = true;
+    setIsListening(true);
+
+    if (transcriptionMode === 'browser' && recognitionRef.current) {
+      try {
+        recognitionRef.current.start();
+        startAudioAnalyser();
+        startSilenceDetection();
+      } catch (e) {
+        console.warn('Speech recognition start error:', e);
+      }
+    } else {
+      // Whisper mode
+      startWhisperRecording();
+    }
+  }, [transcriptionMode, startAudioAnalyser, startSilenceDetection, startWhisperRecording]);
 
   const stopListening = useCallback(() => {
-    if (!recognitionRef.current) return;
     isListeningRef.current = false;
-    try { recognitionRef.current.stop(); } catch {}
     setIsListening(false);
     setInterimTranscript('');
-    stopAudioAnalyser();
     clearSilenceTimers();
-  }, [stopAudioAnalyser, clearSilenceTimers]);
+
+    if (transcriptionMode === 'browser') {
+      try { recognitionRef.current?.stop(); } catch {}
+      stopAudioAnalyser();
+    } else {
+      stopWhisperRecording();
+      stopAudioAnalyser();
+    }
+  }, [transcriptionMode, stopAudioAnalyser, stopWhisperRecording, clearSilenceTimers]);
 
   const signalVoiceActivity = useCallback(() => {
     clearSilenceTimers();
@@ -262,6 +372,7 @@ export function useVoice({
     audioLevel,
     interimTranscript,
     confidenceScore,
+    transcriptionMode,
     startListening,
     stopListening,
     speak,

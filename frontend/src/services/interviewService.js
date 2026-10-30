@@ -36,3 +36,13 @@ export const getResumeData = async () => {
   const response = await api.get('/resume/data');
   return response.data;
 };
+
+export const executeCode = async (payload) => {
+  const response = await api.post('/interview/execute-code', payload);
+  return response.data;
+};
+
+export const generateStudyPlan = async (sessionId) => {
+  const response = await api.post(`/interview/${sessionId}/study-plan`);
+  return response.data;
+};

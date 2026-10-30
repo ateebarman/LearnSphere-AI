@@ -38,6 +38,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import interviewRoutes from './routes/interviewRoutes.js';
 import resumeRoutes from './routes/resumeRoutes.js';
+import transcriptionRoutes from './routes/transcriptionRoutes.js';
 import { setupInterviewHandlers } from './services/interviewSocketHandler.js';
 
 initializeAI();
@@ -83,6 +84,7 @@ app.use('/api/coding', codingRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/interview', interviewRoutes);
 app.use('/api/resume', resumeRoutes);
+app.use('/api/transcribe', transcriptionRoutes);
 
 // Socket.IO Events
 io.on('connection', (socket) => {

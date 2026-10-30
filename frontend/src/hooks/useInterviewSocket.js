@@ -108,6 +108,12 @@ export function useInterviewSocket(interviewId, callbacks = {}) {
     });
     s.on('interview:paused', () => callbacksRef.current.onPaused?.());
     s.on('interview:resumed', () => callbacksRef.current.onResumed?.());
+    s.on('interview:coding_problem', (problem) => {
+      callbacksRef.current.onCodingProblem?.(problem);
+    });
+    s.on('interview:problem_generating', (val) => {
+      callbacksRef.current.onProblemGenerating?.(val);
+    });
 
     return () => {
       s.off('interview:ai_chunk');
@@ -122,6 +128,8 @@ export function useInterviewSocket(interviewId, callbacks = {}) {
       s.off('interview:hint_count');
       s.off('interview:paused');
       s.off('interview:resumed');
+      s.off('interview:coding_problem');
+      s.off('interview:problem_generating');
     };
   }, [appendToLastMessage, setTyping, setStage, setEvaluation, setInterview]);
 

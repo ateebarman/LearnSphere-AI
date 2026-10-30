@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getInterviewDetails } from '../services/interviewService';
+import { getInterviewDetails, generateStudyPlan } from '../services/interviewService';
+import toast from 'react-hot-toast';
 
 function ScoreRing({ score, label, color }) {
   const radius = 28;
@@ -42,6 +43,9 @@ export default function MockInterviewResults() {
   const navigate = useNavigate();
   const [interview, setInterview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [studyPlan, setStudyPlan] = useState(null);
+  const [loadingPlan, setLoadingPlan] = useState(false);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -50,6 +54,23 @@ export default function MockInterviewResults() {
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [sessionId]);
+
+  const handleGenerateStudyPlan = async () => {
+    setLoadingPlan(true);
+    try {
+      const data = await generateStudyPlan(sessionId);
+      if (data.success) {
+        setStudyPlan(data.studyPlan);
+        toast.success('2-Week Study Plan generated!');
+      } else {
+        toast.error('Failed to generate study plan');
+      }
+    } catch {
+      toast.error('Failed to generate study plan');
+    } finally {
+      setLoadingPlan(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -155,18 +176,126 @@ export default function MockInterviewResults() {
           </ol>
         </motion.div>
 
+        {/* Study Plan Section */}
+        {!studyPlan && (
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={handleGenerateStudyPlan}
+              disabled={loadingPlan}
+              className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-emerald-600/30 flex items-center gap-2 text-sm"
+            >
+              {loadingPlan ? (
+                <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generating Plan...</>
+              ) : '📚 Generate 2-Week Personalized Study Plan'}
+            </button>
+          </div>
+        )}
+
+        {studyPlan && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-lg transition-colors"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">📚</span>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">Your 2-Week Action Study Plan</h3>
+            </div>
+            {studyPlan.summary && (
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{studyPlan.summary}</p>
+            )}
+            {studyPlan.keyFocusAreas?.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-5">
+                {studyPlan.keyFocusAreas.map((area, i) => (
+                  <span key={i} className="text-xs px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 font-semibold">
+                    {area}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="space-y-4">
+              {studyPlan.weeks?.map((week, wi) => (
+                <div key={wi} className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                  <div className="bg-slate-50 dark:bg-slate-800/60 px-4 py-2.5 border-b border-slate-200 dark:border-slate-800">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">Week {week.week}: {week.focus}</span>
+                  </div>
+                  <div className="p-4 grid sm:grid-cols-2 gap-3">
+                    {week.days?.map((day, di) => (
+                      <div key={di} className="bg-slate-50/60 dark:bg-slate-950/40 border border-slate-100 dark:border-slate-800/60 rounded-lg p-3">
+                        <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mb-1">{day.day}: {day.topic}</div>
+                        {day.tasks?.map((task, ti) => (
+                          <div key={ti} className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">• {task}</div>
+                        ))}
+                        {day.practice && (
+                          <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1.5 font-medium">🎯 {day.practice}</div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {studyPlan.resources?.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-slate-200 dark:border-slate-800">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Recommended Resources</p>
+                <div className="space-y-2">
+                  {studyPlan.resources.map((r, i) => (
+                    <div key={i} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400">
+                      <span className="text-indigo-500 mt-0.5">→</span>
+                      <span><span className="font-semibold text-slate-800 dark:text-slate-200">{r.title}</span> ({r.type}) — {r.why}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Full Transcript Viewer */}
+        {interview?.transcript?.length > 0 && (
+          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-md transition-colors">
+            <button
+              onClick={() => setShowTranscript(p => !p)}
+              className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+            >
+              <span className="font-semibold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                <span>📜</span> Full Interview Transcript ({interview.transcript.filter(m => m.stage !== 'WARMUP').length} exchanges)
+              </span>
+              <span className="text-slate-400 dark:text-slate-500 text-xs font-medium">{showTranscript ? '▲ Collapse' : '▼ Expand'}</span>
+            </button>
+            {showTranscript && (
+              <div className="border-t border-slate-200 dark:border-slate-800 p-4 max-h-96 overflow-y-auto space-y-3 scrollbar-thin">
+                {interview.transcript.filter(m => m.stage !== 'WARMUP').map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-indigo-600 text-white rounded-tr-none'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-200 dark:border-slate-700'
+                    }`}>
+                      <div className={`text-[10px] mb-1 font-semibold ${msg.role === 'user' ? 'text-indigo-200' : 'text-slate-400'}`}>
+                        {msg.role === 'user' ? 'You' : 'AI'} · {msg.stage || 'STAGE'} · {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-4 justify-center pt-4">
           <button
             onClick={() => navigate('/mock-interview')}
-            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-indigo-600/30"
+            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl transition-colors shadow-lg shadow-indigo-600/30 text-sm"
           >
             Start Another Session
           </button>
           <button
-            onClick={() => navigate('/dashboard')}
-            className="px-8 py-3 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition-colors shadow-sm"
+            onClick={() => navigate('/mock-interview/history')}
+            className="px-8 py-3 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-xl transition-colors shadow-sm text-sm"
           >
-            Dashboard
+            View History
           </button>
         </div>
       </div>

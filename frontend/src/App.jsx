@@ -23,6 +23,7 @@ import OAuthCallback from './pages/OAuthCallback';
 import MockInterviewSetup from './pages/MockInterviewSetup';
 import MockInterviewRoom from './pages/MockInterviewRoom';
 import MockInterviewResults from './pages/MockInterviewResults';
+import MockInterviewHistory from './pages/MockInterviewHistory';
 import ScrollToTop from './components/ScrollToTop';
 
 import { useEffect } from 'react';
@@ -76,6 +77,7 @@ function App() {
             <Route path="mock-interview" element={<MockInterviewSetup />} />
             <Route path="mock-interview/room/:sessionId" element={<MockInterviewRoom />} />
             <Route path="mock-interview/results/:sessionId" element={<MockInterviewResults />} />
+            <Route path="mock-interview/history" element={<MockInterviewHistory />} />
 
             {/* Admin Routes */}
             <Route element={<AdminRoute />}>

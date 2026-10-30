@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
-import Editor from '@monaco-editor/react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useThemeStore } from '../store/useThemeStore';
 import { useInterviewStore } from '../store/useInterviewStore';
 import { useInterviewSocket } from '../hooks/useInterviewSocket';
 import { useVoice } from '../hooks/useVoice';
-import { getInterviewDetails, completeInterview } from '../services/interviewService';
+import { getInterviewDetails, completeInterview, executeCode } from '../services/interviewService';
 import AiAvatar from '../components/AiAvatar';
 import VoiceWaveform from '../components/VoiceWaveform';
 import AnswerTimerRing from '../components/AnswerTimerRing';
 import SilenceNudge from '../components/SilenceNudge';
 import InterviewSidebar from '../components/InterviewSidebar';
+import CodingProblemPanel from '../components/CodingProblemPanel';
 import toast from 'react-hot-toast';
 
 const STAGE_LABELS = {
@@ -21,13 +21,12 @@ const STAGE_LABELS = {
   HR_ROUND: '🤝 HR', FEEDBACK: '📊 Feedback', END: '✅ Done',
 };
 
-const LANGUAGES = [
-  { id: 'javascript', label: 'JavaScript' },
-  { id: 'python', label: 'Python' },
-  { id: 'java', label: 'Java' },
-  { id: 'cpp', label: 'C++' },
-  { id: 'typescript', label: 'TypeScript' },
-];
+const STAR_KEYWORDS = {
+  S: ['situation', 'when i was', 'at my previous', 'at my last', 'there was a time', 'working at', 'on this project'],
+  T: ['task', 'goal', 'objective', 'my role', 'i was responsible', 'i had to', 'needed to'],
+  A: ['i did', 'i took', 'i implemented', 'i led', 'i built', 'i created', 'i decided', 'action i', 'i started', 'i proposed'],
+  R: ['result', 'outcome', 'achieved', 'increased', 'reduced', 'improved', 'delivered', '%', 'as a result', 'ultimately'],
+};
 
 export default function MockInterviewRoom() {
   const { sessionId } = useParams();
@@ -40,11 +39,14 @@ export default function MockInterviewRoom() {
   const [code, setCode] = useState('// Write your code solution here...\n');
   const [language, setLanguage] = useState('javascript');
   const [codeOutput, setCodeOutput] = useState('');
+  const [executionResult, setExecutionResult] = useState(null);
   const [runningCode, setRunningCode] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showCodePanel, setShowCodePanel] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [interviewData, setInterviewData] = useState(null);
+  const [codingProblem, setCodingProblem] = useState(null);
+  const [isGeneratingProblem, setIsGeneratingProblem] = useState(false);
 
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
@@ -73,6 +75,15 @@ export default function MockInterviewRoom() {
     onHintCount: (count) => setHintsUsed(count),
     onPaused: () => setIsPaused(true),
     onResumed: () => setIsPaused(false),
+    onCodingProblem: (problem) => {
+      setCodingProblem(problem);
+      setIsGeneratingProblem(false);
+      if (problem?.starterCode?.[language]) {
+        setCode(problem.starterCode[language]);
+      }
+      setShowCodePanel(true);
+    },
+    onProblemGenerating: (val) => setIsGeneratingProblem(val),
   });
 
   const handleVoiceTranscript = useCallback((text) => {
@@ -86,7 +97,7 @@ export default function MockInterviewRoom() {
 
   const {
     isListening, isSpeaking, audioLevel, interimTranscript, confidenceScore,
-    startListening, stopListening, speak, stopSpeaking, signalVoiceActivity: voiceActivity,
+    transcriptionMode, startListening, stopListening, speak, stopSpeaking, signalVoiceActivity: voiceActivity,
   } = useVoice({
     onTranscript: handleVoiceTranscript,
     onInterimTranscript: () => {
@@ -130,6 +141,9 @@ export default function MockInterviewRoom() {
     getInterviewDetails(sessionId).then((data) => {
       if (data.success) {
         setInterviewData(data.interview);
+        if (data.interview.codingProblem?.title) {
+          setCodingProblem(data.interview.codingProblem);
+        }
         setInterview({
           interviewId: sessionId, mode: data.interview.mode,
           company: data.interview.company, role: data.interview.targetRole,
@@ -155,6 +169,15 @@ export default function MockInterviewRoom() {
       });
     }
   }, [evaluation, sessionId, navigate]);
+
+  // Detect STAR keywords in text input for HR round
+  const starDetected = stage === 'HR_ROUND' && textInput.length > 20
+    ? Object.fromEntries(
+        Object.entries(STAR_KEYWORDS).map(([key, words]) => [
+          key, words.some(w => textInput.toLowerCase().includes(w))
+        ])
+      )
+    : null;
 
   const handleSend = () => {
     if (!textInput.trim()) return;
@@ -185,14 +208,33 @@ export default function MockInterviewRoom() {
     else { stopSpeaking(); startListening(); }
   };
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     setRunningCode(true);
-    setCodeOutput('Simulating execution...');
-    setTimeout(() => {
-      setCodeOutput('✔ Code parsed successfully.\nConsole Output: Executed without runtime exceptions.');
-      sendCodeResult({ code, language, output: 'Executed successfully', passed: true });
+    setCodeOutput('⏳ Executing code on engine...');
+    setExecutionResult(null);
+    try {
+      const result = await executeCode({ code, language });
+      if (result.success) {
+        let output = '';
+        if (result.compileOutput) output += `Compilation:\n${result.compileOutput}\n\n`;
+        if (result.output) output += result.output;
+        if (!output.trim()) output = '(Executed without output)';
+        setCodeOutput(output);
+        setExecutionResult(result);
+        sendCodeResult({ code, language, output: result.output, passed: result.passed });
+        if (!result.passed && result.statusId !== 3) {
+          toast.error(`${result.statusDescription || 'Execution failed'}`, { duration: 3000 });
+        }
+      } else {
+        setCodeOutput(`Execution Error: ${result.error || result.output || 'Failed'}`);
+        setExecutionResult({ passed: false, statusDescription: 'Error' });
+      }
+    } catch (err) {
+      setCodeOutput(`Execution Error: ${err.message}`);
+      setExecutionResult({ passed: false, statusDescription: 'Error' });
+    } finally {
       setRunningCode(false);
-    }, 1200);
+    }
   };
 
   return (
@@ -205,6 +247,11 @@ export default function MockInterviewRoom() {
           <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
             {interviewData?.company !== 'generic' ? interviewData?.company?.toUpperCase() + ' ' : ''}Mock Interview
           </span>
+          {transcriptionMode === 'whisper' && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-300 font-medium flex-shrink-0">
+              🎙 Whisper STT
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -231,7 +278,8 @@ export default function MockInterviewRoom() {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className={`flex flex-col flex-1 min-w-0 ${showCodePanel ? 'max-w-[42%]' : ''} border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 transition-colors`}>
+        {/* Chat Panel */}
+        <div className={`flex flex-col flex-1 min-w-0 ${showCodePanel ? 'max-w-[40%]' : ''} border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 transition-colors`}>
           <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 flex-shrink-0">
             <AiAvatar isTyping={isTyping} isSpeaking={isSpeaking} isListening={isListening} stage={stage} size="md" />
             <div className="flex-1 min-w-0">
@@ -242,11 +290,17 @@ export default function MockInterviewRoom() {
               </div>
             </div>
 
+            {stage === 'RESUME_DISCUSSION' && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-300 font-medium flex-shrink-0">
+                📄 Resume Mode
+              </span>
+            )}
+
             {isListening && (
-              <div className="flex flex-col items-end gap-1">
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
                 <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Confidence</div>
-                <div className="w-20 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 transition-all" style={{ width: `${confidenceScore}%` }} />
+                <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${confidenceScore}%` }} />
                 </div>
               </div>
             )}
@@ -277,6 +331,7 @@ export default function MockInterviewRoom() {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Input Area */}
           <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-slate-50 dark:bg-slate-900/60 transition-colors">
             <div className="flex items-center justify-center gap-6 relative">
               <SilenceNudge phase={silencePhase} message={silenceMessage} onDismiss={() => setSilencePhase('idle')} />
@@ -307,59 +362,77 @@ export default function MockInterviewRoom() {
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={textInput}
-                onChange={e => setTextInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSend()}
-                placeholder="Type your answer here..."
-                className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm"
-              />
-              <button
-                onClick={handleSend}
-                disabled={!textInput.trim()}
-                className="px-4 py-2.5 bg-indigo-600 disabled:opacity-40 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-md"
-              >
-                Send
-              </button>
+            <div className="space-y-1.5">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={textInput}
+                  onChange={e => setTextInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSend()}
+                  placeholder="Type your answer here..."
+                  className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 shadow-sm"
+                />
+                <button
+                  onClick={handleSend}
+                  disabled={!textInput.trim()}
+                  className="px-4 py-2.5 bg-indigo-600 disabled:opacity-40 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl transition-colors shadow-md"
+                >
+                  Send
+                </button>
+              </div>
+
+              {/* STAR Method Indicator for HR Round */}
+              {starDetected && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-600 font-medium">STAR:</span>
+                  {Object.entries(starDetected).map(([key, found]) => (
+                    <span
+                      key={key}
+                      title={`${key === 'S' ? 'Situation' : key === 'T' ? 'Task' : key === 'A' ? 'Action' : 'Result'} ${found ? 'detected' : 'missing'}`}
+                      className={`text-[10px] px-1.5 py-0.5 rounded font-bold transition-all ${
+                        found
+                          ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600'
+                      }`}
+                    >
+                      {key}
+                    </span>
+                  ))}
+                  <span className="text-[10px] text-slate-400 dark:text-slate-600 ml-1">
+                    ({Object.values(starDetected).filter(Boolean).length}/4 components)
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
+        {/* Code Panel */}
         <AnimatePresence>
           {showCodePanel && (
             <motion.div
               initial={{ width: 0, opacity: 0 }}
-              animate={{ width: '42%', opacity: 1 }}
+              animate={{ width: '46%', opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="flex flex-col overflow-hidden border-r border-slate-200 dark:border-slate-800 flex-shrink-0 bg-white dark:bg-slate-950 transition-colors"
+              className="flex flex-col overflow-hidden border-r border-slate-200 dark:border-slate-800 flex-shrink-0"
             >
-              <div className="flex items-center gap-3 px-4 h-10 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/80 flex-shrink-0">
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-bold">Solution Workspace</span>
-                <select value={language} onChange={e => setLanguage(e.target.value)}
-                  className="ml-auto bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded text-xs text-slate-700 dark:text-slate-300 px-2 py-0.5">
-                  {LANGUAGES.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
-                </select>
-                <button onClick={handleRunCode} disabled={runningCode}
-                  className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs px-3 py-1 rounded-md transition-colors font-semibold">
-                  {runningCode ? 'Running...' : '▶ Run Solution'}
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden" style={{ height: '65%' }}>
-                <Editor height="100%" language={language} value={code} onChange={v => setCode(v || '')}
-                  theme={darkMode ? "vs-dark" : "light"} options={{ fontSize: 13, minimap: { enabled: false } }} />
-              </div>
-              <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-col p-3" style={{ height: '35%' }}>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mb-2 font-bold">OUTPUT CONSOLE</div>
-                <pre className="flex-1 overflow-auto text-xs font-mono text-slate-800 dark:text-slate-300 whitespace-pre-wrap bg-white dark:bg-slate-900/50 p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 shadow-inner">
-                  {codeOutput || 'Run code to view output...'}
-                </pre>
-              </div>
+              <CodingProblemPanel
+                problem={codingProblem}
+                isGenerating={isGeneratingProblem}
+                code={code}
+                setCode={setCode}
+                language={language}
+                setLanguage={setLanguage}
+                onRunCode={handleRunCode}
+                runningCode={runningCode}
+                codeOutput={codeOutput}
+                executionResult={executionResult}
+              />
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* Sidebar */}
         <AnimatePresence>
           {showSidebar && (
             <motion.div initial={{ width: 0 }} animate={{ width: 256 }} exit={{ width: 0 }} className="overflow-hidden flex-shrink-0">

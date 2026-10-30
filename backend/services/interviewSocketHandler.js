@@ -3,8 +3,10 @@ import {
   INTRO_PROMPT, DSA_SYSTEM_PROMPT, RESUME_SYSTEM_PROMPT,
   HR_SYSTEM_PROMPT, FOLLOWUP_PROMPT, EVALUATION_PROMPT, VOICE_SYSTEM_PROMPT,
   WARMUP_PROMPT, SILENCE_NUDGE_PROMPT, SILENCE_TIMEOUT_PROMPT, CLARIFICATION_PROMPT,
-  STAGE_TIMER_CONFIG,
+  DSA_PROBLEM_PROMPT, STAGE_TIMER_CONFIG,
 } from './interviewPrompts.js';
+import User from '../models/userModel.js';
+import Interview from '../models/interviewModel.js';
 
 // In-memory session store fallback
 const memorySessions = new Map();
@@ -28,6 +30,27 @@ const STAGE_FLOW = [
 
 const WARMUP_MAX_EXCHANGES = 3;
 
+// Compute adaptive difficulty level from recent answers
+function computeAdaptiveLevel(state) {
+  if (state.difficulty !== 'adaptive') return undefined;
+  return state.adaptiveLevel ?? 3;
+}
+
+function updateAdaptiveLevel(state, answerContent) {
+  if (state.difficulty !== 'adaptive') return;
+  const wordCount = answerContent.trim().split(/\s+/).length;
+  const hasUncertainty = /i don'?t know|not sure|no idea|stuck|help/i.test(answerContent);
+
+  let level = state.adaptiveLevel ?? 3;
+
+  if (hasUncertainty || wordCount < 20) {
+    level = Math.max(1, level - 1);
+  } else if (wordCount > 120 && !hasUncertainty) {
+    level = Math.min(5, level + 1);
+  }
+  state.adaptiveLevel = level;
+}
+
 function getSystemPrompt(state) {
   const base = state.voiceMode ? VOICE_SYSTEM_PROMPT + '\n\n' : '';
   switch (state.stage) {
@@ -36,9 +59,9 @@ function getSystemPrompt(state) {
     case 'INTRO':
       return base + INTRO_PROMPT(state.candidateName, state.role, state.company);
     case 'RESUME_DISCUSSION':
-      return base + RESUME_SYSTEM_PROMPT(state.resumeData || {}, state.company);
+      return base + RESUME_SYSTEM_PROMPT(state.resumeData, state.company);
     case 'DSA_ROUND':
-      return base + DSA_SYSTEM_PROMPT(state.difficulty, 'Data Structures & Algorithms', state.company);
+      return base + DSA_SYSTEM_PROMPT(state.difficulty, state.topic || 'Data Structures & Algorithms', state.company, computeAdaptiveLevel(state));
     case 'HR_ROUND':
       return base + HR_SYSTEM_PROMPT(state.company);
     default:
@@ -135,6 +158,24 @@ export function setupInterviewHandlers(io, socket) {
 
     let state = await getSession(interviewId);
     if (!state) {
+      // Fetch full user profile from DB for rich resume context
+      let richResumeData = resumeData;
+      try {
+        const interviewDoc = await Interview.findById(interviewId).select('candidateId');
+        if (interviewDoc?.candidateId) {
+          const user = await User.findById(interviewDoc.candidateId).select('profile name');
+          if (user?.profile?.resumeData) {
+            richResumeData = user.profile.resumeData;
+            console.log(`📄 Loaded resume from DB for ${user.name || candidateName}`);
+          } else if (user?.profile?.skills?.length) {
+            // Fallback: use skills array if no structured resumeData
+            richResumeData = { skills: user.profile.skills };
+          }
+        }
+      } catch (e) {
+        console.warn('Could not fetch user profile for resume context:', e.message);
+      }
+
       state = {
         interviewId,
         candidateName: candidateName || 'Candidate',
@@ -143,7 +184,8 @@ export function setupInterviewHandlers(io, socket) {
         company: company || 'generic',
         role: role || 'Software Engineer',
         difficulty: difficulty || 'adaptive',
-        resumeData,
+        topic: null,
+        resumeData: richResumeData,
         transcript: [],
         askedQuestions: [],
         currentQuestion: '',
@@ -155,6 +197,8 @@ export function setupInterviewHandlers(io, socket) {
         pendingClarificationQuestion: '',
         hintsUsed: 0,
         isPaused: false,
+        adaptiveLevel: 3,
+        codingProblem: null,
       };
       await saveSession(interviewId, state);
     }
@@ -165,7 +209,8 @@ export function setupInterviewHandlers(io, socket) {
       company: state.company,
       timerSeconds: getTimerConfig(state.stage),
       hintsUsed: state.hintsUsed,
-      transcript: state.transcript
+      transcript: state.transcript,
+      codingProblem: state.codingProblem,
     });
     console.log(`📋 ${candidateName} joined interview ${interviewId} [${state.stage}]`);
 
@@ -204,6 +249,9 @@ export function setupInterviewHandlers(io, socket) {
 
     state.transcript.push({ role: 'user', content, timestamp: Date.now(), stage: state.stage });
     state.questionCount++;
+
+    // Update adaptive difficulty based on answer quality
+    updateAdaptiveLevel(state, content);
 
     const isQuestion = content.includes('?') && content.length < 200;
     const isWarmup = state.stage === 'WARMUP';
@@ -283,6 +331,11 @@ export function setupInterviewHandlers(io, socket) {
     let systemPrompt = getSystemPrompt(state);
     const recentHistory = state.transcript.slice(-12).map(m => ({ role: m.role, content: m.content }));
 
+    // Inject coding problem context into DSA round
+    if (state.stage === 'DSA_ROUND' && state.codingProblem) {
+      systemPrompt += `\n\nCODING PROBLEM IN PANEL:\nTitle: ${state.codingProblem.title}\nDescription: ${state.codingProblem.description}\nOptimal: Time ${state.codingProblem.optimalComplexity?.time}, Space ${state.codingProblem.optimalComplexity?.space}\nFollow-ups: ${(state.codingProblem.followUpQuestions || []).join(', ')}`;
+    }
+
     socket.emit('interview:typing', true);
     let fullResponse = '';
     try {
@@ -329,6 +382,35 @@ export function setupInterviewHandlers(io, socket) {
       timerSeconds: getTimerConfig(nextStage),
     });
 
+    // Pre-generate DSA problem when entering coding round
+    if (nextStage === 'DSA_ROUND') {
+      try {
+        socket.emit('interview:problem_generating', true);
+        const problem = await aiService.generateStructuredResponse({
+          messages: [{
+            role: 'user',
+            content: DSA_PROBLEM_PROMPT(state.topic || 'Arrays', state.difficulty === 'adaptive' ? 'medium' : state.difficulty, state.company)
+          }],
+          temperature: 0.4,
+          maxTokens: 1500,
+        });
+        state.codingProblem = problem;
+        await saveSession(interviewId, state);
+
+        // Save to DB as well
+        try {
+          await Interview.findByIdAndUpdate(interviewId, { codingProblem: problem });
+        } catch (e) { /* non-critical */ }
+
+        socket.emit('interview:coding_problem', problem);
+        socket.emit('interview:problem_generating', false);
+        console.log(`🧩 Pre-generated DSA problem for session ${interviewId}: ${problem.title}`);
+      } catch (e) {
+        socket.emit('interview:problem_generating', false);
+        console.warn('Problem pre-generation failed, AI will improvise:', e.message);
+      }
+    }
+
     if (nextStage === 'FEEDBACK') {
       socket.emit('interview:typing', true);
       try {
@@ -338,7 +420,7 @@ export function setupInterviewHandlers(io, socket) {
             content: EVALUATION_PROMPT(state.transcript, state.stage, state.role)
           }],
           temperature: 0.2,
-          maxTokens: 1000,
+          maxTokens: 1200,
         });
         socket.emit('interview:evaluation', evaluation);
         socket.emit('interview:typing', false);
@@ -378,9 +460,17 @@ export function setupInterviewHandlers(io, socket) {
     socket.emit('interview:hint_count', { hintsUsed: state.hintsUsed });
     socket.emit('interview:typing', true);
     let hint = '';
+
+    // Build hint context with coding problem if available
+    let hintSystemPrompt = getSystemPrompt(state) + '\nThe candidate is stuck and needs a hint. Give a SMALL directional hint — NOT the solution. Point them in the right direction without solving it.';
+    if (state.stage === 'DSA_ROUND' && state.codingProblem?.hints?.length) {
+      const hintIdx = Math.min(state.hintsUsed - 1, state.codingProblem.hints.length - 1);
+      hintSystemPrompt += `\nAvailable hint for this problem: "${state.codingProblem.hints[hintIdx]}" — rephrase this naturally as if you just thought of it, don't reveal too much.`;
+    }
+
     await aiService.generateStream({
       messages: [
-        { role: 'system', content: getSystemPrompt(state) + '\nThe candidate is stuck and needs a hint. Give a SMALL directional hint, not the solution.' },
+        { role: 'system', content: hintSystemPrompt },
         ...state.transcript.slice(-6).map(m => ({ role: m.role, content: m.content })),
       ],
       temperature: 0.5,

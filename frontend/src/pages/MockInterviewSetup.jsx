@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
-import { startInterview } from '../services/interviewService';
+import { startInterview, getResumeData } from '../services/interviewService';
 import toast from 'react-hot-toast';
 
 const TOPICS = [
@@ -57,6 +57,13 @@ export default function MockInterviewSetup() {
     targetRole: 'Software Engineer',
   });
   const [loading, setLoading] = useState(false);
+  const [resumeStatus, setResumeStatus] = useState(null); // null | 'present' | 'missing'
+
+  React.useEffect(() => {
+    getResumeData().then(data => {
+      setResumeStatus(data.success && data.resumeData ? 'present' : 'missing');
+    }).catch(() => setResumeStatus('missing'));
+  }, []);
 
   const steps = [
     { title: 'Interview Mode', subtitle: 'What kind of interview do you want?' },
@@ -90,6 +97,24 @@ export default function MockInterviewSetup() {
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm">Configure your real-time AI-guided practice session</p>
         </div>
+
+        {resumeStatus === 'missing' && (
+          <div className="mb-6 p-3.5 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-xl flex items-center gap-3">
+            <span className="text-base flex-shrink-0">⚠️</span>
+            <div className="text-sm text-amber-700 dark:text-amber-300">
+              No resume uploaded — Resume Deep Dive mode will ask generic questions.{' '}
+              <a href="/profile" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">Upload one →</a>
+            </div>
+          </div>
+        )}
+        {resumeStatus === 'present' && (
+          <div className="mb-6 p-3.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 rounded-xl flex items-center gap-3">
+            <span className="text-base flex-shrink-0">✅</span>
+            <span className="text-sm text-emerald-700 dark:text-emerald-300 font-medium">
+              Resume loaded — AI will ask personalized questions from your actual projects & experience
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center gap-2 mb-8">
           {steps.map((s, i) => (
